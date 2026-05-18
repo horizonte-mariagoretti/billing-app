@@ -44,6 +44,6 @@ export default defineConfig(({ command }) => ({
   // Only apply the GitHub Pages subpath for production web builds.
   // Dev (and Electron build) keep root base so localhost works without
   // requiring the user to type the long URL.
-  base: isWeb && command === 'build' ? '/maria-goretti-invoices-app/' : '/',
+  base: isWeb && command === 'build' ? '/billing-app/' : '/',
   assetsInclude: ['**/*.wasm'],
 }))
