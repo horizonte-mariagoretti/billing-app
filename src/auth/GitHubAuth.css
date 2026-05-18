@@ -194,3 +194,97 @@
   border-radius: 4px;
   margin: 0;
 }
+
+/* Device Flow UI */
+.device-code-wrap {
+  margin: 8px 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.device-code-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-dark-tertiary);
+}
+
+.device-code-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #EEF2FF, #F5F3FF);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 14px 22px;
+  border-radius: 14px;
+}
+
+.device-code-value code {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-indigo);
+  background: none;
+  padding: 0;
+}
+
+.device-code-copy {
+  background: rgba(99, 102, 241, 0.12);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-indigo);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.device-code-copy:hover { background: rgba(99, 102, 241, 0.22); }
+
+.device-open-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.device-open-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(99, 102, 241, 0.4);
+}
+
+.device-hint {
+  text-align: center;
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.85rem;
+  margin: 14px 0 0;
+}
+
+.gh-auth-link-btn {
+  margin-top: 14px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  width: 100%;
+  padding: 6px;
+}
+
+.gh-auth-link-btn:hover { color: var(--color-text-dark-primary); }
