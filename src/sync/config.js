@@ -2,13 +2,13 @@
 // via the auth UI (Advanced section) and persisted in localStorage.
 
 export const DEFAULT_DATA_REPO = {
-  owner: 'Lexon245',
-  repo: 'maria-goretti-invoices',
+  owner: 'hotizonte-mariagoretti',
+  repo: 'billing-app-database',
   branch: 'main',
   dbPath: 'data/invoiceforge.db',
 };
 
-export const PAT_STORAGE_KEY = 'mg-invoices-pat';
-export const REPO_STORAGE_KEY = 'mg-invoices-repo';
+export const PAT_STORAGE_KEY = 'billing-app-pat';
+export const REPO_STORAGE_KEY = 'billing-app-repo';
 
 export const SYNC_DEBOUNCE_MS = 3000;
