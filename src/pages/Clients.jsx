@@ -81,12 +81,6 @@ const Clients = () => {
       }
       if (!result.valid) { setAddressState({ status: 'invalid', result }); return; }
       setAddressState({ status: 'valid', result });
-      setFormData((prev) => ({
-        ...prev,
-        address_zip: prev.address_zip || result.address_zip || '',
-        address_city: prev.address_city || result.address_city || '',
-        address_country: prev.address_country || result.address_country || '',
-      }));
     }, 800);
     return () => clearTimeout(handle);
   }, [formData.address_street, showModal]);

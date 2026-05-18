@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import StatusBadge from '../components/StatusBadge';
 import { effectiveStatus } from '../utils/documentLifecycle';
@@ -17,9 +17,16 @@ const RANGES = [
   { id: 'all', label: 'ALL', months: null },
 ];
 
-// Catmull-Rom → cubic Bézier smoothing for a list of {x,y} points.
-const smoothPath = (pts) => {
+const CHART_H = 220;
+const CHART_PAD_Y = 20;
+const CHART_PAD_XL = 56; // left room for Y-axis labels
+const CHART_PAD_XR = 12;
+
+// Catmull-Rom → cubic Bézier smoothing. yMin/yMax clamp control points
+// so the curve never overshoots below zero on sparse-then-spike data.
+const smoothPath = (pts, yMin = -Infinity, yMax = Infinity) => {
   if (pts.length < 2) return '';
+  const cy = (v) => Math.max(yMin, Math.min(yMax, v));
   let d = `M ${pts[0].x} ${pts[0].y}`;
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = pts[i - 1] || pts[i];
@@ -27,9 +34,9 @@ const smoothPath = (pts) => {
     const p2 = pts[i + 1];
     const p3 = pts[i + 2] || p2;
     const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp1y = cy(p1.y + (p2.y - p0.y) / 6);
     const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    const cp2y = cy(p2.y - (p3.y - p1.y) / 6);
     d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
   }
   return d;
@@ -42,9 +49,19 @@ const Dashboard = ({ settings, onNewDoc }) => {
   });
   const [recentDocs, setRecentDocs] = useState([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [dailyRevenue, setDailyRevenue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState('1y');
+  const chartContainerRef = useRef(null);
+  const [chartWidth, setChartWidth] = useState(600);
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setChartWidth(Math.max(200, e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -72,6 +89,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
 
       let totalRevenue = 0;
       const byMonth = new Map();
+      const byDay = new Map();
 
       for (const inv of invoices) {
         const subtotal = inv.items_subtotal;
@@ -83,8 +101,10 @@ const Dashboard = ({ settings, onNewDoc }) => {
         const total = subtotal - discount + tax;
 
         if (inv.status === 'paid' && inv.date) {
-          const key = inv.date.slice(0, 7);
-          byMonth.set(key, (byMonth.get(key) || 0) + total);
+          const monthKey = inv.date.slice(0, 7);
+          byMonth.set(monthKey, (byMonth.get(monthKey) || 0) + total);
+          const dayKey = inv.date.slice(0, 10);
+          byDay.set(dayKey, (byDay.get(dayKey) || 0) + total);
           totalRevenue += total;
         }
       }
@@ -113,6 +133,21 @@ const Dashboard = ({ settings, onNewDoc }) => {
         pendingQuotes: quoteCount[0]?.cnt || 0,
         totalClients: clientCount[0]?.cnt || 0,
       });
+      // Build daily series for current month (days 1 → today only)
+      const todayDate = new Date();
+      const todayDay = todayDate.getDate();
+      const curYear = todayDate.getFullYear();
+      const curMonth = todayDate.getMonth();
+      const dailySeries = [];
+      for (let d = 1; d <= todayDay; d++) {
+        const key = `${curYear}-${String(curMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        dailySeries.push({
+          key,
+          label: d === 1 || d % 5 === 0 ? String(d) : '',
+          value: byDay.get(key) || 0,
+        });
+      }
+      setDailyRevenue(dailySeries);
       setMonthlyRevenue(fullSeries);
       setRecentDocs(recent);
     } catch (_err) {
@@ -126,6 +161,15 @@ const Dashboard = ({ settings, onNewDoc }) => {
     style: 'currency', currency: settings?.default_currency || 'EUR', maximumFractionDigits: 0
   });
 
+  const fmtShort = (v) => {
+    const cur = settings?.default_currency || 'EUR';
+    const sym = cur === 'EUR' ? '€' : cur === 'USD' ? '$' : cur === 'GBP' ? '£' : cur + ' ';
+    if (v >= 1_000_000) return `${sym}${(v / 1_000_000).toFixed(1)}M`;
+    if (v >= 10_000)    return `${sym}${Math.round(v / 1000)}k`;
+    if (v >= 1_000)     return `${sym}${(v / 1000).toFixed(1)}k`;
+    return `${sym}${Math.round(v)}`;
+  };
+
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -135,34 +179,43 @@ const Dashboard = ({ settings, onNewDoc }) => {
 
   const firstName = (settings?.company_name || 'there').split(/\s+/)[0];
 
-  // Slice monthlyRevenue based on selected range
+  // Slice monthlyRevenue based on selected range; 1m uses daily granularity
   const visibleMonths = useMemo(() => {
+    if (chartRange === '1m') return dailyRevenue;
     if (chartRange === 'all') return monthlyRevenue;
     const months = RANGES.find(r => r.id === chartRange)?.months || 12;
     return monthlyRevenue.slice(-months);
-  }, [monthlyRevenue, chartRange]);
+  }, [monthlyRevenue, dailyRevenue, chartRange]);
 
-  // Generate SVG line chart points
+  // Generate SVG line chart points — uses measured container width so
+  // viewBox matches actual pixels and circles stay circular.
   const chartPoints = useMemo(() => {
-    const W = 600;
-    const H = 180;
-    const padX = 8;
-    const padY = 16;
+    const W = chartWidth;
+    const innerH = CHART_H - CHART_PAD_Y * 2;
     const max = Math.max(...visibleMonths.map(m => m.value), 1);
     const n = visibleMonths.length;
     if (n === 0) return [];
-    const dx = (W - padX * 2) / Math.max(n - 1, 1);
+    const dx = (W - CHART_PAD_XL - CHART_PAD_XR) / Math.max(n - 1, 1);
     return visibleMonths.map((m, i) => ({
-      x: padX + i * dx,
-      y: padY + (H - padY * 2) * (1 - m.value / max),
+      x: CHART_PAD_XL + i * dx,
+      y: CHART_PAD_Y + innerH * (1 - m.value / max),
       v: m.value,
       label: m.label,
     }));
+  }, [visibleMonths, chartWidth]);
+
+  const yTicks = useMemo(() => {
+    const max = Math.max(...visibleMonths.map(m => m.value), 1);
+    const innerH = CHART_H - CHART_PAD_Y * 2;
+    return [0.25, 0.5, 0.75, 1].map(p => ({
+      value: max * p,
+      y: CHART_PAD_Y + innerH * (1 - p),
+    }));
   }, [visibleMonths]);
 
-  const linePath = smoothPath(chartPoints);
+  const linePath = smoothPath(chartPoints, CHART_PAD_Y, CHART_H - CHART_PAD_Y);
   const areaPath = chartPoints.length
-    ? `${linePath} L ${chartPoints[chartPoints.length - 1].x} 180 L ${chartPoints[0].x} 180 Z`
+    ? `${linePath} L ${chartPoints[chartPoints.length - 1].x} ${CHART_H} L ${chartPoints[0].x} ${CHART_H} Z`
     : '';
 
   const hasData = visibleMonths.some(m => m.value > 0);
@@ -261,7 +314,11 @@ const Dashboard = ({ settings, onNewDoc }) => {
         <div className="chart-toolbar">
           <div>
             <h3 className="chart-title">Revenue overview</h3>
-            <p className="chart-sub">{new Date().getFullYear()} · paid invoices</p>
+            <p className="chart-sub">
+              {chartRange === '1m'
+                ? `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} · daily`
+                : `${new Date().getFullYear()} · paid invoices`}
+            </p>
           </div>
           <div className="chart-controls">
             <div className="time-pills">
@@ -278,7 +335,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
           </div>
         </div>
 
-        <div className="chart-area">
+        <div className="chart-area" ref={chartContainerRef}>
           {!hasData && (
             <div className="chart-empty">
               No paid invoices yet — your revenue will appear here.
@@ -286,7 +343,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
           )}
           <svg
             className="chart-svg"
-            viewBox="0 0 600 180"
+            viewBox={`0 0 ${chartWidth} ${CHART_H}`}
             preserveAspectRatio="none"
             role="img"
             aria-label="Revenue line chart"
@@ -297,15 +354,24 @@ const Dashboard = ({ settings, onNewDoc }) => {
                 <stop offset="100%" stopColor="rgba(99,102,241,0)" />
               </linearGradient>
             </defs>
-            {/* horizontal grid lines */}
-            {[0.25, 0.5, 0.75].map((p, i) => (
-              <line
-                key={i}
-                x1="0" x2="600"
-                y1={180 * p} y2={180 * p}
-                stroke="#E2E8F0"
-                strokeDasharray="3 5"
-              />
+            {/* Y-axis tick labels + grid lines */}
+            {yTicks.map((t, i) => (
+              <g key={i}>
+                <line
+                  x1={CHART_PAD_XL} x2={chartWidth - CHART_PAD_XR}
+                  y1={t.y} y2={t.y}
+                  stroke="#E2E8F0" strokeDasharray="3 5"
+                />
+                <text
+                  x={CHART_PAD_XL - 6} y={t.y + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#94A3B8"
+                  fontFamily="var(--font-mono, monospace)"
+                >
+                  {fmtShort(t.value)}
+                </text>
+              </g>
             ))}
             {hasData && (
               <>
@@ -321,7 +387,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
                 {chartPoints.map((p, i) => (
                   <circle
                     key={i}
-                    cx={p.x} cy={p.y} r="3.5"
+                    cx={p.x} cy={p.y} r="4"
                     fill="#FFFFFF"
                     stroke="#6366F1"
                     strokeWidth="2"
@@ -330,7 +396,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
               </>
             )}
           </svg>
-          <div className="chart-x-axis">
+          <div className="chart-x-axis" style={{ paddingLeft: CHART_PAD_XL, paddingRight: CHART_PAD_XR }}>
             {visibleMonths.map((m, i) => (
               <span key={i} className="chart-x-label">{m.label}</span>
             ))}

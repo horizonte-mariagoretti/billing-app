@@ -374,7 +374,7 @@
 
 .chart-svg {
   width: 100%;
-  height: 220px;
+  height: 220px; /* must match CHART_H constant in Dashboard.jsx */
   display: block;
 }
 
