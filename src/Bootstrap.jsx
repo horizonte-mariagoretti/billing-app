@@ -21,7 +21,22 @@ function isElectronRuntime() {
 
 const Bootstrap = () => {
   const electronMode = isElectronRuntime();
-  const [pat, setPat] = useState(() => localStorage.getItem(PAT_STORAGE_KEY) || '');
+  const [authError] = useState(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    return hash.get('auth_error') || null;
+  });
+  const [pat, setPat] = useState(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const token = hash.get('token');
+    if (token || hash.get('auth_error')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    if (token) {
+      localStorage.setItem(PAT_STORAGE_KEY, token);
+      return token;
+    }
+    return localStorage.getItem(PAT_STORAGE_KEY) || '';
+  });
   const [phase, setPhase] = useState(electronMode ? 'ready' : 'init'); // init | auth | loading | ready | error
   const [loadMessage, setLoadMessage] = useState('Connecting to GitHub…');
   const [loadError, setLoadError] = useState(null);
@@ -192,7 +207,7 @@ const Bootstrap = () => {
   if (electronMode) return <App />;
 
   if (phase === 'auth') {
-    return <GitHubAuth onAuthenticated={() => setPat(localStorage.getItem(PAT_STORAGE_KEY) || '')} />;
+    return <GitHubAuth authError={authError} />;
   }
 
   if (phase === 'init' || phase === 'loading') {
