@@ -33,9 +33,6 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings }) =
           </div>
           <div className="header-right">
             {isWebRuntime && <SyncStatusBadge />}
-            <div className="header-avatar" aria-label="Profile">
-              {initials}
-            </div>
           </div>
         </header>
         <div className="content-body">

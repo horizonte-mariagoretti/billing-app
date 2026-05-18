@@ -281,14 +281,40 @@
 
 .settings-page .pattern-row {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: 24px 140px minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  background: #F8FAFC;
-  padding: 8px;
+  background: #FFFFFF;
+  padding: 8px 10px;
   border-radius: 12px;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border-light-theme);
   transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.settings-page .drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-dark-tertiary);
+  cursor: grab;
+  user-select: none;
+  border-radius: 4px;
+  padding: 2px;
+}
+.settings-page .drag-handle:active { cursor: grabbing; }
+
+.settings-page .value-span {
+  grid-column: 3 / 5;
+}
+
+.settings-page .pattern-row.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.settings-page .pattern-row.drag-over {
+  border-color: var(--color-indigo);
+  background: var(--color-indigo-alpha);
 }
 
 .settings-page .row-actions {
@@ -456,4 +482,33 @@
   border-top: 1px solid var(--color-border-light-theme);
   display: flex;
   justify-content: flex-end;
+}
+
+/* App language toggle */
+.settings-page .lang-toggle-row {
+  display: flex;
+  gap: 10px;
+}
+
+.settings-page .lang-toggle-btn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-light-theme);
+  background: #F8FAFC;
+  color: var(--color-text-dark-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-page .lang-toggle-btn:hover {
+  background: #F1F5F9;
+  color: var(--color-text-dark-primary);
+}
+
+.settings-page .lang-toggle-btn.active {
+  background: var(--color-indigo);
+  color: #FFFFFF;
+  border-color: var(--color-indigo);
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
+import { useT } from '../hooks/useUiTranslations';
 import './CategoryEditor.css';
 
 const PRESET_COLORS = [
@@ -10,6 +11,7 @@ const PRESET_COLORS = [
 const EMPTY = { name: '', name_de: '', name_fr: '', color: PRESET_COLORS[0] };
 
 const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
+  const t = useT();
   const [data, setData] = useState(() => ({ ...EMPTY, ...(initial || {}) }));
 
   useEffect(() => {
@@ -40,21 +42,21 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
           autoFocus={autoFocus}
           type="text"
           className="cat-input"
-          placeholder="Category name (EN)"
+          placeholder={t('cat_field_name_en', 'Category name (EN)')}
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
         />
         <input
           type="text"
           className="cat-input"
-          placeholder="DE"
+          placeholder={t('cat_field_de', 'DE')}
           value={data.name_de}
           onChange={(e) => setData({ ...data, name_de: e.target.value })}
         />
         <input
           type="text"
           className="cat-input"
-          placeholder="FR"
+          placeholder={t('cat_field_fr', 'FR')}
           value={data.name_fr}
           onChange={(e) => setData({ ...data, name_fr: e.target.value })}
         />

@@ -8,6 +8,7 @@ import DocumentList from './pages/DocumentList';
 import DocumentEditor from './pages/DocumentEditor';
 import useDocuments from './hooks/useDocuments';
 import useSettings from './hooks/useSettings';
+import { UiTranslationsProvider } from './hooks/useUiTranslations';
 import './index.css';
 
 function App() {
@@ -63,7 +64,7 @@ function App() {
       tax_rate: quote.tax_rate ?? 21,
       discount_value: quote.discount_value || 0,
       discount_type: quote.discount_type || '%',
-      language: quote.language || 'en',
+      language: quote.language || 'de',
       payment_mode: quote.payment_mode || 'standard',
       status: 'draft',
       locked: 0,
@@ -85,7 +86,7 @@ function App() {
   const renderContent = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard settings={appSettings} onNewDoc={handleNewDoc} />;
+        return <Dashboard settings={appSettings} onNewDoc={handleNewDoc} onEditDoc={handleEditDoc} />;
       case 'quotes':
         return <DocumentList type="quote" onEdit={handleEditDoc} onNew={() => handleNewDoc('quote')} />;
       case 'invoices':
@@ -106,24 +107,26 @@ function App() {
     : null;
 
   return (
-    <Layout
-      currentView={view}
-      setView={(v) => { setView(v); setIsEditing(false); }}
-      onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
-      title={editorTitle}
-      settings={appSettings}
-    >
-      {isEditing ? (
-        <DocumentEditor
-          key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}
-          type={editingData?.type || 'invoice'}
-          initialData={editingData}
-          onSave={handleSaveDoc}
-          onCancel={() => setIsEditing(false)}
-          onConvertToInvoice={handleConvertToInvoice}
-        />
-      ) : renderContent()}
-    </Layout>
+    <UiTranslationsProvider>
+      <Layout
+        currentView={view}
+        setView={(v) => { setView(v); setIsEditing(false); }}
+        onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
+        title={editorTitle}
+        settings={appSettings}
+      >
+        {isEditing ? (
+          <DocumentEditor
+            key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}
+            type={editingData?.type || 'invoice'}
+            initialData={editingData}
+            onSave={handleSaveDoc}
+            onCancel={() => setIsEditing(false)}
+            onConvertToInvoice={handleConvertToInvoice}
+          />
+        ) : renderContent()}
+      </Layout>
+    </UiTranslationsProvider>
   );
 }
 

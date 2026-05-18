@@ -47,6 +47,26 @@ const Bootstrap = () => {
   // -- Web boot ---------------------------------------------------------------
   useEffect(() => {
     if (electronMode) return;
+
+    // DEV BYPASS: skip GitHub auth in local Vite dev server.
+    // Uses an empty in-memory DB — data does not persist across reloads.
+    // This code path is tree-shaken out of production builds (import.meta.env.DEV = false).
+    if (import.meta.env.DEV) {
+      let cancelled = false;
+      (async () => {
+        try {
+          setLoadMessage('Dev mode — loading in-memory DB…');
+          await engine.init(null);
+          engine.migrate();
+          engine.installAsElectronShim();
+          if (!cancelled) setPhase('ready');
+        } catch (err) {
+          if (!cancelled) { setLoadError(err.message); setPhase('error'); }
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+
     if (!pat) { setPhase('auth'); return; }
 
     let cancelled = false;

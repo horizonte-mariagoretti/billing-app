@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import StatusBadge from '../components/StatusBadge';
 import { effectiveStatus } from '../utils/documentLifecycle';
+import { useT } from '../hooks/useUiTranslations';
 import {
-  DollarSign, FileText, Users, Clock, AlertCircle,
-  TrendingUp, ArrowUpRight, Plus, Sparkles, Receipt
+  Euro, FileText, Users, Clock, AlertCircle,
+  ArrowUpRight, Plus, Sparkles, Receipt, X
 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -15,7 +16,26 @@ const RANGES = [
   { id: '6m', label: '6M', months: 6 },
   { id: '1y', label: '1Y', months: 12 },
   { id: 'all', label: 'ALL', months: null },
+  { id: 'custom', label: 'Custom', months: null },
 ];
+
+const TODAY = new Date();
+const todayStr = TODAY.toISOString().split('T')[0];
+
+function getFiscalYear() {
+  const now = new Date();
+  const isBefore = now.getMonth() < 8; // before Sept (0-indexed)
+  const startYear = isBefore ? now.getFullYear() - 1 : now.getFullYear();
+  const endYear = startYear + 1;
+  return {
+    from: `${startYear}-09-01`,
+    to: `${endYear}-08-31`,
+  };
+}
+
+function heroClosedToday() {
+  return localStorage.getItem('hero_last_closed') === todayStr;
+}
 
 const CHART_H = 220;
 const CHART_PAD_Y = 20;
@@ -42,8 +62,9 @@ const smoothPath = (pts, yMin = -Infinity, yMax = Infinity) => {
   return d;
 };
 
-const Dashboard = ({ settings, onNewDoc }) => {
+const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   const { query } = useDatabase();
+  const t = useT();
   const [stats, setStats] = useState({
     revenue: 0, paidInvoices: 0, pendingQuotes: 0, totalClients: 0
   });
@@ -53,6 +74,10 @@ const Dashboard = ({ settings, onNewDoc }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState('1y');
+  const [showHero, setShowHero] = useState(!heroClosedToday());
+  const fiscal = getFiscalYear();
+  const [customFrom, setCustomFrom] = useState(fiscal.from);
+  const [customTo, setCustomTo] = useState(fiscal.to);
   const chartContainerRef = useRef(null);
   const [chartWidth, setChartWidth] = useState(600);
   useEffect(() => {
@@ -151,7 +176,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
       setMonthlyRevenue(fullSeries);
       setRecentDocs(recent);
     } catch (_err) {
-      setError('Failed to load dashboard data. Please restart the app.');
+      setError(t('doclist_load_error', 'Failed to load. Please restart the app.'));
     } finally {
       setLoading(false);
     }
@@ -172,20 +197,35 @@ const Dashboard = ({ settings, onNewDoc }) => {
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+    if (h < 12) return t('greeting_morning', 'Good morning');
+    if (h < 18) return t('greeting_afternoon', 'Good afternoon');
+    return t('greeting_evening', 'Good evening');
+  }, [t]);
 
   const firstName = (settings?.company_name || 'there').split(/\s+/)[0];
+
+  const handleCloseHero = () => {
+    localStorage.setItem('hero_last_closed', todayStr);
+    setShowHero(false);
+  };
 
   // Slice monthlyRevenue based on selected range; 1m uses daily granularity
   const visibleMonths = useMemo(() => {
     if (chartRange === '1m') return dailyRevenue;
     if (chartRange === 'all') return monthlyRevenue;
+    if (chartRange === 'custom') {
+      const fromKey = customFrom.slice(0, 7);
+      const toKey = customTo.slice(0, 7);
+      return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey);
+    }
     const months = RANGES.find(r => r.id === chartRange)?.months || 12;
     return monthlyRevenue.slice(-months);
-  }, [monthlyRevenue, dailyRevenue, chartRange]);
+  }, [monthlyRevenue, dailyRevenue, chartRange, customFrom, customTo]);
+
+  const filteredRevenue = useMemo(
+    () => visibleMonths.reduce((sum, m) => sum + m.value, 0),
+    [visibleMonths]
+  );
 
   // Generate SVG line chart points — uses measured container width so
   // viewBox matches actual pixels and circles stay circular.
@@ -224,28 +264,28 @@ const Dashboard = ({ settings, onNewDoc }) => {
   const statCards = [
     {
       key: 'revenue',
-      label: 'Total Revenue',
-      value: loading ? '—' : fmtEUR(stats.revenue),
-      icon: DollarSign,
+      label: t('kpi_total_revenue', 'Total Revenue'),
+      value: loading ? '—' : fmtEUR(filteredRevenue),
+      icon: Euro,
       tone: 'lime',
     },
     {
       key: 'paid',
-      label: 'Paid Invoices',
+      label: t('kpi_paid_invoices', 'Paid Invoices'),
       value: loading ? '—' : stats.paidInvoices,
       icon: Receipt,
       tone: 'dark',
     },
     {
       key: 'quotes',
-      label: 'Pending Quotes',
+      label: t('kpi_pending_quotes', 'Pending Quotes'),
       value: loading ? '—' : stats.pendingQuotes,
       icon: Clock,
       tone: 'indigo',
     },
     {
       key: 'clients',
-      label: 'Total Clients',
+      label: t('kpi_total_clients', 'Total Clients'),
       value: loading ? '—' : stats.totalClients,
       icon: Users,
       tone: 'pink',
@@ -262,34 +302,39 @@ const Dashboard = ({ settings, onNewDoc }) => {
       )}
 
       {/* HERO PROMO CARD */}
-      <section className="hero-card">
-        <div className="hero-content">
-          <span className="hero-eyebrow">
-            <Sparkles size={14} /> {greeting}, {firstName}
-          </span>
-          <h2 className="hero-title">
-            Run your billing like a pro <span className="hero-emoji">✦</span>
-          </h2>
-          <p className="hero-sub">
-            Track revenue, send invoices, and stay on top of every quote — all in one place.
-          </p>
-          <div className="hero-actions">
-            <button className="hero-cta" onClick={() => onNewDoc?.('invoice')}>
-              <Plus size={16} /> New Invoice
-            </button>
-            <button className="hero-cta-ghost" onClick={() => onNewDoc?.('quote')}>
-              New Quote
-            </button>
+      {showHero && (
+        <section className="hero-card">
+          <button className="hero-close" onClick={handleCloseHero} aria-label="Close">
+            <X size={18} />
+          </button>
+          <div className="hero-content">
+            <span className="hero-eyebrow">
+              <Sparkles size={14} /> {greeting}, {firstName}
+            </span>
+            <h2 className="hero-title">
+              {t('hero_title', 'Run your billing like a pro')} <span className="hero-emoji">✦</span>
+            </h2>
+            <p className="hero-sub">
+              {t('hero_subtitle', 'Track revenue, send invoices, and stay on top of every quote — all in one place.')}
+            </p>
+            <div className="hero-actions">
+              <button className="hero-cta" onClick={() => onNewDoc?.('invoice')}>
+                <Plus size={16} /> {t('btn_new_invoice', 'New Invoice')}
+              </button>
+              <button className="hero-cta-ghost" onClick={() => onNewDoc?.('quote')}>
+                {t('btn_new_quote', 'New Quote')}
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="hero-decor" aria-hidden="true">
-          <div className="hero-orb hero-orb-1"><Receipt size={30} /></div>
-          <div className="hero-orb hero-orb-2"><FileText size={30} /></div>
-          <div className="hero-orb hero-orb-3"><DollarSign size={26} /></div>
-          <div className="hero-spark hero-spark-1"></div>
-          <div className="hero-spark hero-spark-2"></div>
-        </div>
-      </section>
+          <div className="hero-decor" aria-hidden="true">
+            <div className="hero-orb hero-orb-1"><Receipt size={30} /></div>
+            <div className="hero-orb hero-orb-2"><FileText size={30} /></div>
+            <div className="hero-orb hero-orb-3"><Euro size={26} /></div>
+            <div className="hero-spark hero-spark-1"></div>
+            <div className="hero-spark hero-spark-2"></div>
+          </div>
+        </section>
+      )}
 
       {/* STAT CARDS */}
       <section className="stats-grid">
@@ -313,11 +358,11 @@ const Dashboard = ({ settings, onNewDoc }) => {
       <section className="chart-card">
         <div className="chart-toolbar">
           <div>
-            <h3 className="chart-title">Revenue overview</h3>
+            <h3 className="chart-title">{t('chart_title', 'Revenue overview')}</h3>
             <p className="chart-sub">
               {chartRange === '1m'
-                ? `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} · daily`
-                : `${new Date().getFullYear()} · paid invoices`}
+                ? `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} · ${t('chart_mode_daily', 'daily')}`
+                : `${new Date().getFullYear()} · ${t('chart_mode_paid', 'paid invoices')}`}
             </p>
           </div>
           <div className="chart-controls">
@@ -332,13 +377,30 @@ const Dashboard = ({ settings, onNewDoc }) => {
                 </button>
               ))}
             </div>
+            {chartRange === 'custom' && (
+              <div className="custom-range">
+                <input
+                  type="date"
+                  className="date-range-input"
+                  value={customFrom}
+                  onChange={e => setCustomFrom(e.target.value)}
+                />
+                <span className="date-range-sep">–</span>
+                <input
+                  type="date"
+                  className="date-range-input"
+                  value={customTo}
+                  onChange={e => setCustomTo(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
 
         <div className="chart-area" ref={chartContainerRef}>
           {!hasData && (
             <div className="chart-empty">
-              No paid invoices yet — your revenue will appear here.
+              {t('chart_empty', 'No paid invoices yet — your revenue will appear here.')}
             </div>
           )}
           <svg
@@ -408,21 +470,28 @@ const Dashboard = ({ settings, onNewDoc }) => {
       <section className="bottom-grid">
         <div className="recent-card">
           <div className="recent-header">
-            <h3>Recent Documents</h3>
-            <span className="recent-subtle">Latest activity</span>
+            <h3>{t('recent_docs_title', 'Recent Documents')}</h3>
+            <span className="recent-subtle">{t('recent_docs_subtitle', 'Latest activity')}</span>
           </div>
           {recentDocs.length === 0 ? (
-            <p className="empty-state">No documents yet. Create your first invoice!</p>
+            <p className="empty-state">{t('recent_docs_empty', 'No documents yet. Create your first invoice!')}</p>
           ) : (
             <div className="recent-list">
               {recentDocs.map(doc => (
-                <div key={doc.id} className="recent-item">
+                <div
+                  key={doc.id}
+                  className="recent-item recent-item-clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onEditDoc?.(doc)}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onEditDoc?.(doc)}
+                >
                   <div className="recent-avatar">
                     {(doc.client_name || '??').slice(0, 1).toUpperCase()}
                   </div>
                   <div className="recent-main">
                     <span className="recent-num">{doc.number}</span>
-                    <span className="recent-client">{doc.client_name || 'No Client'}</span>
+                    <span className="recent-client">{doc.client_name || t('doc_no_client', 'No Client')}</span>
                   </div>
                   <div className="recent-meta">
                     <span className="recent-date">{doc.date}</span>
@@ -436,7 +505,7 @@ const Dashboard = ({ settings, onNewDoc }) => {
 
         <aside className="quick-panel">
           <div className="quick-stat">
-            <span className="quick-stat-label">This month</span>
+            <span className="quick-stat-label">{t('this_month', 'This month')}</span>
             <span className="quick-stat-value">
               {fmtEUR((() => {
                 const n = new Date();
@@ -447,12 +516,12 @@ const Dashboard = ({ settings, onNewDoc }) => {
           </div>
 
           <div className="quick-actions">
-            <h4>Quick actions</h4>
+            <h4>{t('quick_actions', 'Quick actions')}</h4>
             <button className="quick-btn primary" onClick={() => onNewDoc?.('invoice')}>
-              <Plus size={16} /> New Invoice
+              <Plus size={16} /> {t('btn_new_invoice', 'New Invoice')}
             </button>
             <button className="quick-btn" onClick={() => onNewDoc?.('quote')}>
-              <Plus size={16} /> New Quote
+              <Plus size={16} /> {t('btn_new_quote', 'New Quote')}
             </button>
           </div>
         </aside>

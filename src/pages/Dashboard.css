@@ -186,14 +186,8 @@
   padding: 22px 22px 20px;
   border-radius: 20px;
   overflow: hidden;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   min-height: 160px;
   isolation: isolate;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 .stat-icon-wrap {
@@ -616,4 +610,63 @@
 .quick-btn.primary:hover {
   background: var(--color-indigo-hover);
   border-color: var(--color-indigo-hover);
+}
+
+/* Hero close button */
+.hero-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.hero-close:hover {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+}
+
+/* Custom date range picker */
+.custom-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.date-range-input {
+  padding: 5px 10px;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  background: #FFFFFF;
+  color: var(--color-text-dark-primary);
+  cursor: pointer;
+}
+
+.date-range-sep {
+  color: var(--color-text-dark-tertiary);
+  font-weight: 600;
+}
+
+/* Clickable recent docs */
+.recent-item-clickable {
+  cursor: pointer;
+  outline: none;
+}
+.recent-item-clickable:hover {
+  background: #F1F5F9;
+}
+.recent-item-clickable:focus-visible {
+  outline: 2px solid var(--color-indigo);
+  outline-offset: 2px;
 }

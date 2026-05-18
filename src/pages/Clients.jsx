@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import useFocusTrap from '../hooks/useFocusTrap';
+import { useT } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
 
 const Clients = () => {
   const { query, run } = useDatabase();
+  const t = useT();
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -105,7 +107,7 @@ const Clients = () => {
       `);
       setClients(data);
     } catch (err) {
-      setError('Failed to load clients. Please restart the app.');
+      setError(t('clients_load_error', 'Failed to load clients. Please restart the app.'));
     } finally {
       setLoading(false);
     }
@@ -116,8 +118,8 @@ const Clients = () => {
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (formData.email && emailState.status === 'invalid') newErrors.email = 'Invalid email format';
-    if (formData.phone && phoneState.status === 'invalid') newErrors.phone = 'Invalid phone format';
+    if (formData.email && emailState.status === 'invalid') newErrors.email = t('clients_invalid_email', 'Invalid email format');
+    if (formData.phone && phoneState.status === 'invalid') newErrors.phone = t('clients_invalid_phone', 'Invalid phone format');
     setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -241,14 +243,14 @@ const Clients = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search clients..."
+            placeholder={t('clients_search', 'Search clients...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search clients"
+            aria-label={t('clients_search', 'Search clients...')}
           />
         </div>
         <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
-          Add Client
+          {t('clients_add', 'Add Client')}
         </Button>
       </div>
 
@@ -264,24 +266,24 @@ const Clients = () => {
           <div className="clients-empty">
             <Users size={36} strokeWidth={1.4} />
             <div className="clients-empty-title">
-              {loading ? 'Loading…' : search ? `No clients match "${search}"` : 'No clients yet'}
+              {loading ? t('loading', 'Loading…') : search ? `${t('clients_no_match', 'No clients match')} "${search}"` : t('clients_no_clients', 'No clients yet')}
             </div>
             <div className="clients-empty-desc">
-              {!loading && !search && 'Add your first client to start creating invoices and quotes.'}
-              {!loading && search && 'Try a different search term.'}
+              {!loading && !search && t('clients_no_clients_hint', 'Add your first client to start creating invoices and quotes.')}
+              {!loading && search && t('try_different_search', 'Try a different search term.')}
             </div>
           </div>
         ) : (
           <table className="clients-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>City</th>
-                <th>VAT</th>
-                <th>Documents</th>
-                <th>Actions</th>
+                <th>{t('clients_col_name', 'Name')}</th>
+                <th>{t('clients_col_email', 'Email')}</th>
+                <th>{t('clients_col_phone', 'Phone')}</th>
+                <th>{t('clients_col_city', 'City')}</th>
+                <th>{t('clients_col_vat', 'VAT')}</th>
+                <th>{t('clients_col_documents', 'Documents')}</th>
+                <th>{t('col_actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -314,15 +316,15 @@ const Clients = () => {
                   <td className="actions-cell">
                     <div className="action-btns">
                       <button
-                        title="Edit"
-                        aria-label={`Edit ${client.name}`}
+                        title={t('btn_edit', 'Edit')}
+                        aria-label={`${t('btn_edit', 'Edit')} ${client.name}`}
                         onClick={() => handleEdit(client)}
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
-                        title="Delete"
-                        aria-label={`Delete ${client.name}`}
+                        title={t('btn_delete', 'Delete')}
+                        aria-label={`${t('btn_delete', 'Delete')} ${client.name}`}
                         onClick={() => setConfirm({ id: client.id, name: client.name })}
                       >
                         <Trash2 size={16} />
@@ -337,12 +339,12 @@ const Clients = () => {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingClient ? 'Edit Client' : 'Add New Client'}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}>
           <div className="modal-content" ref={modalRef}>
-            <h2>{editingClient ? 'Edit Client' : 'Add New Client'}</h2>
+            <h2>{editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}</h2>
             <form onSubmit={handleSubmit}>
               <Input
-                label="Client Name"
+                label={t('clients_field_name', 'Name')}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 error={formErrors.name}
@@ -351,7 +353,7 @@ const Clients = () => {
               <div className="form-row">
                 <div className="input-with-status">
                   <Input
-                    label="Email"
+                    label={t('clients_field_email', 'Email')}
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -361,7 +363,7 @@ const Clients = () => {
                 </div>
                 <div className="input-with-status">
                   <Input
-                    label="Phone"
+                    label={t('clients_field_phone', 'Phone')}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     error={formErrors.phone}
@@ -379,32 +381,32 @@ const Clients = () => {
               <div className="address-section">
                 <div className="input-with-status">
                   <Input
-                    label="Street & Number"
+                    label={t('clients_field_street', 'Street & Number')}
                     value={formData.address_street}
                     onChange={(e) => setFormData({ ...formData, address_street: e.target.value })}
                   />
                   <ValidationIcon
                     status={addressState.status}
                     title={
-                      addressState.status === 'valid' ? 'Address verified' :
-                      addressState.status === 'invalid' ? 'Could not verify address' :
-                      addressState.status === 'error' ? 'Address service unavailable' : ''
+                      addressState.status === 'valid' ? t('clients_addr_verified', 'Address verified') :
+                      addressState.status === 'invalid' ? t('clients_addr_failed', 'Could not verify address') :
+                      addressState.status === 'error' ? t('clients_addr_unavailable', 'Address service unavailable') : ''
                     }
                   />
                 </div>
                 <div className="form-row three-col">
                   <Input
-                    label="Zip-Code"
+                    label={t('clients_field_zip', 'Zip-Code')}
                     value={formData.address_zip}
                     onChange={(e) => setFormData({ ...formData, address_zip: e.target.value })}
                   />
                   <Input
-                    label="City"
+                    label={t('clients_field_city', 'City')}
                     value={formData.address_city}
                     onChange={(e) => setFormData({ ...formData, address_city: e.target.value })}
                   />
                   <Input
-                    label="Country"
+                    label={t('clients_field_country', 'Country')}
                     value={formData.address_country}
                     onChange={(e) => setFormData({ ...formData, address_country: e.target.value })}
                   />
@@ -413,16 +415,16 @@ const Clients = () => {
 
               <div className="input-with-status">
                 <Input
-                  label="VAT Number"
+                  label={t('clients_field_vat', 'VAT Number')}
                   value={formData.vat}
                   onChange={(e) => setFormData({ ...formData, vat: e.target.value })}
-                  placeholder="e.g. BE0123456789"
+                  placeholder={t('clients_vat_placeholder', 'e.g. BE0123456789')}
                 />
                 <ValidationIcon
                   status={vatState.status}
                   title={
                     vatCompany ||
-                    (vatState.status === 'error' ? 'VAT service unavailable — enter manually' : (vatState.result?.reason || ''))
+                    (vatState.status === 'error' ? t('clients_service_unavailable', 'Service unavailable') : (vatState.result?.reason || ''))
                   }
                 />
               </div>
@@ -431,14 +433,14 @@ const Clients = () => {
               )}
 
               <div className="modal-actions">
-                <Button variant="ghost" type="button" onClick={closeModal}>Cancel</Button>
+                <Button variant="ghost" type="button" onClick={closeModal}>{t('btn_cancel', 'Cancel')}</Button>
                 <Button
                   variant="primary"
                   type="submit"
                   disabled={anyPending}
-                  title={anyPending ? 'Please wait for validation to complete' : undefined}
+                  title={anyPending ? t('clients_validating', 'Validating…') : undefined}
                 >
-                  {anyPending ? 'Validating…' : 'Save Client'}
+                  {anyPending ? t('clients_validating', 'Validating…') : t('clients_save', 'Save Client')}
                 </Button>
               </div>
             </form>
@@ -448,9 +450,9 @@ const Clients = () => {
 
       {confirm && (
         <ConfirmDialog
-          title="Delete client?"
-          message={`"${confirm.name}" will be permanently deleted. Any linked documents will be kept but unlinked.`}
-          confirmLabel="Delete"
+          title={t('clients_delete_title', 'Delete client?')}
+          message={`"${confirm.name}" ${t('clients_delete_body', 'will be permanently deleted. Any linked documents will be kept but unlinked.')}`}
+          confirmLabel={t('btn_delete', 'Delete')}
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setConfirm(null)}
         />

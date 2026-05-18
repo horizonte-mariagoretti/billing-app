@@ -10,6 +10,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import useDatabase from '../hooks/useDatabase';
 import useDocuments from '../hooks/useDocuments';
 import useSettings from '../hooks/useSettings';
+import { useT } from '../hooks/useUiTranslations';
 import { effectiveStatus, allowedNextStatuses } from '../utils/documentLifecycle';
 import DocumentPreview from './DocumentPreview';
 import previewCss from './DocumentPreview.css?inline';
@@ -19,6 +20,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const { query } = useDatabase();
   const { transitionDocument, fetchPayments } = useDocuments();
   const { loadSettings, getNextDocumentNumber, incrementDocumentNumber } = useSettings();
+  const t = useT();
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -49,7 +51,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       tax_rate: 21,
       discount_value: 0,
       discount_type: '%',
-      language: 'en',
+      language: 'de',
       payment_mode: 'standard',
       status: 'draft',
       locked: 0,
@@ -134,7 +136,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
   const handleTransition = async (next) => {
     if (!isPersisted) {
-      setTransitionError('Save the document before changing its status.');
+      setTransitionError(t('editor_save_before_status', 'Save the document before changing its status.'));
       return;
     }
     try {
@@ -151,7 +153,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
   const handleConvertClick = () => {
     if (!isPersisted) {
-      setTransitionError('Save the quote before converting it.');
+      setTransitionError(t('editor_save_before_convert', 'Save the quote before converting it.'));
       return;
     }
     onConvertToInvoice?.({ ...doc });
@@ -235,7 +237,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const handleExportPDF = async () => {
     const previewEl = document.querySelector('.pdf-container');
     if (!previewEl) {
-      setTransitionError('Switch to Preview before exporting the PDF.');
+      setTransitionError(t('editor_preview_first', 'Switch to Preview before exporting the PDF.'));
       return;
     }
     const html = `<!doctype html>
@@ -300,29 +302,29 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     const acts = [];
     if (type === 'invoice') {
       if (nextStatuses.includes('sent') && status === 'draft') {
-        acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>Mark as Sent</Button>);
+        acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>{t('editor_mark_sent', 'Mark as Sent')}</Button>);
       }
       if (status === 'paid') {
-        acts.push(<Button key="unlock" variant="outline" icon={Unlock} onClick={() => handleTransition('sent')}>Unlock for Edit</Button>);
+        acts.push(<Button key="unlock" variant="outline" icon={Unlock} onClick={() => handleTransition('sent')}>{t('editor_unlock_edit', 'Unlock for Edit')}</Button>);
       }
       if (nextStatuses.includes('paid')) {
-        acts.push(<Button key="paid" variant="primary" icon={CheckCircle2} onClick={() => handleTransition('paid')}>Mark as Paid</Button>);
+        acts.push(<Button key="paid" variant="primary" icon={CheckCircle2} onClick={() => handleTransition('paid')}>{t('editor_mark_paid', 'Mark as Paid')}</Button>);
       }
       if (nextStatuses.includes('cancelled')) {
-        acts.push(<Button key="cancel" variant="danger" icon={XCircle} onClick={() => handleTransition('cancelled')}>Cancel Invoice</Button>);
+        acts.push(<Button key="cancel" variant="danger" icon={XCircle} onClick={() => handleTransition('cancelled')}>{t('editor_cancel_invoice', 'Cancel Invoice')}</Button>);
       }
     } else if (type === 'quote') {
       if (nextStatuses.includes('sent')) {
-        acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>Mark as Sent</Button>);
+        acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>{t('editor_mark_sent', 'Mark as Sent')}</Button>);
       }
       if (nextStatuses.includes('accepted')) {
-        acts.push(<Button key="accept" variant="primary" icon={ThumbsUp} onClick={() => handleTransition('accepted')}>Mark Accepted</Button>);
+        acts.push(<Button key="accept" variant="primary" icon={ThumbsUp} onClick={() => handleTransition('accepted')}>{t('editor_mark_accepted', 'Mark Accepted')}</Button>);
       }
       if (nextStatuses.includes('declined')) {
-        acts.push(<Button key="decline" variant="danger" icon={ThumbsDown} onClick={() => handleTransition('declined')}>Mark Declined</Button>);
+        acts.push(<Button key="decline" variant="danger" icon={ThumbsDown} onClick={() => handleTransition('declined')}>{t('editor_mark_declined', 'Mark Declined')}</Button>);
       }
       if (status === 'accepted') {
-        acts.push(<Button key="convert" variant="primary" icon={ArrowRightCircle} onClick={handleConvertClick}>Convert to Invoice</Button>);
+        acts.push(<Button key="convert" variant="primary" icon={ArrowRightCircle} onClick={handleConvertClick}>{t('editor_convert_to_invoice', 'Convert to Invoice')}</Button>);
       }
     }
     return acts;
@@ -335,7 +337,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
           <button className="back-btn" aria-label="Go back" onClick={handleCancel}>
             <ChevronLeft size={20} />
           </button>
-          <h2>{doc.id ? 'Edit' : 'Create'} {type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+          <h2>{doc.id ? t('editor_edit', 'Edit Document') : t('editor_create', 'Create Document')}</h2>
           {isPersisted && <StatusBadge status={displayStatus} />}
         </div>
         <div className="actions">
@@ -344,15 +346,15 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
             <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc(d => ({...d, language: 'de'}))}>DE</button>
             <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc(d => ({...d, language: 'fr'}))}>FR</button>
           </div>
-          <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
+          <Button variant="ghost" onClick={handleCancel}>{t('btn_cancel', 'Cancel')}</Button>
           <Button variant="outline" icon={Eye} onClick={() => setShowPreview(!showPreview)}>
-            {showPreview ? 'Back to Editor' : 'Preview'}
+            {showPreview ? t('editor_back_to_editor', 'Back to Editor') : t('editor_preview', 'Preview')}
           </Button>
           {showPreview && (
-            <Button variant="outline" onClick={handleExportPDF}>Export PDF</Button>
+            <Button variant="outline" onClick={handleExportPDF}>{t('editor_export_pdf', 'Export PDF')}</Button>
           )}
           {!isLocked && (
-            <Button variant="primary" icon={Save} onClick={handleSaveWithIncrement}>Save {type}</Button>
+            <Button variant="primary" icon={Save} onClick={handleSaveWithIncrement}>{t('editor_save', 'Save Document')}</Button>
           )}
         </div>
       </header>
@@ -378,8 +380,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
           <fieldset className="doc-main-form" disabled={isLocked}>
             {isLocked && (
               <div className="locked-banner">
-                This {type} is locked because its status is <strong>{displayStatus}</strong>.
-                {status === 'paid' && ' Click "Unlock for Edit" to make changes.'}
+                {t('editor_locked_notice', 'This document is locked. Click "Unlock for Edit" to make changes.')}
               </div>
             )}
 
@@ -392,14 +393,14 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     onChange={(e) => updateDoc(d => ({...d, client_id: e.target.value}))}
                     className="input-field"
                   >
-                    <option value="">Select a client...</option>
+                    <option value="">{t('editor_select_client', 'Select a client...')}</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="input-col">
                   <Input
-                    label="Document Title / Subject"
-                    placeholder="e.g. Website Design Project"
+                    label={t('editor_doc_title', 'Document Title / Subject')}
+                    placeholder={t('editor_doc_title_placeholder', 'e.g. Website Design Project')}
                     value={doc.title}
                     onChange={(e) => updateDoc(d => ({...d, title: e.target.value}))}
                   />
@@ -408,18 +409,18 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
               <div className="section-grid three-col">
                 <Input
-                  label={`${type.charAt(0).toUpperCase() + type.slice(1)} Number`}
+                  label={t('editor_doc_number', 'Document Number')}
                   value={doc.number}
                   onChange={(e) => updateDoc(d => ({...d, number: e.target.value}))}
                 />
                 <Input
-                  label="Date"
+                  label={t('editor_field_date', 'Date')}
                   type="date"
                   value={doc.date}
                   onChange={(e) => handleDateChange(e.target.value)}
                 />
                 <Input
-                  label={type === 'quote' ? 'Valid Until' : 'Due Date'}
+                  label={type === 'quote' ? t('editor_valid_until', 'Valid Until') : t('editor_due_date', 'Due Date')}
                   type="date"
                   value={doc.due_date}
                   onChange={(e) => updateDoc(d => ({...d, due_date: e.target.value}))}
@@ -429,28 +430,28 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
             <section className="items-section card">
               <div className="items-header">
-                <h3>Line Items</h3>
+                <h3>{t('editor_line_items', 'Line Items')}</h3>
                 <div className="product-loader">
                   <FileText size={16} />
                   <select onChange={(e) => { addProductItem(e.target.value); e.target.value = ""; }}>
-                    <option value="">Add from Products...</option>
+                    <option value="">{t('editor_add_from_products', 'Add from Products...')}</option>
                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
               </div>
               <div className="items-list">
                 <div className="items-grid-header">
-                  <div className="col-desc">Description</div>
-                  <div className="col-qty">Qty</div>
-                  <div className="col-rate">Rate</div>
-                  <div className="col-total">Total</div>
+                  <div className="col-desc">{t('col_description', 'Description')}</div>
+                  <div className="col-qty">{t('col_qty', 'Qty')}</div>
+                  <div className="col-rate">{t('col_rate', 'Rate')}</div>
+                  <div className="col-total">{t('col_total', 'Total')}</div>
                   <div className="col-actions"></div>
                 </div>
                 {doc.items.map((item) => (
                   <div key={item.id} className="item-row">
                     <div className="col-desc">
                       <textarea
-                        placeholder="Item description..."
+                        placeholder={t('editor_item_description', 'Item description...')}
                         value={item.description}
                         onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                         rows={2}
@@ -478,7 +479,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 {doc.items.length === 0 && (
                   <button type="button" className="add-item-btn" onClick={() => addItem(null)}>
                     <Plus size={18} />
-                    <span>Add First Item</span>
+                    <span>{t('editor_add_first_item', 'Add First Item')}</span>
                   </button>
                 )}
               </div>
@@ -486,37 +487,37 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
             <section className="bottom-section">
               <div className="notes-area card">
-                <label>Notes & Terms</label>
+                <label>{t('editor_notes_terms', 'Notes & Terms')}</label>
                 <textarea
-                  placeholder="Payment terms, project notes..."
+                  placeholder={t('editor_notes_placeholder', 'Payment terms, project notes...')}
                   value={doc.notes}
                   onChange={(e) => updateDoc(d => ({...d, notes: e.target.value}))}
                 />
               </div>
               <div className="totals-area card">
                 <div className="payment-mode-row">
-                  <span>Payment mode</span>
+                  <span>{t('editor_payment_mode', 'Payment mode')}</span>
                   <div className="payment-mode-toggle">
                     <button
                       type="button"
                       className={!isCash ? 'active' : ''}
                       onClick={() => isCash && togglePaymentMode()}
-                    >Standard</button>
+                    >{t('editor_standard', 'Standard')}</button>
                     <button
                       type="button"
                       className={isCash ? 'active' : ''}
                       onClick={() => !isCash && togglePaymentMode()}
-                    >Cash</button>
+                    >{t('editor_cash', 'Cash')}</button>
                   </div>
                 </div>
 
                 <div className="total-row">
-                  <span>Subtotal</span>
+                  <span>{t('editor_subtotal', 'Subtotal')}</span>
                   <span>{fmt(subtotal)}</span>
                 </div>
                 <div className="total-row discount">
                   <div className="discount-config">
-                    <span>Discount</span>
+                    <span>{t('editor_discount', 'Discount')}</span>
                     <div className="discount-inputs">
                       <input type="number" min="0" step="0.01" {...(doc.discount_type === '%' ? { max: '100' } : {})} value={doc.discount_value}
                         onChange={(e) => {
@@ -527,7 +528,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <select value={doc.discount_type}
                         onChange={(e) => updateDoc(d => ({...d, discount_type: e.target.value}))}>
                         <option value="%">%</option>
-                        <option value="fixed">Fixed</option>
+                        <option value="fixed">{t('editor_fixed', 'Fixed')}</option>
                       </select>
                     </div>
                   </div>
@@ -537,7 +538,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 {!isCash && (
                   <div className="total-row">
                     <div className="tax-config">
-                      <span>Tax</span>
+                      <span>{t('editor_tax', 'Tax')}</span>
                       <input type="number" min="0" step="0.01" value={doc.tax_rate}
                         onChange={(e) => updateDoc(d => ({...d, tax_rate: Math.max(0, parseFloat(e.target.value) || 0)}))} />
                       <span>%</span>
@@ -547,7 +548,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 )}
 
                 <div className="total-row grand-total">
-                  <span>Total</span>
+                  <span>{t('editor_total', 'Total')}</span>
                   <span>{fmt(total)}</span>
                 </div>
 
@@ -561,14 +562,14 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
             {payments.length > 0 && (
               <section className="payments-section card">
-                <h3>Payments</h3>
+                <h3>{t('editor_payments', 'Payments')}</h3>
                 <table className="payments-table">
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Method</th>
-                      <th>Reference</th>
-                      <th>Amount</th>
+                      <th>{t('col_date', 'Date')}</th>
+                      <th>{t('col_method', 'Method')}</th>
+                      <th>{t('col_reference', 'Reference')}</th>
+                      <th>{t('col_amount', 'Amount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -589,16 +590,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       </div>
       {pendingCancel && (
         <ConfirmDialog
-          title="Unsaved changes"
-          message="You have unsaved changes. Leave without saving?"
-          confirmLabel="Leave"
+          title={t('editor_unsaved_title', 'Unsaved changes')}
+          message={t('editor_unsaved_body', 'You have unsaved changes. Leave without saving?')}
+          confirmLabel={t('editor_leave', 'Leave')}
           onConfirm={() => { setPendingCancel(false); onCancel(); }}
           onCancel={() => setPendingCancel(false)}
         />
       )}
       {transitionError && (
         <ConfirmDialog
-          title="Notice"
+          title={t('editor_notice', 'Notice')}
           message={transitionError}
           confirmLabel="OK"
           onConfirm={() => setTransitionError(null)}

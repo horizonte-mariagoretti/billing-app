@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import useSettings from '../hooks/useSettings';
+import { useT, getUiLang } from '../hooks/useUiTranslations';
 import useFocusTrap from '../hooks/useFocusTrap';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -11,6 +12,8 @@ import {
   ChevronDown, ChevronUp, ArrowUp, ArrowDown, AlertCircle
 } from 'lucide-react';
 import './Products.css';
+
+const uiLang = getUiLang();
 
 const EMPTY_PRODUCT = {
   name: '', name_de: '', name_fr: '',
@@ -27,6 +30,7 @@ const parseLocaleNumber = (v) => {
 const Products = () => {
   const { query, run } = useDatabase();
   const { loadSettings } = useSettings();
+  const t = useT();
   const [settings, setSettings] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -69,7 +73,7 @@ const Products = () => {
       setError(null);
       await Promise.all([fetchProducts(), fetchCategories()]);
     } catch (_err) {
-      setError('Failed to load products. Please restart the app.');
+      setError(t('products_load_error', 'Failed to load products. Please restart the app.'));
     }
   };
 
@@ -218,9 +222,20 @@ const Products = () => {
   };
 
   // ----- filtering -----
+  const getLocalizedName = (p) => {
+    if (uiLang === 'de') return p.name_de || p.name || p.name_fr || '';
+    if (uiLang === 'fr') return p.name_fr || p.name || p.name_de || '';
+    return p.name || p.name_de || p.name_fr || '';
+  };
+
   const filteredProducts = products
     .filter((p) => activeCategory === 'all' || p.category_id === activeCategory)
-    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    .filter((p) => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return [p.name, p.name_de, p.name_fr, p.description, p.description_de, p.description_fr]
+        .some(v => v?.toLowerCase().includes(s));
+    });
 
   const categoryById = (id) => categories.find(c => c.id === id);
 
@@ -231,13 +246,13 @@ const Products = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search products/services..."
+            placeholder={t('products_search', 'Search products/services...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
-          Add Product
+          {t('products_add', 'Add Product')}
         </Button>
       </div>
 
@@ -254,7 +269,7 @@ const Products = () => {
             className={`cat-chip ${activeCategory === 'all' ? 'active' : ''}`}
             onClick={() => setActiveCategory('all')}
           >
-            All <span className="cat-chip-count">{products.length}</span>
+            {t('products_all', 'All')} <span className="cat-chip-count">{products.length}</span>
           </button>
           {categories.map((cat) => {
             const count = products.filter(p => p.category_id === cat.id).length;
@@ -275,9 +290,9 @@ const Products = () => {
             <button
               className="cat-chip cat-chip-add"
               onClick={() => setShowStripEditor(true)}
-              title="Create category"
+              title={t('products_create_category', 'Create category')}
             >
-              <Plus size={14} /> New Category
+              <Plus size={14} /> {t('products_new_category', 'New Category')}
             </button>
           )}
         </div>
@@ -294,7 +309,7 @@ const Products = () => {
             onClick={() => setShowManagePanel(!showManagePanel)}
           >
             {showManagePanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showManagePanel ? 'Hide' : 'Manage'} categories
+            {showManagePanel ? t('products_hide', 'Hide') : t('products_manage_categories', 'Manage categories')}
           </button>
         )}
 
@@ -317,16 +332,16 @@ const Products = () => {
                       {cat.name_fr && <span className="cat-lang-tag">FR</span>}
                     </span>
                     <div className="manage-cat-actions">
-                      <button title="Move up" onClick={() => moveCategory(cat.id, 'up')} disabled={idx === 0}>
+                      <button title={t('products_move_up', 'Move up')} onClick={() => moveCategory(cat.id, 'up')} disabled={idx === 0}>
                         <ArrowUp size={14} />
                       </button>
-                      <button title="Move down" onClick={() => moveCategory(cat.id, 'down')} disabled={idx === categories.length - 1}>
+                      <button title={t('products_move_down', 'Move down')} onClick={() => moveCategory(cat.id, 'down')} disabled={idx === categories.length - 1}>
                         <ArrowDown size={14} />
                       </button>
-                      <button title="Edit" onClick={() => setEditingCategoryId(cat.id)}>
+                      <button title={t('btn_edit', 'Edit')} onClick={() => setEditingCategoryId(cat.id)}>
                         <Edit2 size={14} />
                       </button>
-                      <button title="Delete" aria-label={`Delete category ${cat.name}`} onClick={() => deleteCategory(cat.id, cat.name)}>
+                      <button title={t('btn_delete', 'Delete')} aria-label={`${t('btn_delete', 'Delete')} category ${cat.name}`} onClick={() => deleteCategory(cat.id, cat.name)}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -338,61 +353,71 @@ const Products = () => {
         )}
       </div>
 
-      <div className="products-grid">
-        {filteredProducts.length === 0 && (
+      <div className="products-table-container">
+        {filteredProducts.length === 0 ? (
           <div className="products-empty">
             <Package size={32} strokeWidth={1.3} />
             <div className="products-empty-title">
-              {search ? `No products match "${search}"` : 'No products yet'}
+              {search ? `${t('products_no_match', 'No products match')} "${search}"` : t('products_no_products', 'No products yet')}
             </div>
             <div className="products-empty-desc">
-              {search ? 'Try a different search term.' : 'Add a product or service to quickly populate your invoices.'}
+              {search ? t('try_different_search', 'Try a different search term.') : t('products_no_products_hint', 'Add a product or service to quickly populate your invoices.')}
             </div>
           </div>
+        ) : (
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th>{t('col_name', 'Name')}</th>
+                <th>{t('products_field_category', 'Category')}</th>
+                <th>{t('products_field_rate', 'Rate')}</th>
+                <th>{t('products_field_unit', 'Unit')}</th>
+                <th>{t('col_actions', 'Actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map((product) => {
+                const cat = categoryById(product.category_id);
+                const displayName = getLocalizedName(product);
+                return (
+                  <tr key={product.id}>
+                    <td>
+                      <div className="product-name-cell">
+                        {cat && <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />}
+                        <span className="product-name-text">{displayName || product.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      {cat ? (
+                        <span className="product-cat-tag" style={{ borderColor: cat.color, color: cat.color }}>
+                          {cat.name}
+                        </span>
+                      ) : (
+                        <span className="product-no-cat">{t('products_uncategorised', '—')}</span>
+                      )}
+                    </td>
+                    <td className="product-rate-cell">
+                      {product.rate.toLocaleString('de-DE', { style: 'currency', currency: settings?.default_currency || 'EUR' })}
+                    </td>
+                    <td className="product-unit-cell">{product.unit}</td>
+                    <td className="product-actions-cell">
+                      <div className="action-btns">
+                        <button aria-label={`${t('btn_edit', 'Edit')} ${product.name}`} title={t('btn_edit', 'Edit')} onClick={() => handleEdit(product)}><Edit2 size={16} /></button>
+                        <button aria-label={`${t('btn_delete', 'Delete')} ${product.name}`} title={t('btn_delete', 'Delete')} onClick={() => handleDelete(product.id, product.name)}><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
-        {filteredProducts.map((product) => {
-          const cat = categoryById(product.category_id);
-          return (
-            <div key={product.id} className="product-card">
-              <div className="product-card-header">
-                <div className="product-info">
-                  <div className="product-title-row">
-                    {cat && <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />}
-                    <h3>{product.name}</h3>
-                  </div>
-                  <span className="product-rate">
-                    {product.rate.toLocaleString('de-DE', { style: 'currency', currency: settings?.default_currency || 'EUR' })}
-                    <small>/{product.unit}</small>
-                  </span>
-                </div>
-                <div className="product-actions">
-                  <button aria-label={`Edit ${product.name}`} title="Edit" onClick={() => handleEdit(product)}><Edit2 size={16} /></button>
-                  <button aria-label={`Delete ${product.name}`} title="Delete" onClick={() => handleDelete(product.id, product.name)}><Trash2 size={16} /></button>
-                </div>
-              </div>
-              {product.description && <p className="product-desc">{product.description}</p>}
-              <div className="product-card-footer">
-                {cat && (
-                  <span className="product-cat-tag" style={{ borderColor: cat.color, color: cat.color }}>
-                    {cat.name}
-                  </span>
-                )}
-                {(product.name_de || product.name_fr) && (
-                  <div className="product-langs">
-                    {product.name_de && <span className="lang-tag">DE</span>}
-                    {product.name_fr && <span className="lang-tag">FR</span>}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingProduct ? 'Edit Product' : 'Add Product'}>
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}>
           <div className="modal-content" ref={modalRef}>
-            <h2>{editingProduct ? 'Edit Product' : 'Add Product'}</h2>
+            <h2>{editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}</h2>
 
             <div className="lang-tabs">
               <button className={activeLang === 'en' ? 'active' : ''} onClick={() => setActiveLang('en')}>EN</button>
@@ -404,13 +429,13 @@ const Products = () => {
               {activeLang === 'en' && (
                 <>
                   <Input
-                    label="Product Name (EN)"
+                    label={t('products_field_name_en', 'Product Name (EN)')}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                   <Input
-                    label="Description (EN)"
+                    label={t('products_field_desc_en', 'Description (EN)')}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
@@ -419,12 +444,12 @@ const Products = () => {
               {activeLang === 'de' && (
                 <>
                   <Input
-                    label="Product Name (DE)"
+                    label={t('products_field_name_de', 'Product Name (DE)')}
                     value={formData.name_de}
                     onChange={(e) => setFormData({ ...formData, name_de: e.target.value })}
                   />
                   <Input
-                    label="Description (DE)"
+                    label={t('products_field_desc_de', 'Description (DE)')}
                     value={formData.description_de}
                     onChange={(e) => setFormData({ ...formData, description_de: e.target.value })}
                   />
@@ -433,12 +458,12 @@ const Products = () => {
               {activeLang === 'fr' && (
                 <>
                   <Input
-                    label="Product Name (FR)"
+                    label={t('products_field_name_fr', 'Product Name (FR)')}
                     value={formData.name_fr}
                     onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
                   />
                   <Input
-                    label="Description (FR)"
+                    label={t('products_field_desc_fr', 'Description (FR)')}
                     value={formData.description_fr}
                     onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
                   />
@@ -447,7 +472,7 @@ const Products = () => {
 
               <div className="form-row">
                 <Input
-                  label="Rate (EUR)"
+                  label={t('products_field_rate', 'Rate (EUR)')}
                   type="number"
                   min="0"
                   step="0.01"
@@ -455,22 +480,22 @@ const Products = () => {
                   onChange={(e) => setFormData({ ...formData, rate: parseLocaleNumber(e.target.value) })}
                 />
                 <div className="input-group">
-                  <label className="input-label">Unit</label>
+                  <label className="input-label">{t('products_field_unit', 'Unit')}</label>
                   <select
                     className="input-field"
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   >
-                    <option value="hour">per hour</option>
-                    <option value="day">per day</option>
-                    <option value="item">per item</option>
-                    <option value="fixed">fixed price</option>
+                    <option value="hour">{t('products_unit_hour', 'per hour')}</option>
+                    <option value="day">{t('products_unit_day', 'per day')}</option>
+                    <option value="item">{t('products_unit_item', 'per item')}</option>
+                    <option value="fixed">{t('products_unit_fixed', 'fixed price')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="input-group">
-                <label className="input-label">Category</label>
+                <label className="input-label">{t('products_field_category', 'Category')}</label>
                 <div className="category-select-row">
                   <select
                     className="input-field"
@@ -483,11 +508,11 @@ const Products = () => {
                       }
                     }}
                   >
-                    <option value="">— Uncategorised —</option>
+                    <option value="">{t('products_uncategorised', '— Uncategorised —')}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
-                    <option value="__new__">+ New category…</option>
+                    <option value="__new__">{t('products_new_category_option', '+ New category…')}</option>
                   </select>
                 </div>
                 {showInlineModalCatEditor && (
@@ -502,8 +527,8 @@ const Products = () => {
               </div>
 
               <div className="modal-actions">
-                <Button variant="ghost" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
-                <Button variant="primary" type="submit">Save</Button>
+                <Button variant="ghost" type="button" onClick={() => setShowModal(false)}>{t('btn_cancel', 'Cancel')}</Button>
+                <Button variant="primary" type="submit">{t('btn_save', 'Save')}</Button>
               </div>
             </form>
           </div>
@@ -512,13 +537,13 @@ const Products = () => {
 
       {confirm && (
         <ConfirmDialog
-          title={confirm.type === 'category' ? 'Delete category?' : 'Delete product?'}
+          title={confirm.type === 'category' ? t('products_delete_cat_title', 'Delete category?') : t('products_delete_title', 'Delete product?')}
           message={
             confirm.type === 'category'
-              ? `"${confirm.name}" will be deleted. Products in this category will become uncategorised.`
+              ? `"${confirm.name}" ${t('products_delete_cat_body', 'will be deleted. Products in this category will become uncategorised.')}`
               : `"${confirm.name}" will be permanently deleted.`
           }
-          confirmLabel="Delete"
+          confirmLabel={t('btn_delete', 'Delete')}
           onConfirm={handleConfirmed}
           onCancel={() => setConfirm(null)}
         />
