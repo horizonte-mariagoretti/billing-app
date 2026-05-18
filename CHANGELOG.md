@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.0] - 2026-05-18
+
+### Added
+- **App UI translation system**: all UI strings now sourced from `ui_translations` DB table (migration #6). `useUiTranslations` hook + `UiTranslationsProvider` context exposes `t(key)` across all components.
+- **German UI**: app defaults to German (`value_de`). Language toggle in Settings → Company switches between DE / FR / EN and reloads; persisted in `localStorage`.
+- **Multi-language support**: `useUiTranslations` reads `app_ui_lang` from localStorage and queries the correct DB column.
+- **Closable hero card**: dashboard promo banner shows once per day; close button writes today's date to `hero_last_closed` in localStorage; re-appears next calendar day automatically.
+- **Clickable recent documents**: each row in the Recent Documents panel opens the full document editor.
+- **Custom date range in revenue chart**: "Custom" pill next to 1M/3M/6M/1Y/ALL; defaults to the current fiscal year (01.09–31.08); user can pick any from/to dates. Total Revenue KPI dynamically reflects the active time frame.
+- **Document list Name column**: invoices and quotes table now shows Number, Client, **Name**, Date, Status, Amount, Actions.
+- **Products list view**: product gallery replaced with a sortable table; search matches all language fields (EN/DE/FR); display name falls back to English when no translation exists for the active UI language.
+- **Settings numbering drag-and-drop**: pattern rows are now draggable for reordering via HTML5 DnD; rows have a fixed-width grid for consistent alignment across text/date/counter types.
+- **Dev bypass**: `npm run dev:web` (Vite DEV mode) skips GitHub sign-in and uses an empty in-memory sql.js DB — no PAT required locally. Tree-shaken from production builds.
+
+### Changed
+- `DollarSign` icon replaced with `Euro` across all pictograms.
+- Removed hover lift effect from the 4 KPI stat cards.
+- Removed profile avatar from top-right header.
+- Document default language changed from EN to DE.
+- Language picker order changed to DE / FR / EN throughout the app.
+
 ## [1.0.0] - 2026-05-08
 
 ### Added — Web target (parallel to Electron)

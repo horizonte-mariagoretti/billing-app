@@ -1,7 +1,8 @@
 import React from 'react';
+import { useT } from '../hooks/useUiTranslations';
 import './StatusBadge.css';
 
-const STATUS_LABELS = {
+const STATUS_EN_FALLBACKS = {
   draft: 'Draft',
   sent: 'Sent',
   paid: 'Paid',
@@ -13,9 +14,10 @@ const STATUS_LABELS = {
 };
 
 const StatusBadge = ({ status }) => {
+  const t = useT();
   const key = (status || 'draft').toLowerCase();
-  const label = STATUS_LABELS[key] || status;
-  const knownKey = STATUS_LABELS[key] ? key : 'unknown';
+  const label = t(`status_${key}`, STATUS_EN_FALLBACKS[key] || status);
+  const knownKey = STATUS_EN_FALLBACKS[key] ? key : 'unknown';
   return <span className={`status-badge status-${knownKey}`}>{label}</span>;
 };
 

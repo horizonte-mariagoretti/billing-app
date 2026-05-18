@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Cloud, CloudOff, RefreshCw, AlertTriangle, Check } from 'lucide-react';
 import * as engine from '../db/sqliteEngine';
+import { useT } from '../hooks/useUiTranslations';
 import './SyncStatusBadge.css';
 
-const LABELS = {
-  idle:    { icon: Cloud,         text: 'Synced',       cls: 'idle'    },
-  dirty:   { icon: Cloud,         text: 'Unsaved',      cls: 'dirty'   },
-  saving:  { icon: RefreshCw,     text: 'Saving…',      cls: 'saving'  },
-  saved:   { icon: Check,         text: 'Saved',        cls: 'saved'   },
-  conflict:{ icon: AlertTriangle, text: 'Conflict',     cls: 'conflict'},
-  error:   { icon: CloudOff,      text: 'Sync error',   cls: 'error'   },
-};
-
 const SyncStatusBadge = () => {
+  const t = useT();
   const [state, setState] = useState('idle');
+
+  const LABELS = {
+    idle:    { icon: Cloud,         text: t('sync_synced', 'Synced'),       cls: 'idle'    },
+    dirty:   { icon: Cloud,         text: t('sync_unsaved', 'Unsaved'),      cls: 'dirty'   },
+    saving:  { icon: RefreshCw,     text: t('sync_saving', 'Saving…'),      cls: 'saving'  },
+    saved:   { icon: Check,         text: t('sync_saved', 'Saved'),        cls: 'saved'   },
+    conflict:{ icon: AlertTriangle, text: t('sync_conflict', 'Conflict'),     cls: 'conflict'},
+    error:   { icon: CloudOff,      text: t('sync_error', 'Sync error'),   cls: 'error'   },
+  };
 
   useEffect(() => {
     const unsub = engine.subscribe((event) => {
@@ -47,7 +49,7 @@ const SyncStatusBadge = () => {
       type="button"
       className={`sync-badge sync-${meta.cls}`}
       onClick={handleClick}
-      title={clickable ? 'Click to save now' : meta.text}
+      title={clickable ? t('sync_click_to_save', 'Click to save now') : meta.text}
       disabled={!clickable}
     >
       <Icon size={14} className={state === 'saving' ? 'spin' : ''} />

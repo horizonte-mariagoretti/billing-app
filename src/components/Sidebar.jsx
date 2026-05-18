@@ -10,19 +10,22 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { version as appVersion } from '../../package.json';
+import { useT } from '../hooks/useUiTranslations';
 import './Sidebar.css';
 
 const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggleCollapse }) => {
+  const t = useT();
+
   const mainNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'invoices',  label: 'Invoices',  icon: Receipt },
-    { id: 'quotes',    label: 'Quotes',    icon: FileText },
-    { id: 'clients',   label: 'Clients',   icon: Users },
-    { id: 'products',  label: 'Products',  icon: Package },
+    { id: 'dashboard', label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
+    { id: 'invoices',  label: t('nav_invoices', 'Invoices'),   icon: Receipt },
+    { id: 'quotes',    label: t('nav_quotes', 'Quotes'),       icon: FileText },
+    { id: 'clients',   label: t('nav_clients', 'Clients'),     icon: Users },
+    { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
   ];
 
   const generalNav = [
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: t('nav_settings', 'Settings'), icon: Settings },
   ];
 
   const renderItem = (item) => {
@@ -66,8 +69,8 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
         <button
           className="sidebar-collapse-btn"
           onClick={onToggleCollapse}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? t('sidebar_expand', 'Expand sidebar') : t('sidebar_collapse', 'Collapse sidebar')}
+          aria-label={collapsed ? t('sidebar_expand', 'Expand sidebar') : t('sidebar_collapse', 'Collapse sidebar')}
         >
           <CollapseIcon size={16} />
         </button>
@@ -76,11 +79,11 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
       <button
         className="sidebar-cta"
         onClick={() => onNewDoc('invoice')}
-        title={collapsed ? 'New Invoice' : undefined}
-        aria-label="New Invoice"
+        title={collapsed ? t('nav_new_invoice', 'New Invoice') : undefined}
+        aria-label={t('nav_new_invoice', 'New Invoice')}
       >
         <Receipt size={16} aria-hidden="true" />
-        {!collapsed && <span>New Invoice</span>}
+        {!collapsed && <span>{t('nav_new_invoice', 'New Invoice')}</span>}
       </button>
 
       <div className="nav-section">
@@ -91,7 +94,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
       </div>
 
       <div className="nav-section">
-        {!collapsed && <span className="nav-section-label">General</span>}
+        {!collapsed && <span className="nav-section-label">{t('nav_general', 'General')}</span>}
         <nav className="sidebar-nav">
           {generalNav.map(renderItem)}
         </nav>

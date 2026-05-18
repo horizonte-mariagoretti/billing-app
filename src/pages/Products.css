@@ -4,23 +4,98 @@
   gap: var(--space-xl);
 }
 
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-lg);
+.products-table-container {
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.products-table th {
+  padding: var(--space-md) var(--space-lg);
+  background-color: #F8FAFC;
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-light-theme);
+}
+
+.products-table td {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light-theme);
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+
+.products-table tr:last-child td { border-bottom: none; }
+.products-table tr:hover td { background-color: #F8FAFC; }
+
+.product-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-name-text {
+  font-weight: 500;
+  color: var(--color-text-dark-primary);
+}
+
+.product-rate-cell {
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+  white-space: nowrap;
+}
+
+.product-unit-cell {
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+}
+
+.product-no-cat {
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.85rem;
+}
+
+.product-actions-cell .action-btns {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.product-actions-cell .action-btns button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-dark-tertiary);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.product-actions-cell .action-btns button:hover {
+  color: var(--color-text-dark-primary);
+  background-color: #F1F5F9;
 }
 
 .products-empty {
-  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
   padding: var(--space-2xl);
-  background-color: var(--color-light-surface);
-  border: 1px dashed var(--color-border-light-theme);
-  border-radius: var(--radius-lg);
   color: var(--color-text-dark-tertiary);
   text-align: center;
 }
