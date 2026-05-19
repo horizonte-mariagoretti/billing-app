@@ -19,8 +19,12 @@ function App() {
   const { saveDocument, fetchDocumentItems } = useDocuments();
   const { getNextDocumentNumber, loadSettings } = useSettings();
 
+  const [settingsError, setSettingsError] = React.useState(null);
   React.useEffect(() => {
-    loadSettings().then(setAppSettings).catch(() => {});
+    loadSettings().then(setAppSettings).catch((err) => {
+      console.error('Failed to load settings:', err);
+      setSettingsError(err.message || 'Failed to load settings');
+    });
   }, []);
 
   const handleNewDoc = (type = 'invoice') => {
@@ -115,6 +119,11 @@ function App() {
         title={editorTitle}
         settings={appSettings}
       >
+        {settingsError && (
+          <div className="page-error" role="alert">
+            Settings failed to load: {settingsError}
+          </div>
+        )}
         {isEditing ? (
           <DocumentEditor
             key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}

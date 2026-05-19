@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2026-05-19
+
+### Fixed
+- `githubSync.pushDb`: HTTP 422 (validation error) no longer misclassified as a sync conflict. Only 409 (SHA mismatch) triggers the conflict modal; 422 surfaces as a hard error with the full GitHub response body.
+- `App.jsx`: `loadSettings()` failure now logs to console and shows a `page-error` banner instead of silently keeping `appSettings` null, preventing invisible cascading UI failures.
+
 ## [1.1.0] - 2026-05-18
 
 ### Added
