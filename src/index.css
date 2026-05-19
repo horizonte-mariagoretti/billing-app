@@ -70,8 +70,8 @@
   --color-indigo-soft: rgba(99, 102, 241, 0.04);
 
   /* ── Shadows ── */
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.06);
-  --shadow-card-hover: 0 4px 16px rgba(15, 23, 42, 0.10), 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-card: none;
+  --shadow-card-hover: none;
 
   /* ── Stat card palette ── */
   --stat-green-bg: #ECFDF5;

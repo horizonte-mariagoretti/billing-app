@@ -152,7 +152,6 @@
   letter-spacing: 0.02em;
   font-family: var(--font-heading);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.30);
 }
 
 .content-body {

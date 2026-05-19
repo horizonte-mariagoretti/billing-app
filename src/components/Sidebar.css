@@ -71,7 +71,6 @@
   font-weight: 700;
   font-size: 1.05rem;
   font-family: var(--font-heading);
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.40);
 }
 
 .app-info {
@@ -107,14 +106,12 @@
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.30);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-fast);
   margin-bottom: 22px;
 }
 
 .sidebar-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.40);
 }
 
 .sidebar.collapsed .sidebar-cta {
@@ -189,7 +186,6 @@
   height: 6px;
   border-radius: 50%;
   background: #6366F1;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.7);
 }
 
 .sidebar.collapsed .nav-active-dot {
