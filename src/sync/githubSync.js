@@ -103,7 +103,8 @@ export async function pushDb(bytes, message) {
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (res.status === 409 || res.status === 422) {
+  if (res.status === 409) {
+    // SHA mismatch — another push landed since our last fetch.
     const err = new Error('sync_conflict');
     err.code = 'sync_conflict';
     throw err;
