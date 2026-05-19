@@ -16,7 +16,6 @@
   padding: 36px;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
   animation: gh-auth-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -37,7 +36,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.35);
 }
 
 .gh-auth-header h1 {
@@ -260,13 +258,11 @@
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-fast);
 }
 
 .device-open-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(99, 102, 241, 0.4);
 }
 
 .device-hint {

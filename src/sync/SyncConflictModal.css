@@ -16,7 +16,6 @@
   padding: 28px;
   max-width: 460px;
   width: calc(100% - 40px);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
   animation: conflictPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
