@@ -467,6 +467,24 @@ if (getVersion() < 6) {
   setVersion(6);
 }
 
+// Migration 7: split item name from description into separate column
+if (getVersion() < 7) {
+  try { db.exec("ALTER TABLE document_items ADD COLUMN name TEXT;"); } catch(e) {}
+  try {
+    db.exec(`
+      UPDATE document_items
+        SET name = CASE WHEN instr(description, char(10)) > 0
+                        THEN substr(description, 1, instr(description, char(10)) - 1)
+                        ELSE description END,
+            description = CASE WHEN instr(description, char(10)) > 0
+                               THEN substr(description, instr(description, char(10)) + 1)
+                               ELSE '' END
+        WHERE name IS NULL;
+    `);
+  } catch(e) {}
+  setVersion(7);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

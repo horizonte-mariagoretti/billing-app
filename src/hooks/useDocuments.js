@@ -113,11 +113,11 @@ const useDocuments = () => {
 
     doc.items.forEach((item, i) => {
       operations.push({
-        sql: `INSERT INTO document_items (id, document_id, description, qty, rate, sort_order)
-              VALUES (?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO document_items (id, document_id, name, description, qty, rate, sort_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         params: [
           newId(),
-          id, item.description, item.qty, item.rate, i,
+          id, item.name ?? '', item.description ?? '', item.qty, item.rate, i,
         ],
       });
     });

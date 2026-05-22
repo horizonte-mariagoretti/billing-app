@@ -1,0 +1,202 @@
+.datepicker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  position: relative;
+}
+
+.datepicker-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-dark-secondary);
+}
+
+.datepicker-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: hidden;
+}
+
+.datepicker-input-wrap:hover {
+  border-color: #94A3B8;
+}
+
+.datepicker-input-wrap.focused {
+  border-color: var(--color-indigo);
+  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+}
+
+.datepicker-input-wrap.disabled {
+  opacity: 0.6;
+  background-color: #F1F5F9;
+}
+
+.datepicker-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 12px;
+  font-size: 0.95rem;
+  color: var(--color-text-dark-primary);
+  font-family: var(--font-sans);
+  min-width: 0;
+}
+
+.datepicker-input:focus {
+  outline: none;
+}
+
+.datepicker-input::placeholder {
+  color: var(--color-text-dark-tertiary);
+}
+
+.datepicker-input-wrap.disabled .datepicker-input {
+  cursor: not-allowed;
+}
+
+.datepicker-icon-btn {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border-light-theme);
+  padding: 0 10px;
+  height: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-text-dark-tertiary);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.datepicker-icon-btn:hover {
+  background-color: #F8FAFC;
+  color: var(--color-text-dark-secondary);
+}
+
+.datepicker-icon-btn:disabled {
+  cursor: not-allowed;
+}
+
+.datepicker-icon {
+  flex-shrink: 0;
+}
+
+.datepicker-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  width: 280px;
+  animation: dp-appear 120ms ease;
+}
+
+@keyframes dp-appear {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.dp-month-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-dark-primary);
+}
+
+.dp-nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-secondary);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dp-nav-btn:hover {
+  background: #F1F5F9;
+  border-color: var(--color-border-light-theme);
+  color: var(--color-text-dark-primary);
+}
+
+.datepicker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dp-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-dark-tertiary);
+  text-transform: uppercase;
+  padding: 4px 0;
+  letter-spacing: 0.04em;
+}
+
+.dp-day {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-primary);
+  font-size: 0.85rem;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.dp-day:hover {
+  background: var(--color-indigo-alpha);
+  color: var(--color-indigo);
+}
+
+.dp-day.today {
+  font-weight: 700;
+}
+
+.dp-day.selected {
+  background: var(--color-indigo);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dp-day.selected:hover {
+  background: var(--color-indigo-hover);
+  color: #fff;
+}
+
+.dp-today-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-indigo);
+}

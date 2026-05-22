@@ -455,6 +455,26 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 7,
+    up: (exec) => {
+      try {
+        exec("ALTER TABLE document_items ADD COLUMN name TEXT;");
+        exec(`
+          UPDATE document_items
+            SET name = CASE WHEN instr(description, char(10)) > 0
+                            THEN substr(description, 1, instr(description, char(10)) - 1)
+                            ELSE description END,
+                description = CASE WHEN instr(description, char(10)) > 0
+                                   THEN substr(description, instr(description, char(10)) + 1)
+                                   ELSE '' END
+          WHERE name IS NULL;
+        `);
+      } catch (e) {
+        console.error('Migration 7 failed:', e.message);
+      }
+    },
+  },
 ];
 
 // adapter shape:
@@ -473,4 +493,4 @@ export function runMigrations(adapter) {
   }
 }
 
-export const TARGET_SCHEMA_VERSION = 6;
+export const TARGET_SCHEMA_VERSION = 7;

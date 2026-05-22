@@ -82,11 +82,6 @@ const DocumentPreview = ({ doc, sender, client }) => {
   const tax = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
   const total = subtotal - discountAmt + tax;
 
-  const cashNote = sender?.[`trans_cash_note_${lang}`] ||
-    (lang === 'de' ? 'Barzahlung — keine Mehrwertsteuer' :
-     lang === 'fr' ? 'Vente au comptant — TVA non applicable' :
-     'Cash sale — VAT not applicable');
-
   const senderAddress = sender?.company_address || '';
   const clientAddress = client
     ? [
@@ -173,18 +168,24 @@ const DocumentPreview = ({ doc, sender, client }) => {
           </thead>
           <tbody>
             {(doc.items || []).map((item, i) => {
-              const lines = (item.description || '').split('\n');
-              const headline = lines[0];
-              const details = lines.slice(1).filter(l => l.trim());
+              const itemName = item.name || (item.description || '').split('\n')[0] || '';
+              const rawDesc = item.name
+                ? (item.description || '')
+                : (item.description || '').split('\n').slice(1).join('\n');
+              const descLines = rawDesc.split('\n').filter(l => l.trim());
               return (
                 <tr key={i}>
                   <td className="col-num">{i + 1}</td>
                   <td className="col-desc">
-                    <span className="item-headline">{headline}</span>
-                    {details.length > 0 && (
-                      <ul className="item-details">
-                        {details.map((l, idx) => <li key={idx}>{l}</li>)}
-                      </ul>
+                    <span className="item-headline">{itemName}</span>
+                    {descLines.length > 0 && (
+                      <div className="item-desc-block">
+                        {descLines.map((l, idx) =>
+                          l.trimStart().startsWith('-')
+                            ? <ul key={idx} className="item-details"><li>{l.trimStart().slice(1).trim()}</li></ul>
+                            : <span key={idx} className="item-detail-plain">{l}</span>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="col-qty">{item.qty}</td>
@@ -226,11 +227,6 @@ const DocumentPreview = ({ doc, sender, client }) => {
           <span>{totalLabel.toUpperCase()}</span>
           <span>{fmt(total, currency)}</span>
         </div>
-
-        {/* ── Cash note ── */}
-        {isCash && (
-          <div className="pdf-cash-note">{cashNote}</div>
-        )}
 
         {/* ── Notes ── */}
         {doc.notes && (
