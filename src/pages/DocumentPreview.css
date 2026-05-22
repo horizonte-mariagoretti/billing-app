@@ -198,26 +198,26 @@
   text-align: left;
 }
 
-.col-num {
+.pdf-table .col-num {
   width: 24px;
   color: #999;
   font-size: 8.5pt;
   padding-right: 6px !important;
 }
 
-.col-desc {
+.pdf-table .col-desc {
   width: 55%;
 }
 
-.col-qty {
+.pdf-table .col-qty {
   width: 8%;
 }
 
-.col-rate {
+.pdf-table .col-rate {
   width: 17%;
 }
 
-.col-total {
+.pdf-table .col-total {
   width: 17%;
   font-weight: 600;
 }
@@ -228,8 +228,22 @@
   color: #111;
 }
 
+.item-desc-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 3px;
+}
+
+.item-detail-plain {
+  display: block;
+  font-size: 8.5pt;
+  color: #555;
+  line-height: 1.6;
+}
+
 .item-details {
-  margin: 4px 0 0 0;
+  margin: 0;
   padding-left: 14px;
   list-style: disc;
   font-size: 8.5pt;
@@ -275,16 +289,6 @@
   margin-top: 3mm;
   margin-bottom: 6mm;
   letter-spacing: 0.3px;
-}
-
-/* ── Cash note ── */
-.pdf-cash-note {
-  font-size: 8.5pt;
-  font-style: italic;
-  color: #666;
-  text-align: right;
-  margin-top: -4mm;
-  margin-bottom: 5mm;
 }
 
 /* ── Notes ── */
@@ -371,7 +375,6 @@
   /* Keep totals + footer on same page, never split */
   .pdf-totals-wrap,
   .pdf-total-bar,
-  .pdf-cash-note,
   .pdf-footer { page-break-inside: avoid; }
 
   /* Color preservation */

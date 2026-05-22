@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText,
+  ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
-  Download
+  Download, GripVertical
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -15,6 +15,8 @@ import { useT } from '../hooks/useUiTranslations';
 import { effectiveStatus, allowedNextStatuses } from '../utils/documentLifecycle';
 import DocumentPreview from './DocumentPreview';
 import previewCss from './DocumentPreview.css?inline';
+import ClientModal from '../components/ClientModal';
+import DatePicker from '../components/DatePicker';
 import './DocumentEditor.css';
 
 // ── Lightweight custom select ──────────────────────────────────────────────
@@ -73,6 +75,24 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const [previewScale, setPreviewScale] = useState(0.75);
   const prevTaxRateRef = useRef(null);
   const rightBodyRef = useRef(null);
+  const clientDropdownRef = useRef(null);
+  const productDropRef = useRef(null);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientFocusIdx, setClientFocusIdx] = useState(-1);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [draggingIdx, setDraggingIdx] = useState(null);
+  const dragItemIdx = useRef(null);
+  const dragOverIdx = useRef(null);
+
+  // Auto-resize description textarea — called on mount (ref cb) and on change
+  const resizeTextarea = useCallback((el) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.value ? el.scrollHeight + 'px' : '';
+  }, []);
 
   const [doc, setDoc] = useState(() => {
     const today = new Date();
@@ -98,7 +118,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       payment_mode: 'standard',
       status: 'draft',
       locked: 0,
-      items: [{ id: crypto.randomUUID(), description: '', qty: 1, rate: 0 }],
+      items: [{ id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0 }],
     };
     if (initialData) {
       return {
@@ -137,6 +157,22 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       setPayments([]);
     }
   }, [isPersisted, status, doc.id, fetchPayments]);
+
+  // Close client dropdown on outside click
+  useEffect(() => {
+    if (!showClientDropdown) return;
+    const close = (e) => { if (!clientDropdownRef.current?.contains(e.target)) setShowClientDropdown(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showClientDropdown]);
+
+  // Close product dropdown on outside click
+  useEffect(() => {
+    if (!showProductDropdown) return;
+    const close = (e) => { if (!productDropRef.current?.contains(e.target)) setShowProductDropdown(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showProductDropdown]);
 
   // Dynamically scale preview to fill the right panel
   useEffect(() => {
@@ -220,7 +256,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   };
 
   const addItem = (afterId = null) => {
-    const newItem = { id: crypto.randomUUID(), description: '', qty: 1, rate: 0 };
+    const newItem = { id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0 };
     updateDoc((d) => {
       if (afterId == null) return { ...d, items: [...d.items, newItem] };
       const idx = d.items.findIndex((i) => i.id === afterId);
@@ -240,10 +276,9 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       name = prod.name_fr;
       desc = prod.description_fr || desc;
     }
-    const fullDesc = desc ? `${name}\n${desc}` : name;
     updateDoc((d) => ({
       ...d,
-      items: [...d.items, { id: crypto.randomUUID(), description: fullDesc, qty: 1, rate: prod.rate || 0 }],
+      items: [...d.items, { id: crypto.randomUUID(), name, description: desc || '', qty: 1, rate: prod.rate || 0 }],
     }));
   };
 
@@ -256,6 +291,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
   const removeItem = (id) => {
     updateDoc((d) => ({ ...d, items: d.items.filter((item) => item.id !== id) }));
+  };
+
+  const moveItem = (fromIdx, toIdx) => {
+    if (fromIdx == null || toIdx == null || fromIdx === toIdx) return;
+    updateDoc((d) => {
+      const items = [...d.items];
+      const [moved] = items.splice(fromIdx, 1);
+      items.splice(toIdx, 0, moved);
+      return { ...d, items };
+    });
   };
 
   const handleDateChange = (newDate) => {
@@ -413,21 +458,76 @@ ${previewCss}
             )}
 
             {/* Client */}
-            <section className="form-section card">
-              <div className="input-col">
-                <label>{t('editor_people', 'People')}</label>
-                <StyledSelect
-                  value={doc.client_id}
-                  onChange={(e) => updateDoc((d) => ({ ...d, client_id: e.target.value }))}
-                  placeholder={t('editor_select_client', 'Select a client...')}
-                >
-                  <option value="">{t('editor_select_client', 'Select a client...')}</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </StyledSelect>
-              </div>
-            </section>
+            {(() => {
+              const filteredClientsList = clients.filter(c =>
+                c.name.toLowerCase().includes(clientSearch.toLowerCase())
+              );
+              const createIdx = filteredClientsList.length;
+              return (
+                <section className="form-section card">
+                  <div className="input-col">
+                    <label>Kunde</label>
+                    <div ref={clientDropdownRef} className="client-search-wrap">
+                      <input
+                        className="client-search-input"
+                        placeholder={t('editor_select_client', 'Kunden suchen…')}
+                        value={showClientDropdown ? clientSearch : (clients.find(c => c.id === doc.client_id)?.name || '')}
+                        onChange={(e) => {
+                          setClientSearch(e.target.value);
+                          setClientFocusIdx(-1);
+                          if (!showClientDropdown) setShowClientDropdown(true);
+                        }}
+                        onFocus={() => { setClientSearch(''); setClientFocusIdx(-1); setShowClientDropdown(true); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') { setShowClientDropdown(false); return; }
+                          if (!showClientDropdown) return;
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setClientFocusIdx(i => Math.min(i + 1, createIdx));
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setClientFocusIdx(i => Math.max(i - 1, 0));
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (clientFocusIdx === createIdx) {
+                              setShowClientDropdown(false);
+                              setShowClientModal(true);
+                            } else if (clientFocusIdx >= 0 && filteredClientsList[clientFocusIdx]) {
+                              updateDoc(d => ({ ...d, client_id: filteredClientsList[clientFocusIdx].id }));
+                              setShowClientDropdown(false);
+                              setClientSearch('');
+                              setClientFocusIdx(-1);
+                            }
+                          }
+                        }}
+                      />
+                      {showClientDropdown && (
+                        <ul className="ss-dropdown">
+                          {filteredClientsList.map((c, i) => (
+                            <li key={c.id}
+                                className={`ss-option${c.id === doc.client_id ? ' ss-option--selected' : ''}${i === clientFocusIdx ? ' ss-option--focused' : ''}`}
+                                onMouseDown={() => {
+                                  updateDoc(d => ({ ...d, client_id: c.id }));
+                                  setShowClientDropdown(false);
+                                  setClientSearch('');
+                                  setClientFocusIdx(-1);
+                                }}>
+                              {c.name}
+                              {c.id === doc.client_id && <Check size={12} className="ss-check" />}
+                            </li>
+                          ))}
+                          <li className={`ss-option client-create-option${clientFocusIdx === createIdx ? ' ss-option--focused' : ''}`}
+                              onMouseDown={() => { setShowClientDropdown(false); setShowClientModal(true); }}>
+                            <Plus size={13} />
+                            <span>Neuen Kunden anlegen</span>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              );
+            })()}
 
             {/* Document info — Subject + dates + currency + doc number grouped */}
             <section className="form-section card">
@@ -438,11 +538,10 @@ ${previewCss}
                 onChange={(e) => updateDoc((d) => ({ ...d, title: e.target.value }))}
               />
               <div className="section-grid">
-                <Input
-                  label={type === 'quote' ? t('editor_valid_until', 'Valid Until') : t('editor_due_date', 'Due Date')}
-                  type="date"
+                <DatePicker
+                  label={type === 'quote' ? t('editor_valid_until', 'Gültig bis') : t('editor_due_date', 'Fälligkeitsdatum')}
                   value={doc.due_date}
-                  onChange={(e) => updateDoc((d) => ({ ...d, due_date: e.target.value }))}
+                  onChange={(v) => updateDoc((d) => ({ ...d, due_date: v }))}
                 />
                 <div className="input-col">
                   <label>{t('editor_currency', 'Currency')}</label>
@@ -463,11 +562,10 @@ ${previewCss}
                   value={doc.number}
                   onChange={(e) => updateDoc((d) => ({ ...d, number: e.target.value }))}
                 />
-                <Input
-                  label={t('editor_field_date', 'Issue Date')}
-                  type="date"
+                <DatePicker
+                  label={t('editor_field_date', 'Datum')}
                   value={doc.date}
-                  onChange={(e) => handleDateChange(e.target.value)}
+                  onChange={handleDateChange}
                 />
               </div>
             </section>
@@ -476,32 +574,50 @@ ${previewCss}
             <section className="items-section card">
               <div className="items-header">
                 <h3>{t('editor_line_items', 'Product')}</h3>
-                <div className="product-loader">
-                  <FileText size={16} />
-                  <select onChange={(e) => { addProductItem(e.target.value); e.target.value = ''; }}>
-                    <option value="">{t('editor_add_from_products', 'Add from Products...')}</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
               <div className="items-list">
                 <div className="items-grid-header">
+                  <div className="col-drag" />
                   <div className="col-desc">{t('col_description', 'Description')}</div>
                   <div className="col-qty">{t('col_qty', 'Qty')}</div>
                   <div className="col-rate">{t('col_rate', 'Rate')}</div>
                   <div className="col-total">{t('col_total', 'Total')}</div>
                   <div className="col-actions" />
                 </div>
-                {doc.items.map((item) => (
-                  <div key={item.id} className="item-row">
+                {doc.items.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className={`item-row${draggingIdx === idx ? ' dragging' : ''}`}
+                    draggable
+                    onDragStart={() => { dragItemIdx.current = idx; setDraggingIdx(idx); }}
+                    onDragOver={(e) => { e.preventDefault(); dragOverIdx.current = idx; }}
+                    onDragEnd={() => {
+                      moveItem(dragItemIdx.current, dragOverIdx.current);
+                      dragItemIdx.current = null;
+                      dragOverIdx.current = null;
+                      setDraggingIdx(null);
+                    }}
+                  >
+                    <div className="col-drag">
+                      <GripVertical size={14} className="drag-handle" />
+                    </div>
                     <div className="col-desc">
+                      <input
+                        className="item-name-input"
+                        placeholder="Artikelname…"
+                        value={item.name || ''}
+                        onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                      />
                       <textarea
-                        placeholder={t('editor_item_description', 'Item description...')}
-                        value={item.description}
-                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        rows={2}
+                        className="item-desc-textarea"
+                        placeholder="Beschreibung… (optional)"
+                        value={item.description || ''}
+                        rows={1}
+                        ref={resizeTextarea}
+                        onChange={(e) => {
+                          updateItem(item.id, 'description', e.target.value);
+                          resizeTextarea(e.target);
+                        }}
                       />
                     </div>
                     <div className="col-qty">
@@ -534,10 +650,59 @@ ${previewCss}
                   </button>
                 )}
               </div>
-              <button type="button" className="add-line-btn" onClick={() => addItem(null)}>
-                <Plus size={14} />
-                {t('editor_add_line', 'Add New Line')}
-              </button>
+              <div className="items-footer">
+                <button type="button" className="add-line-btn" onClick={() => addItem(null)}>
+                  <Plus size={14} />
+                  {t('editor_add_line', 'Add New Line')}
+                </button>
+                <div className="product-picker-wrap" ref={productDropRef}>
+                  <button
+                    type="button"
+                    className="add-product-btn"
+                    onClick={() => { setShowProductDropdown(v => !v); setProductSearch(''); }}
+                  >
+                    <FileText size={14} />
+                    {t('editor_add_from_products', 'Aus Produkten…')}
+                  </button>
+                  {showProductDropdown && (
+                    <div className="product-popup">
+                      <div className="product-popup-search">
+                        <Search size={13} className="product-popup-search-icon" />
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Produkt suchen…"
+                          value={productSearch}
+                          onChange={e => setProductSearch(e.target.value)}
+                          className="product-popup-search-input"
+                        />
+                      </div>
+                      <ul className="product-popup-list">
+                        {(() => {
+                          const filtered = products.filter(p =>
+                            p.name.toLowerCase().includes(productSearch.toLowerCase())
+                          );
+                          return filtered.length === 0
+                            ? <li className="product-popup-empty">Keine Produkte</li>
+                            : filtered.map(p => (
+                                <li
+                                  key={p.id}
+                                  className="product-popup-item"
+                                  onMouseDown={() => {
+                                    addProductItem(p.id);
+                                    setShowProductDropdown(false);
+                                    setProductSearch('');
+                                  }}
+                                >
+                                  {p.name}
+                                </li>
+                              ));
+                        })()}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </section>
 
             {/* Notes */}
@@ -694,6 +859,18 @@ ${previewCss}
         </div>
 
       </div>{/* end editor-split */}
+
+      {showClientModal && (
+        <ClientModal
+          editingClient={null}
+          onSave={async (newClient) => {
+            setShowClientModal(false);
+            await fetchClients();
+            updateDoc(d => ({ ...d, client_id: newClient.id }));
+          }}
+          onCancel={() => setShowClientModal(false)}
+        />
+      )}
 
       {pendingCancel && (
         <ConfirmDialog

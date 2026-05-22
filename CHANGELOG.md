@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0] - 2026-05-22
+
+### Added
+- **Item name/description split**: Each line item now has a separate bold "Artikelname" field and an optional "Beschreibung" subtext. DB migration 7 adds a `name` column to `document_items` and backfills existing rows by splitting on the first newline. Old items render correctly via fallback.
+- **Custom DatePicker**: Replaced native `<input type="date">` fields in DocumentEditor with a custom calendar popup matching app design tokens (indigo accent, Monday-first, German month/weekday labels, click-outside dismiss, Escape key support).
+- **Client search combobox**: Client selector replaced with a live-filter search input. Typing filters the client list inline; selecting "Neuen Kunden anlegen" opens a full `ClientModal` overlay with all fields and live validation (email, phone, VAT, address lookup). New client is auto-selected after save.
+- **Custom Products dropdown**: "Add from Products" now uses a styled dropdown button (matching the Currency selector) instead of a native `<select>`.
+- **`ClientModal` component**: Extracted client create/edit form (all fields, live validation, focus trap) into a reusable `ClientModal` component. Used by both `Clients` page and `DocumentEditor`.
+
+### Changed
+- **Item column widths**: Menge and Preis columns widened to `100px` / `140px` so values are not clipped.
+- **Item row hover**: Rows now show rounded corners on hover (`border-radius: var(--radius-md)`).
+- **Item textarea styling**: Description textarea is borderless; only a bottom-line appears on hover/focus. No visible box at rest.
+- **Client label**: "People" label renamed to "Kunde".
+- **Cash payment note**: Removed cash-payment notice from PDF preview and print output.
+- **Number spinners**: Removed up/down arrow spinners from all `<input type="number">` elements globally via `index.css`.
+- **`Clients` page**: Refactored to delegate modal rendering to `ClientModal` — removed inline form state, validation hooks, and ~100 lines of duplicated logic.
+
+### Fixed
+- PDF preview now has correct grey surround and white A4 page with shadow for a "printed document" appearance.
+
 ## [1.2.1] - 2026-05-21
 
 ### Changed
