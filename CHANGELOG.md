@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.1] - 2026-05-21
+
+### Changed
+- **DocumentEditor — form grouping**: Subject, Due Date, Currency, Doc Number, and Issue Date collapsed into one card (was 3 separate cards). Doc number/date row gets a dashed top divider to stay visually secondary.
+- **Items (Positionen)**: Qty and Rate inputs replaced with minimal inline numbers — no box/border, only a bottom-line on hover/focus. Description textarea keeps its bordered box. Removes the "extra boxes" visual noise.
+- **Styled dropdowns**: Native `<select>` for Client and Currency replaced with `StyledSelect` — a custom dropdown with themed trigger, animated chevron, and a styled option list matching the design system.
+- **PDF multi-page**: Print CSS now sets `@page { size: A4; margin: 20mm 22mm }`. Page margins handled by `@page` (not double-padded). Table header repeats on continuation pages; totals block and footer never split across pages.
+
+## [1.2.0] - 2026-05-21
+
+### Changed
+- **DocumentEditor — split-panel redesign**: form (left, 420 px, scrollable) and live preview (right, always visible) replace the old single-column + preview-toggle layout.
+- Left panel form reordered to match modern invoice-app UX: People → Subject → Due Date + Currency → Doc Number + Date → Products → Notes → Payment mode + Totals.
+- Language switcher (EN/DE/FR) and PDF export button moved to the right panel header; top header simplified to back, title, Cancel, Save.
+- Added "Add New Line" text button below items list.
+- Preview scales at 72 % inside the right panel; phantom height collapsed via negative `margin-bottom` so the panel scrolls correctly.
+- Responsive ≤ 900 px: panels stack vertically (form above, preview below).
+
+## [1.1.2] - 2026-05-21
+
+### Changed
+- **DocumentPreview**: complete redesign — two-column header (sender info left, doc type/number/dates right), "Bill to" client block, subject accent stripe, cleaner line-items table with `#` column, right-aligned totals breakdown, indigo grand-total bar, professional payment footer with IBAN/BIC and legal line.
+- **PDF export — web path**: replaced `html2pdf.js` iframe with `window.open` + native browser print dialog. Fonts load correctly in the new window; no more blank-font renders.
+- **PDF export — Electron path**: `printToPDF` margins set to 0 (was 0.4 in ≈ 10 mm). CSS `padding: 20mm 22mm` on `.pdf-page` now controls all spacing; previously the double margin produced ~35 mm gutters.
+- Exported HTML includes Google Fonts `<link>` so Inter/Outfit render correctly in both paths.
+
 ## [1.1.1] - 2026-05-19
 
 ### Fixed

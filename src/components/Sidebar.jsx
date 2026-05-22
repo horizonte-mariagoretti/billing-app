@@ -5,7 +5,7 @@ import {
   Users,
   Settings,
   Package,
-  Receipt,
+  ReceiptEuro,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -18,7 +18,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
 
   const mainNav = [
     { id: 'dashboard', label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'invoices',  label: t('nav_invoices', 'Invoices'),   icon: Receipt },
+    { id: 'invoices',  label: t('nav_invoices', 'Invoices'),   icon: ReceiptEuro },
     { id: 'quotes',    label: t('nav_quotes', 'Quotes'),       icon: FileText },
     { id: 'clients',   label: t('nav_clients', 'Clients'),     icon: Users },
     { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
@@ -82,7 +82,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
         title={collapsed ? t('nav_new_invoice', 'New Invoice') : undefined}
         aria-label={t('nav_new_invoice', 'New Invoice')}
       >
-        <Receipt size={16} aria-hidden="true" />
+        <ReceiptEuro size={16} aria-hidden="true" />
         {!collapsed && <span>{t('nav_new_invoice', 'New Invoice')}</span>}
       </button>
 

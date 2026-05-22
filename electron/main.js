@@ -88,7 +88,8 @@ ipcMain.handle('generate-pdf', async (event, { html, filename }) => {
     const data = await pdfWin.webContents.printToPDF({
       printBackground: true,
       pageSize: 'A4',
-      margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 }, // inches
+      // CSS padding on .pdf-page handles all spacing; no extra Electron margins.
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
     });
 
     const safeName = path.basename(String(filename || 'document').replace(/\.pdf$/i, '')) + '.pdf';
