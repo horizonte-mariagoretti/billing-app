@@ -1,154 +1,383 @@
+/* ── Viewer shell ── */
 .pdf-container {
-  background-color: #525659; /* PDF viewer background */
+  background: #525659;
   padding: 40px;
   display: flex;
   justify-content: center;
   min-height: 100%;
 }
 
+/* ── A4 page ── */
 .pdf-page {
-  background-color: white;
-  width: 210mm; /* A4 Width */
-  min-height: 297mm; /* A4 Height */
-  padding: 25mm; /* Standard margins */
-  color: #000;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 22mm;
+  color: #111;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
   display: flex;
   flex-direction: column;
+  gap: 0;
 }
 
+/* ── Header ── */
 .pdf-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 25mm;
+  align-items: flex-start;
+  margin-bottom: 10mm;
+  gap: 8mm;
 }
 
-.client-info p, .doc-meta-right p {
-  font-size: 11pt;
-  line-height: 1.4;
-  margin: 0;
+.pdf-sender {
+  flex: 1;
 }
 
-.doc-meta-right {
-  text-align: right;
-}
-
-.pdf-subject-section {
-  margin-bottom: 15mm;
-}
-
-.doc-title {
+.pdf-sender-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 16pt;
+  font-size: 14pt;
   font-weight: 700;
-  margin-bottom: 8px;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+.pdf-sender-address {
+  white-space: pre-line;
+  color: #444;
+  font-size: 9.5pt;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.pdf-sender-meta {
+  font-size: 9pt;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Doc meta — right column */
+.pdf-doc-meta {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pdf-doc-type {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22pt;
+  font-weight: 700;
+  color: #6366F1;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
   text-transform: uppercase;
 }
 
-.doc-subject {
-  font-size: 11pt;
+.pdf-doc-number {
+  font-size: 9.5pt;
+  font-weight: 600;
   color: #333;
-  line-height: 1.4;
+  margin: 3px 0 8px;
+  letter-spacing: 0.3px;
 }
 
+.pdf-meta-table {
+  border: none;
+  border-collapse: collapse;
+  margin-left: auto;
+}
+
+.pdf-meta-table td {
+  padding: 1px 0;
+  font-size: 9pt;
+  color: #444;
+}
+
+.pdf-meta-label {
+  padding-right: 8px !important;
+  color: #888 !important;
+  font-size: 8.5pt !important;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.pdf-meta-value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Horizontal rule ── */
+.pdf-rule {
+  border: none;
+  border-top: 1px solid #E2E8F0;
+  margin: 0 0 8mm;
+}
+
+/* ── Client block ── */
+.pdf-client-block {
+  margin-bottom: 8mm;
+}
+
+.pdf-bill-to-label {
+  font-size: 7.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.pdf-client-name {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 2px;
+}
+
+.pdf-client-address {
+  white-space: pre-line;
+  font-size: 9.5pt;
+  color: #444;
+  line-height: 1.5;
+}
+
+.pdf-client-vat {
+  font-size: 9pt;
+  color: #555;
+  margin-top: 3px;
+}
+
+/* ── Document subject ── */
+.pdf-subject {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 7mm;
+  padding: 6px 10px;
+  background: #F8FAFC;
+  border-left: 3px solid #6366F1;
+}
+
+/* ── Line items table ── */
 .pdf-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 10mm;
+  margin-bottom: 0;
+}
+
+.pdf-table thead tr {
+  border-bottom: 1.5px solid #111;
 }
 
 .pdf-table th {
-  border-bottom: 1px solid #000;
-  padding: 8px 0;
-  font-size: 10pt;
-  font-weight: 600;
+  padding: 6px 0;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #333;
   text-align: right;
 }
 
+.pdf-table th.col-num,
 .pdf-table th.col-desc {
   text-align: left;
 }
 
 .pdf-table td {
-  padding: 15px 0;
-  font-size: 11pt;
+  padding: 9px 0;
+  font-size: 9.5pt;
   vertical-align: top;
+  text-align: right;
+  border-bottom: 1px solid #F0F0F0;
 }
 
-.item-description strong {
+.pdf-table td.col-num,
+.pdf-table td.col-desc {
+  text-align: left;
+}
+
+.col-num {
+  width: 24px;
+  color: #999;
+  font-size: 8.5pt;
+  padding-right: 6px !important;
+}
+
+.col-desc {
+  width: 55%;
+}
+
+.col-qty {
+  width: 8%;
+}
+
+.col-rate {
+  width: 17%;
+}
+
+.col-total {
+  width: 17%;
+  font-weight: 600;
+}
+
+.item-headline {
   display: block;
-  margin-bottom: 5px;
+  font-weight: 600;
+  color: #111;
 }
 
 .item-details {
-  font-size: 10pt;
-  color: #444;
-  padding-left: 5px;
+  margin: 4px 0 0 0;
+  padding-left: 14px;
+  list-style: disc;
+  font-size: 8.5pt;
+  color: #555;
+  line-height: 1.6;
 }
 
-.col-qty, .col-rate, .col-discount, .col-total {
-  text-align: right;
-  white-space: nowrap;
+/* ── Totals section ── */
+.pdf-totals-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4mm;
 }
 
-.pdf-total-bar {
-  background-color: #E5E5E5; /* Light grey bar from inspiration */
+.pdf-totals {
+  width: 55%;
+  border-top: 1px solid #E2E8F0;
+  padding-top: 4mm;
+}
+
+.pdf-totals-row {
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 3px 0;
+  font-size: 9.5pt;
+  color: #333;
+}
+
+.pdf-discount {
+  color: #16A34A;
+}
+
+/* ── Grand total bar ── */
+.pdf-total-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #6366F1;
+  color: #fff;
   font-weight: 700;
   font-size: 11pt;
-  margin-top: auto; /* Push to bottom if content is short */
-  margin-bottom: 15mm;
+  padding: 8px 12px;
+  margin-top: 3mm;
+  margin-bottom: 6mm;
+  letter-spacing: 0.3px;
 }
 
-.pdf-notes {
-  font-size: 10pt;
-  line-height: 1.5;
-  color: #333;
-  margin-bottom: 10mm;
-  padding: 8px 0;
-  border-top: 1px solid #DDD;
-}
-
+/* ── Cash note ── */
 .pdf-cash-note {
-  font-size: 9.5pt;
+  font-size: 8.5pt;
   font-style: italic;
-  color: #555;
+  color: #666;
   text-align: right;
-  margin-top: -10mm;
-  margin-bottom: 12mm;
+  margin-top: -4mm;
+  margin-bottom: 5mm;
 }
 
-.pdf-footer {
-  font-size: 10pt;
+/* ── Notes ── */
+.pdf-notes {
+  font-size: 9.5pt;
+  color: #444;
   line-height: 1.6;
+  white-space: pre-line;
+  margin-bottom: 6mm;
+  padding: 6px 10px;
+  background: #FAFAFA;
+  border-left: 2px solid #E2E8F0;
+}
+
+/* ── Footer ── */
+.pdf-footer {
   margin-top: auto;
-  padding-top: 10mm;
-  border-top: 1px solid #DDD;
+  padding-top: 2mm;
 }
 
-.bank-details {
+.pdf-rule--footer {
+  margin-bottom: 5mm;
+}
+
+.pdf-payment-label {
+  font-size: 9pt;
+  color: #555;
+  margin: 0 0 4px;
+}
+
+.pdf-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #111;
+}
+
+.pdf-bank-name {
+  font-weight: 700;
+}
+
+.pdf-footer-legal {
   margin-top: 8px;
+  font-size: 8pt;
+  color: #888;
+  border-top: 1px solid #F0F0F0;
+  padding-top: 5px;
 }
 
-.bank-details p {
-  margin: 0;
-}
-
-/* Print Overrides */
+/* ── Print / PDF export ── */
 @media print {
+  @page {
+    size: A4;
+    margin: 20mm 22mm;
+  }
+
   body {
     background: white;
+    margin: 0;
+    padding: 0;
   }
+
   .pdf-container {
     padding: 0;
     background: none;
   }
+
+  /* pdf-page padding handled by @page margin — remove it so content isn't double-indented */
   .pdf-page {
     box-shadow: none;
+    width: 100%;
+    min-height: 0;
     padding: 0;
     margin: 0;
-    width: 100%;
+  }
+
+  /* Multi-page: keep table header visible on each continuation page */
+  .pdf-table thead { display: table-header-group; }
+  .pdf-table { page-break-inside: auto; }
+  .pdf-table tr { page-break-inside: avoid; page-break-after: auto; }
+
+  /* Keep totals + footer on same page, never split */
+  .pdf-totals-wrap,
+  .pdf-total-bar,
+  .pdf-cash-note,
+  .pdf-footer { page-break-inside: avoid; }
+
+  /* Color preservation */
+  .pdf-total-bar,
+  .pdf-subject {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

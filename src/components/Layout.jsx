@@ -5,7 +5,7 @@ import './Layout.css';
 
 const isWebRuntime = typeof window !== 'undefined' && window.__ELECTRON_PRELOAD__ !== true;
 
-const Layout = ({ children, currentView, setView, onNewDoc, title, settings }) => {
+const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noPadding = false }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const resolvedTitle = title ?? (currentView.charAt(0).toUpperCase() + currentView.slice(1));
   const initials = (() => {
@@ -35,7 +35,7 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings }) =
             {isWebRuntime && <SyncStatusBadge />}
           </div>
         </header>
-        <div className="content-body">
+        <div className={`content-body${noPadding ? ' content-body--no-padding' : ''}`}>
           {children}
         </div>
       </main>

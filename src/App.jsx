@@ -118,6 +118,7 @@ function App() {
         onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
         title={editorTitle}
         settings={appSettings}
+        noPadding={isEditing}
       >
         {settingsError && (
           <div className="page-error" role="alert">

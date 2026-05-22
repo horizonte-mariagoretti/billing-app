@@ -1,67 +1,93 @@
 import React from 'react';
 import './DocumentPreview.css';
 
-const LABELS = {
+const L = {
   en: {
+    billTo: 'Bill to',
     description: 'Description',
     qty: 'Qty',
     rate: 'Rate',
-    discount: 'Discount',
     subtotal: 'Subtotal',
+    discount: 'Discount',
     tax: 'Tax',
     total: 'Total',
-    paymentNote: 'Total amount to be paid to the following bank account:',
+    paymentNote: 'Please transfer the total amount to the following bank account:',
+    date: 'Date',
+    dueDate: 'Due Date',
+    validUntil: 'Valid Until',
   },
   de: {
+    billTo: 'Rechnungsempfänger',
     description: 'Beschreibung',
     qty: 'Menge',
-    rate: 'Satz',
-    discount: 'Rabatt',
+    rate: 'Einzelpreis',
     subtotal: 'Zwischensumme',
+    discount: 'Rabatt',
     tax: 'MwSt.',
     total: 'Gesamt',
-    paymentNote: 'Gesamtbetrag auf folgendes Bankkonto zu überweisen:',
+    paymentNote: 'Gesamtbetrag bitte auf folgendes Konto überweisen:',
+    date: 'Datum',
+    dueDate: 'Fälligkeitsdatum',
+    validUntil: 'Gültig bis',
   },
   fr: {
+    billTo: 'Facturer à',
     description: 'Description',
-    qty: 'Quantité',
-    rate: 'Taux',
-    discount: 'Rabais',
+    qty: 'Qté',
+    rate: 'Prix unit.',
     subtotal: 'Sous-total',
+    discount: 'Remise',
     tax: 'TVA',
     total: 'Total',
-    paymentNote: 'Montant total à verser sur le compte bancaire suivant :',
+    paymentNote: 'Veuillez virer le montant total sur le compte bancaire suivant :',
+    date: 'Date',
+    dueDate: 'Date d\'échéance',
+    validUntil: 'Valable jusqu\'au',
   },
+};
+
+const fmt = (value, currency) =>
+  value.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    style: 'currency',
+    currency: currency || 'EUR',
+  });
+
+const fmtDate = (iso) => {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
 };
 
 const DocumentPreview = ({ doc, sender, client }) => {
   if (!doc) return null;
 
   const lang = doc.language || 'en';
-  const labels = LABELS[lang] || LABELS.en;
+  const labels = L[lang] || L.en;
 
-  const docTypeLabel = doc.type === 'quote'
-    ? (sender?.[`trans_quote_${lang}`] || labels.total)
-    : (sender?.[`trans_invoice_${lang}`] || 'Invoice');
+  const docTypeLabel =
+    doc.type === 'quote'
+      ? sender?.[`trans_quote_${lang}`] || (lang === 'de' ? 'Angebot' : lang === 'fr' ? 'Devis' : 'Quote')
+      : sender?.[`trans_invoice_${lang}`] || (lang === 'de' ? 'Rechnung' : lang === 'fr' ? 'Facture' : 'Invoice');
 
   const totalLabel = sender?.[`trans_total_${lang}`] || labels.total;
 
   const isCash = doc.payment_mode === 'cash';
-  const subtotal = doc.items.reduce((sum, item) => sum + (item.qty * item.rate), 0);
-  const discount = doc.discount_type === '%'
-    ? subtotal * (doc.discount_value / 100)
-    : doc.discount_value;
-  const tax = isCash ? 0 : (subtotal - discount) * (doc.tax_rate / 100);
-  const total = subtotal - discount + tax;
-  const cashNote = sender?.[`trans_cash_note_${lang}`] || 'Cash sale — VAT not applicable';
+  const currency = doc.currency || 'EUR';
 
-  const fmt = (value) =>
-    value.toLocaleString('de-DE', {
-      minimumFractionDigits: 2,
-      style: 'currency',
-      currency: doc.currency || 'EUR',
-    });
+  const subtotal = (doc.items || []).reduce((sum, item) => sum + (item.qty * item.rate), 0);
+  const discountAmt = doc.discount_type === '%'
+    ? subtotal * ((doc.discount_value || 0) / 100)
+    : (doc.discount_value || 0);
+  const tax = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
+  const total = subtotal - discountAmt + tax;
 
+  const cashNote = sender?.[`trans_cash_note_${lang}`] ||
+    (lang === 'de' ? 'Barzahlung — keine Mehrwertsteuer' :
+     lang === 'fr' ? 'Vente au comptant — TVA non applicable' :
+     'Cash sale — VAT not applicable');
+
+  const senderAddress = sender?.company_address || '';
   const clientAddress = client
     ? [
         client.address_street,
@@ -70,30 +96,75 @@ const DocumentPreview = ({ doc, sender, client }) => {
       ].filter(Boolean).join('\n')
     : '';
 
+  const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
+
   return (
     <div className="pdf-container">
       <div className="pdf-page">
+
+        {/* ── Header: sender left, doc meta right ── */}
         <header className="pdf-header">
-          <div className="client-info">
-            <p><strong>{client?.name || doc.client_name || 'Client Name'}</strong></p>
-            <p style={{ whiteSpace: 'pre-line' }}>{clientAddress || 'Client Address'}</p>
+          <div className="pdf-sender">
+            <div className="pdf-sender-name">{sender?.company_name || ''}</div>
+            {senderAddress && (
+              <div className="pdf-sender-address">{senderAddress}</div>
+            )}
+            {sender?.company_vat && (
+              <div className="pdf-sender-meta">VAT: {sender.company_vat}</div>
+            )}
+            {sender?.company_email && (
+              <div className="pdf-sender-meta">{sender.company_email}</div>
+            )}
+            {sender?.company_phone && (
+              <div className="pdf-sender-meta">{sender.company_phone}</div>
+            )}
           </div>
-          <div className="doc-meta-right">
-            <p>{sender?.company_name || ''}</p>
-            <p>{doc.date}</p>
+
+          <div className="pdf-doc-meta">
+            <div className="pdf-doc-type">{docTypeLabel}</div>
+            <div className="pdf-doc-number">{doc.number || '—'}</div>
+            <table className="pdf-meta-table">
+              <tbody>
+                <tr>
+                  <td className="pdf-meta-label">{labels.date}</td>
+                  <td className="pdf-meta-value">{fmtDate(doc.date)}</td>
+                </tr>
+                {doc.due_date && (
+                  <tr>
+                    <td className="pdf-meta-label">{dueDateLabel}</td>
+                    <td className="pdf-meta-value">{fmtDate(doc.due_date)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </header>
 
-        <section className="pdf-subject-section">
-          <h2 className="doc-title">
-            {docTypeLabel.toUpperCase()} – {doc.number}
-          </h2>
-          {doc.title && <p className="doc-subject">{doc.title}</p>}
+        {/* ── Divider ── */}
+        <div className="pdf-rule" />
+
+        {/* ── Client block ── */}
+        <section className="pdf-client-block">
+          <div className="pdf-bill-to-label">{labels.billTo}</div>
+          <div className="pdf-client-name">{client?.name || doc.client_name || '—'}</div>
+          {clientAddress && (
+            <div className="pdf-client-address">{clientAddress}</div>
+          )}
+          {client?.vat_number && (
+            <div className="pdf-client-vat">VAT: {client.vat_number}</div>
+          )}
         </section>
 
+        {/* ── Subject / title ── */}
+        {doc.title && (
+          <div className="pdf-subject">{doc.title}</div>
+        )}
+
+        {/* ── Line items table ── */}
         <table className="pdf-table">
           <thead>
             <tr>
+              <th className="col-num">#</th>
               <th className="col-desc">{labels.description}</th>
               <th className="col-qty">{labels.qty}</th>
               <th className="col-rate">{labels.rate}</th>
@@ -101,75 +172,88 @@ const DocumentPreview = ({ doc, sender, client }) => {
             </tr>
           </thead>
           <tbody>
-            {doc.items.map((item, i) => (
-              <tr key={i}>
-                <td className="col-desc">
-                  <div className="item-description">
-                    <strong>{i + 1}. {item.description.split('\n')[0]}</strong>
-                    {item.description.split('\n').length > 1 && (
-                      <div className="item-details">
-                        {item.description.split('\n').slice(1).map((line, idx) => (
-                          <div key={idx}>- {line}</div>
-                        ))}
-                      </div>
+            {(doc.items || []).map((item, i) => {
+              const lines = (item.description || '').split('\n');
+              const headline = lines[0];
+              const details = lines.slice(1).filter(l => l.trim());
+              return (
+                <tr key={i}>
+                  <td className="col-num">{i + 1}</td>
+                  <td className="col-desc">
+                    <span className="item-headline">{headline}</span>
+                    {details.length > 0 && (
+                      <ul className="item-details">
+                        {details.map((l, idx) => <li key={idx}>{l}</li>)}
+                      </ul>
                     )}
-                  </div>
-                </td>
-                <td className="col-qty">{item.qty}</td>
-                <td className="col-rate">{fmt(item.rate)}</td>
-                <td className="col-total">
-                  {fmt(item.qty * item.rate)}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="col-qty">{item.qty}</td>
+                  <td className="col-rate">{fmt(item.rate, currency)}</td>
+                  <td className="col-total">{fmt(item.qty * item.rate, currency)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
-        <div className="pdf-totals-breakdown">
-          <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0' }}>
-            <strong>{labels.subtotal}</strong>
-            <span>{fmt(subtotal)}</span>
+        {/* ── Totals breakdown ── */}
+        <div className="pdf-totals-wrap">
+          <div className="pdf-totals">
+            <div className="pdf-totals-row">
+              <span>{labels.subtotal}</span>
+              <span>{fmt(subtotal, currency)}</span>
+            </div>
+            {(doc.discount_value || 0) > 0 && (
+              <div className="pdf-totals-row">
+                <span>
+                  {labels.discount}
+                  {doc.discount_type === '%' ? ` (${doc.discount_value}%)` : ''}
+                </span>
+                <span className="pdf-discount">−{fmt(discountAmt, currency)}</span>
+              </div>
+            )}
+            {!isCash && (
+              <div className="pdf-totals-row">
+                <span>{labels.tax}{doc.tax_rate ? ` (${doc.tax_rate}%)` : ''}</span>
+                <span>{fmt(tax, currency)}</span>
+              </div>
+            )}
           </div>
-          {doc.discount_value > 0 && (
-            <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0' }}>
-              <strong>
-                {labels.discount}
-                {doc.discount_type === '%' ? ` ${doc.discount_value}%` : ''}
-              </strong>
-              <span>{`-${fmt(discount)}`}</span>
-            </div>
-          )}
-          {!isCash && (
-            <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0' }}>
-              <strong>{labels.tax}{doc.tax_rate ? ` ${doc.tax_rate}%` : ''}</strong>
-              <span>{fmt(tax)}</span>
-            </div>
-          )}
         </div>
 
+        {/* ── Grand total bar ── */}
         <div className="pdf-total-bar">
-          <div className="total-label">{totalLabel.toUpperCase()}</div>
-          <div className="total-value">{fmt(total)}</div>
+          <span>{totalLabel.toUpperCase()}</span>
+          <span>{fmt(total, currency)}</span>
         </div>
 
+        {/* ── Cash note ── */}
         {isCash && (
           <div className="pdf-cash-note">{cashNote}</div>
         )}
 
+        {/* ── Notes ── */}
         {doc.notes && (
-          <div className="pdf-notes">
-            <p style={{ whiteSpace: 'pre-line' }}>{doc.notes}</p>
-          </div>
+          <div className="pdf-notes">{doc.notes}</div>
         )}
 
+        {/* ── Payment footer ── */}
         <footer className="pdf-footer">
-          <p>{labels.paymentNote}</p>
-          <div className="bank-details">
-            <p><strong>{sender?.company_name || 'Your Name'}</strong></p>
-            <p><strong>{sender?.company_iban || 'IBAN'}</strong></p>
-            {sender?.company_bic && <p><strong>{sender.company_bic}</strong></p>}
+          <div className="pdf-rule pdf-rule--footer" />
+          <p className="pdf-payment-label">{labels.paymentNote}</p>
+          <div className="pdf-bank">
+            {sender?.company_name && <span className="pdf-bank-name">{sender.company_name}</span>}
+            {sender?.company_iban && <span>IBAN: {sender.company_iban}</span>}
+            {sender?.company_bic  && <span>BIC: {sender.company_bic}</span>}
           </div>
+          {(sender?.company_vat || sender?.company_email) && (
+            <div className="pdf-footer-legal">
+              {[sender.company_name, sender.company_vat ? `VAT: ${sender.company_vat}` : null, sender.company_email]
+                .filter(Boolean).join('  ·  ')}
+            </div>
+          )}
         </footer>
+
       </div>
     </div>
   );

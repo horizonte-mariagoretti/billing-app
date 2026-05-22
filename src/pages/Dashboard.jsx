@@ -5,7 +5,7 @@ import { effectiveStatus } from '../utils/documentLifecycle';
 import { useT } from '../hooks/useUiTranslations';
 import {
   Euro, FileText, Users, Clock, AlertCircle,
-  ArrowUpRight, Plus, Sparkles, Receipt, X
+  ArrowUpRight, Plus, Sparkles, ReceiptEuro, X
 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -273,7 +273,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
       key: 'paid',
       label: t('kpi_paid_invoices', 'Paid Invoices'),
       value: loading ? '—' : stats.paidInvoices,
-      icon: Receipt,
+      icon: ReceiptEuro,
       tone: 'dark',
     },
     {
@@ -327,7 +327,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
             </div>
           </div>
           <div className="hero-decor" aria-hidden="true">
-            <div className="hero-orb hero-orb-1"><Receipt size={30} /></div>
+            <div className="hero-orb hero-orb-1"><ReceiptEuro size={30} /></div>
             <div className="hero-orb hero-orb-2"><FileText size={30} /></div>
             <div className="hero-orb hero-orb-3"><Euro size={26} /></div>
             <div className="hero-spark hero-spark-1"></div>

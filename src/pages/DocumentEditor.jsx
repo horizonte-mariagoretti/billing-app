@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  ChevronLeft, Plus, Trash2, Save, Eye, FileText,
-  Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown
+  ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText,
+  Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
+  Download
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -16,6 +17,47 @@ import DocumentPreview from './DocumentPreview';
 import previewCss from './DocumentPreview.css?inline';
 import './DocumentEditor.css';
 
+// ── Lightweight custom select ──────────────────────────────────────────────
+const StyledSelect = ({ value, onChange, children, placeholder, className = '', disabled = false }) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  const options = React.Children.toArray(children)
+    .filter((c) => c.type === 'option')
+    .map((c) => ({ value: c.props.value ?? '', label: c.props.children }));
+  const sel = options.find((o) => String(o.value) === String(value));
+  const isEmpty = !sel || String(sel.value) === '';
+  return (
+    <div ref={ref} className={`ss-root${open ? ' ss-open' : ''}${disabled ? ' ss-disabled' : ''}${className ? ' ' + className : ''}`}>
+      <button type="button" className="ss-trigger" onClick={() => !disabled && setOpen((v) => !v)} disabled={disabled}>
+        <span className={isEmpty ? 'ss-placeholder' : ''}>{sel?.label || placeholder || ''}</span>
+        <ChevronDown size={14} className="ss-chevron" />
+      </button>
+      {open && (
+        <ul className="ss-dropdown" role="listbox">
+          {options.map((opt) => (
+            <li
+              key={String(opt.value)}
+              role="option"
+              aria-selected={String(opt.value) === String(value)}
+              className={`ss-option${String(opt.value) === String(value) ? ' ss-option--selected' : ''}`}
+              onMouseDown={(e) => { e.preventDefault(); onChange({ target: { value: opt.value } }); setOpen(false); }}
+            >
+              {opt.label}
+              {String(opt.value) === String(value) && <Check size={12} className="ss-check" />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onConvertToInvoice }) => {
   const { query } = useDatabase();
   const { transitionDocument, fetchPayments } = useDocuments();
@@ -24,16 +66,17 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [payments, setPayments] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
   const [pendingCancel, setPendingCancel] = useState(false);
   const [transitionError, setTransitionError] = useState(null);
-  const prevTaxRateRef = React.useRef(null);
+  const [previewScale, setPreviewScale] = useState(0.75);
+  const prevTaxRateRef = useRef(null);
+  const rightBodyRef = useRef(null);
+
   const [doc, setDoc] = useState(() => {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
-
     const dueDate = new Date(today);
     if (type === 'invoice') dueDate.setMonth(dueDate.getMonth() + 1);
     else dueDate.setMonth(dueDate.getMonth() + 2);
@@ -55,15 +98,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       payment_mode: 'standard',
       status: 'draft',
       locked: 0,
-      items: [{ id: crypto.randomUUID(), description: '', qty: 1, rate: 0 }]
+      items: [{ id: crypto.randomUUID(), description: '', qty: 1, rate: 0 }],
     };
     if (initialData) {
       return {
         ...defaults,
         ...initialData,
-        items: (initialData.items && initialData.items.length > 0)
-          ? initialData.items
-          : defaults.items
+        items:
+          initialData.items && initialData.items.length > 0
+            ? initialData.items
+            : defaults.items,
       };
     }
     return defaults;
@@ -94,6 +138,22 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     }
   }, [isPersisted, status, doc.id, fetchPayments]);
 
+  // Dynamically scale preview to fill the right panel
+  useEffect(() => {
+    const el = rightBodyRef.current;
+    if (!el) return;
+    const A4_PX = 794; // 210mm at 96dpi
+    const PADDING = 64; // 2 × var(--space-xl) horizontal
+    const compute = (width) => {
+      const scale = Math.min(1, Math.max(0.3, (width - PADDING) / A4_PX));
+      setPreviewScale(parseFloat(scale.toFixed(4)));
+    };
+    compute(el.clientWidth);
+    const obs = new ResizeObserver(([entry]) => compute(entry.contentRect.width));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const fetchClients = async () => {
     const data = await query(
       'SELECT id, name, address_street, address_zip, address_city, address_country FROM clients ORDER BY name ASC'
@@ -109,14 +169,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const fetchSettingsAndNumber = async () => {
     const s = await loadSettings();
     setSettings(s);
-
     if (!initialData?.id) {
       const nextNum = await getNextDocumentNumber(type);
-      setDoc(d => ({
+      setDoc((d) => ({
         ...d,
         number: nextNum,
-        tax_rate: (() => { const n = parseFloat(s.default_tax_rate); return Number.isFinite(n) ? n : 21; })(),
-        currency: s.default_currency || 'EUR'
+        tax_rate: (() => {
+          const n = parseFloat(s.default_tax_rate);
+          return Number.isFinite(n) ? n : 21;
+        })(),
+        currency: s.default_currency || 'EUR',
       }));
     }
   };
@@ -124,9 +186,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const handleSaveWithIncrement = async () => {
     await onSave(doc);
     setIsDirty(false);
-    if (!initialData?.id) {
-      await incrementDocumentNumber(type);
-    }
+    if (!initialData?.id) await incrementDocumentNumber(type);
   };
 
   const handleCancel = () => {
@@ -163,13 +223,13 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     const newItem = { id: crypto.randomUUID(), description: '', qty: 1, rate: 0 };
     updateDoc((d) => {
       if (afterId == null) return { ...d, items: [...d.items, newItem] };
-      const idx = d.items.findIndex(i => i.id === afterId);
+      const idx = d.items.findIndex((i) => i.id === afterId);
       return { ...d, items: [...d.items.slice(0, idx + 1), newItem, ...d.items.slice(idx + 1)] };
     });
   };
 
   const addProductItem = (productId) => {
-    const prod = products.find(p => p.id === productId);
+    const prod = products.find((p) => p.id === productId);
     if (!prod) return;
     let name = prod.name;
     let desc = prod.description;
@@ -183,22 +243,19 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     const fullDesc = desc ? `${name}\n${desc}` : name;
     updateDoc((d) => ({
       ...d,
-      items: [...d.items, {
-        id: crypto.randomUUID(),
-        description: fullDesc, qty: 1, rate: prod.rate || 0
-      }]
+      items: [...d.items, { id: crypto.randomUUID(), description: fullDesc, qty: 1, rate: prod.rate || 0 }],
     }));
   };
 
   const updateItem = (id, field, value) => {
     updateDoc((d) => ({
       ...d,
-      items: d.items.map(item => item.id === id ? { ...item, [field]: value } : item)
+      items: d.items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     }));
   };
 
   const removeItem = (id) => {
-    updateDoc((d) => ({ ...d, items: d.items.filter(item => item.id !== id) }));
+    updateDoc((d) => ({ ...d, items: d.items.filter((item) => item.id !== id) }));
   };
 
   const handleDateChange = (newDate) => {
@@ -218,76 +275,65 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         if (Number(d.tax_rate) > 0) prevTaxRateRef.current = d.tax_rate;
         return { ...d, payment_mode: 'cash', tax_rate: 0 };
       } else {
-        const fallback = (() => { const n = parseFloat(settings?.default_tax_rate); return Number.isFinite(n) ? n : 21; })();
+        const fallback = (() => {
+          const n = parseFloat(settings?.default_tax_rate);
+          return Number.isFinite(n) ? n : 21;
+        })();
         const restored = prevTaxRateRef.current != null ? prevTaxRateRef.current : fallback;
         return { ...d, payment_mode: 'standard', tax_rate: restored };
       }
     });
   };
 
-  const subtotal = doc.items.reduce((sum, item) => sum + (item.qty * item.rate), 0);
-  const discount = doc.discount_type === '%'
-    ? subtotal * (doc.discount_value / 100)
-    : doc.discount_value;
+  const subtotal = doc.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
+  const discount =
+    doc.discount_type === '%'
+      ? subtotal * (doc.discount_value / 100)
+      : doc.discount_value;
   const tax = isCash ? 0 : (subtotal - discount) * (doc.tax_rate / 100);
   const total = subtotal - discount + tax;
 
-  const fmt = (v) => v.toLocaleString('de-DE', { style: 'currency', currency: doc.currency || 'EUR' });
+  const fmt = (v) =>
+    v.toLocaleString('de-DE', { style: 'currency', currency: doc.currency || 'EUR' });
 
   const handleExportPDF = async () => {
     const previewEl = document.querySelector('.pdf-container');
     if (!previewEl) {
-      setTransitionError(t('editor_preview_first', 'Switch to Preview before exporting the PDF.'));
+      setTransitionError('Preview not found. Please try again.');
       return;
     }
+    const filename = `${doc.type}-${doc.number || 'draft'}.pdf`;
     const html = `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <style>${previewCss}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+${previewCss}
       html, body { margin: 0; padding: 0; background: #fff; }
-      .pdf-container { box-shadow: none !important; transform: none !important; }
+      .pdf-container { padding: 0; background: none; }
+      .pdf-page { box-shadow: none; }
     </style>
   </head>
   <body>${previewEl.outerHTML}</body>
 </html>`;
-    const filename = `${doc.type}-${doc.number || 'draft'}.pdf`;
     try {
       if (window.electron?.pdf?.generate) {
-        // Electron path: native printToPDF + save dialog.
         await window.electron.pdf.generate({ html, filename });
       } else {
-        // Web path: render in a hidden iframe so html2pdf can capture the
-        // standalone HTML (which already includes the print stylesheet),
-        // then trigger a Blob download with the standard filename.
-        const html2pdf = (await import('html2pdf.js')).default;
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.left = '-10000px';
-        iframe.style.top = '0';
-        iframe.style.width = '210mm';
-        iframe.style.height = '297mm';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-        try {
-          const idoc = iframe.contentDocument || iframe.contentWindow.document;
-          idoc.open(); idoc.write(html); idoc.close();
-          // Wait one frame for layout + fonts.
-          await new Promise(r => setTimeout(r, 200));
-          const target = idoc.querySelector('.pdf-container') || idoc.body;
-          await html2pdf()
-            .set({
-              filename,
-              margin: 0,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            })
-            .from(target)
-            .save();
-        } finally {
-          document.body.removeChild(iframe);
+        const printWin = window.open('', '_blank', 'width=900,height=700');
+        if (!printWin) {
+          setTransitionError('Pop-up blocked. Allow pop-ups for this site, then try again.');
+          return;
         }
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.addEventListener('load', () => {
+          setTimeout(() => { printWin.focus(); printWin.print(); }, 400);
+        });
       }
     } catch (err) {
       setTransitionError(`PDF export failed: ${err.message}`);
@@ -296,87 +342,69 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
   const nextStatuses = allowedNextStatuses(doc);
 
-  // Compose lifecycle action buttons based on type + current status
   const lifecycleActions = (() => {
     if (!isPersisted) return null;
     const acts = [];
     if (type === 'invoice') {
-      if (nextStatuses.includes('sent') && status === 'draft') {
+      if (nextStatuses.includes('sent') && status === 'draft')
         acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>{t('editor_mark_sent', 'Mark as Sent')}</Button>);
-      }
-      if (status === 'paid') {
+      if (status === 'paid')
         acts.push(<Button key="unlock" variant="outline" icon={Unlock} onClick={() => handleTransition('sent')}>{t('editor_unlock_edit', 'Unlock for Edit')}</Button>);
-      }
-      if (nextStatuses.includes('paid')) {
+      if (nextStatuses.includes('paid'))
         acts.push(<Button key="paid" variant="primary" icon={CheckCircle2} onClick={() => handleTransition('paid')}>{t('editor_mark_paid', 'Mark as Paid')}</Button>);
-      }
-      if (nextStatuses.includes('cancelled')) {
+      if (nextStatuses.includes('cancelled'))
         acts.push(<Button key="cancel" variant="danger" icon={XCircle} onClick={() => handleTransition('cancelled')}>{t('editor_cancel_invoice', 'Cancel Invoice')}</Button>);
-      }
     } else if (type === 'quote') {
-      if (nextStatuses.includes('sent')) {
+      if (nextStatuses.includes('sent'))
         acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>{t('editor_mark_sent', 'Mark as Sent')}</Button>);
-      }
-      if (nextStatuses.includes('accepted')) {
+      if (nextStatuses.includes('accepted'))
         acts.push(<Button key="accept" variant="primary" icon={ThumbsUp} onClick={() => handleTransition('accepted')}>{t('editor_mark_accepted', 'Mark Accepted')}</Button>);
-      }
-      if (nextStatuses.includes('declined')) {
+      if (nextStatuses.includes('declined'))
         acts.push(<Button key="decline" variant="danger" icon={ThumbsDown} onClick={() => handleTransition('declined')}>{t('editor_mark_declined', 'Mark Declined')}</Button>);
-      }
-      if (status === 'accepted') {
+      if (status === 'accepted')
         acts.push(<Button key="convert" variant="primary" icon={ArrowRightCircle} onClick={handleConvertClick}>{t('editor_convert_to_invoice', 'Convert to Invoice')}</Button>);
-      }
     }
     return acts;
   })();
 
   return (
     <div className="doc-editor">
+
+      {/* ── Top header ── */}
       <header className="doc-editor-header">
         <div className="left">
           <button className="back-btn" aria-label="Go back" onClick={handleCancel}>
             <ChevronLeft size={20} />
           </button>
-          <h2>{doc.id ? t('editor_edit', 'Edit Document') : t('editor_create', 'Create Document')}</h2>
+          <h2>
+            {doc.id
+              ? t('editor_edit', 'Edit Document')
+              : type === 'quote'
+                ? t('editor_create_quote', 'New Quote')
+                : t('editor_create_invoice', 'New Invoice')}
+          </h2>
           {isPersisted && <StatusBadge status={displayStatus} />}
         </div>
         <div className="actions">
-          <div className="lang-switcher">
-            <button className={doc.language === 'en' ? 'active' : ''} onClick={() => updateDoc(d => ({...d, language: 'en'}))}>EN</button>
-            <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc(d => ({...d, language: 'de'}))}>DE</button>
-            <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc(d => ({...d, language: 'fr'}))}>FR</button>
-          </div>
           <Button variant="ghost" onClick={handleCancel}>{t('btn_cancel', 'Cancel')}</Button>
-          <Button variant="outline" icon={Eye} onClick={() => setShowPreview(!showPreview)}>
-            {showPreview ? t('editor_back_to_editor', 'Back to Editor') : t('editor_preview', 'Preview')}
-          </Button>
-          {showPreview && (
-            <Button variant="outline" onClick={handleExportPDF}>{t('editor_export_pdf', 'Export PDF')}</Button>
-          )}
           {!isLocked && (
-            <Button variant="primary" icon={Save} onClick={handleSaveWithIncrement}>{t('editor_save', 'Save Document')}</Button>
+            <Button variant="primary" icon={Save} onClick={handleSaveWithIncrement}>
+              {t('editor_save', 'Save Document')}
+            </Button>
           )}
         </div>
       </header>
 
+      {/* ── Lifecycle bar ── */}
       {lifecycleActions && lifecycleActions.length > 0 && (
-        <div className="lifecycle-bar">
-          {lifecycleActions}
-        </div>
+        <div className="lifecycle-bar">{lifecycleActions}</div>
       )}
 
-      <div className="doc-editor-body">
-        {showPreview ? (
-          <div className="preview-container">
-            <div className="preview-scale-wrap">
-              <DocumentPreview
-                doc={doc}
-                sender={settings}
-                client={clients.find(c => c.id === doc.client_id) || null}
-              />
-            </div>
-          </div>
-        ) : (
+      {/* ── Split panel ── */}
+      <div className="editor-split">
+
+        {/* ── LEFT: form ── */}
+        <div className="editor-left">
           <fieldset className="doc-main-form" disabled={isLocked}>
             {isLocked && (
               <div className="locked-banner">
@@ -384,58 +412,77 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               </div>
             )}
 
+            {/* Client */}
             <section className="form-section card">
-              <div className="section-grid">
-                <div className="input-col">
-                  <label>Client</label>
-                  <select
-                    value={doc.client_id}
-                    onChange={(e) => updateDoc(d => ({...d, client_id: e.target.value}))}
-                    className="input-field"
-                  >
-                    <option value="">{t('editor_select_client', 'Select a client...')}</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="input-col">
-                  <Input
-                    label={t('editor_doc_title', 'Document Title / Subject')}
-                    placeholder={t('editor_doc_title_placeholder', 'e.g. Website Design Project')}
-                    value={doc.title}
-                    onChange={(e) => updateDoc(d => ({...d, title: e.target.value}))}
-                  />
-                </div>
+              <div className="input-col">
+                <label>{t('editor_people', 'People')}</label>
+                <StyledSelect
+                  value={doc.client_id}
+                  onChange={(e) => updateDoc((d) => ({ ...d, client_id: e.target.value }))}
+                  placeholder={t('editor_select_client', 'Select a client...')}
+                >
+                  <option value="">{t('editor_select_client', 'Select a client...')}</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </StyledSelect>
               </div>
+            </section>
 
-              <div className="section-grid three-col">
-                <Input
-                  label={t('editor_doc_number', 'Document Number')}
-                  value={doc.number}
-                  onChange={(e) => updateDoc(d => ({...d, number: e.target.value}))}
-                />
-                <Input
-                  label={t('editor_field_date', 'Date')}
-                  type="date"
-                  value={doc.date}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                />
+            {/* Document info — Subject + dates + currency + doc number grouped */}
+            <section className="form-section card">
+              <Input
+                label={t('editor_doc_title', 'Subject')}
+                placeholder={t('editor_doc_title_placeholder', 'e.g. Website Design Project')}
+                value={doc.title}
+                onChange={(e) => updateDoc((d) => ({ ...d, title: e.target.value }))}
+              />
+              <div className="section-grid">
                 <Input
                   label={type === 'quote' ? t('editor_valid_until', 'Valid Until') : t('editor_due_date', 'Due Date')}
                   type="date"
                   value={doc.due_date}
-                  onChange={(e) => updateDoc(d => ({...d, due_date: e.target.value}))}
+                  onChange={(e) => updateDoc((d) => ({ ...d, due_date: e.target.value }))}
+                />
+                <div className="input-col">
+                  <label>{t('editor_currency', 'Currency')}</label>
+                  <StyledSelect
+                    value={doc.currency}
+                    onChange={(e) => updateDoc((d) => ({ ...d, currency: e.target.value }))}
+                  >
+                    <option value="EUR">EUR — Euro</option>
+                    <option value="USD">USD — US Dollar</option>
+                    <option value="GBP">GBP — British Pound</option>
+                    <option value="CHF">CHF — Swiss Franc</option>
+                  </StyledSelect>
+                </div>
+              </div>
+              <div className="section-grid doc-meta-row">
+                <Input
+                  label={t('editor_doc_number', 'Document Number')}
+                  value={doc.number}
+                  onChange={(e) => updateDoc((d) => ({ ...d, number: e.target.value }))}
+                />
+                <Input
+                  label={t('editor_field_date', 'Issue Date')}
+                  type="date"
+                  value={doc.date}
+                  onChange={(e) => handleDateChange(e.target.value)}
                 />
               </div>
             </section>
 
+            {/* Line items */}
             <section className="items-section card">
               <div className="items-header">
-                <h3>{t('editor_line_items', 'Line Items')}</h3>
+                <h3>{t('editor_line_items', 'Product')}</h3>
                 <div className="product-loader">
                   <FileText size={16} />
-                  <select onChange={(e) => { addProductItem(e.target.value); e.target.value = ""; }}>
+                  <select onChange={(e) => { addProductItem(e.target.value); e.target.value = ''; }}>
                     <option value="">{t('editor_add_from_products', 'Add from Products...')}</option>
-                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -445,7 +492,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <div className="col-qty">{t('col_qty', 'Qty')}</div>
                   <div className="col-rate">{t('col_rate', 'Rate')}</div>
                   <div className="col-total">{t('col_total', 'Total')}</div>
-                  <div className="col-actions"></div>
+                  <div className="col-actions" />
                 </div>
                 {doc.items.map((item) => (
                   <div key={item.id} className="item-row">
@@ -458,12 +505,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       />
                     </div>
                     <div className="col-qty">
-                      <input type="number" min="0" step="0.01" value={item.qty}
-                        onChange={(e) => updateItem(item.id, 'qty', Math.max(0, parseFloat(e.target.value) || 0))} />
+                      <input
+                        type="number" min="0" step="0.01" value={item.qty}
+                        onChange={(e) => updateItem(item.id, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                      />
                     </div>
                     <div className="col-rate">
-                      <input type="number" min="0" step="0.01" value={item.rate}
-                        onChange={(e) => updateItem(item.id, 'rate', Math.max(0, parseFloat(e.target.value) || 0))} />
+                      <input
+                        type="number" min="0" step="0.01" value={item.rate}
+                        onChange={(e) => updateItem(item.id, 'rate', Math.max(0, parseFloat(e.target.value) || 0))}
+                      />
                     </div>
                     <div className="col-total">{fmt(item.qty * item.rate)}</div>
                     <div className="col-actions">
@@ -483,31 +534,46 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   </button>
                 )}
               </div>
+              <button type="button" className="add-line-btn" onClick={() => addItem(null)}>
+                <Plus size={14} />
+                {t('editor_add_line', 'Add New Line')}
+              </button>
             </section>
 
-            <section className="bottom-section">
-              <div className="notes-area card">
+            {/* Notes */}
+            <section className="form-section card">
+              <div className="notes-area">
                 <label>{t('editor_notes_terms', 'Notes & Terms')}</label>
                 <textarea
                   placeholder={t('editor_notes_placeholder', 'Payment terms, project notes...')}
                   value={doc.notes}
-                  onChange={(e) => updateDoc(d => ({...d, notes: e.target.value}))}
+                  rows={2}
+                  onChange={(e) => {
+                    updateDoc((d) => ({ ...d, notes: e.target.value }));
+                    // auto-expand height
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
                 />
               </div>
-              <div className="totals-area card">
+            </section>
+
+            {/* Payment mode + totals */}
+            <section className="form-section card">
+              <div className="totals-area">
                 <div className="payment-mode-row">
                   <span>{t('editor_payment_mode', 'Payment mode')}</span>
                   <div className="payment-mode-toggle">
-                    <button
-                      type="button"
-                      className={!isCash ? 'active' : ''}
-                      onClick={() => isCash && togglePaymentMode()}
-                    >{t('editor_standard', 'Standard')}</button>
-                    <button
-                      type="button"
-                      className={isCash ? 'active' : ''}
-                      onClick={() => !isCash && togglePaymentMode()}
-                    >{t('editor_cash', 'Cash')}</button>
+                    <button type="button" className={!isCash ? 'active' : ''} onClick={() => isCash && togglePaymentMode()}>
+                      {t('editor_standard', 'Standard')}
+                    </button>
+                    <button type="button" className={isCash ? 'active' : ''} onClick={() => !isCash && togglePaymentMode()}>
+                      {t('editor_cash', 'Cash')}
+                    </button>
                   </div>
                 </div>
 
@@ -519,14 +585,20 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <div className="discount-config">
                     <span>{t('editor_discount', 'Discount')}</span>
                     <div className="discount-inputs">
-                      <input type="number" min="0" step="0.01" {...(doc.discount_type === '%' ? { max: '100' } : {})} value={doc.discount_value}
+                      <input
+                        type="number" min="0" step="0.01"
+                        {...(doc.discount_type === '%' ? { max: '100' } : {})}
+                        value={doc.discount_value}
                         onChange={(e) => {
                           let v = Math.max(0, parseFloat(e.target.value) || 0);
                           if (doc.discount_type === '%') v = Math.min(100, v);
-                          updateDoc(d => ({...d, discount_value: v}));
-                        }} />
-                      <select value={doc.discount_type}
-                        onChange={(e) => updateDoc(d => ({...d, discount_type: e.target.value}))}>
+                          updateDoc((d) => ({ ...d, discount_value: v }));
+                        }}
+                      />
+                      <select
+                        value={doc.discount_type}
+                        onChange={(e) => updateDoc((d) => ({ ...d, discount_type: e.target.value }))}
+                      >
                         <option value="%">%</option>
                         <option value="fixed">{t('editor_fixed', 'Fixed')}</option>
                       </select>
@@ -539,8 +611,10 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <div className="total-row">
                     <div className="tax-config">
                       <span>{t('editor_tax', 'Tax')}</span>
-                      <input type="number" min="0" step="0.01" value={doc.tax_rate}
-                        onChange={(e) => updateDoc(d => ({...d, tax_rate: Math.max(0, parseFloat(e.target.value) || 0)}))} />
+                      <input
+                        type="number" min="0" step="0.01" value={doc.tax_rate}
+                        onChange={(e) => updateDoc((d) => ({ ...d, tax_rate: Math.max(0, parseFloat(e.target.value) || 0) }))}
+                      />
                       <span>%</span>
                     </div>
                     <span>{fmt(tax)}</span>
@@ -552,14 +626,11 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <span>{fmt(total)}</span>
                 </div>
 
-                {isCash && (
-                  <div className="cash-note-badge">
-                    {settings?.[`trans_cash_note_${doc.language}`] || 'Cash sale — VAT not applicable'}
-                  </div>
-                )}
+                {/* cash note shown in preview only — no duplicate badge here */}
               </div>
             </section>
 
+            {/* Payments (paid invoices) */}
             {payments.length > 0 && (
               <section className="payments-section card">
                 <h3>{t('editor_payments', 'Payments')}</h3>
@@ -578,7 +649,9 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                         <td>{(p.paid_at || '').split('T')[0]}</td>
                         <td className="payment-method">{p.method || '—'}</td>
                         <td>{p.reference || '—'}</td>
-                        <td className="payment-amount">{p.amount.toLocaleString('de-DE', { style: 'currency', currency: p.currency || doc.currency || 'EUR' })}</td>
+                        <td className="payment-amount">
+                          {p.amount.toLocaleString('de-DE', { style: 'currency', currency: p.currency || doc.currency || 'EUR' })}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -586,8 +659,42 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               </section>
             )}
           </fieldset>
-        )}
-      </div>
+        </div>
+
+        {/* ── RIGHT: live preview ── */}
+        <div className="editor-right">
+          <div className="editor-right-header">
+            <span className="editor-right-title">{t('editor_preview', 'Preview')}</span>
+            <div className="editor-right-actions">
+              <div className="lang-switcher">
+                <button className={doc.language === 'en' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'en' }))}>EN</button>
+                <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'de' }))}>DE</button>
+                <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'fr' }))}>FR</button>
+              </div>
+              <Button variant="outline" size="sm" icon={Download} onClick={handleExportPDF}>
+                {t('editor_export_pdf', 'PDF')}
+              </Button>
+            </div>
+          </div>
+          <div className="editor-right-body" ref={rightBodyRef}>
+            <div
+              className="preview-scale-wrap"
+              style={{
+                transform: `scale(${previewScale})`,
+                marginBottom: `calc((${previewScale} - 1) * 297mm)`,
+              }}
+            >
+              <DocumentPreview
+                doc={doc}
+                sender={settings}
+                client={clients.find((c) => c.id === doc.client_id) || null}
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>{/* end editor-split */}
+
       {pendingCancel && (
         <ConfirmDialog
           title={t('editor_unsaved_title', 'Unsaved changes')}
