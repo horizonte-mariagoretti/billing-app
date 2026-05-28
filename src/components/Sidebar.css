@@ -316,3 +316,28 @@
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 150;
+    width: 264px;
+    padding: 20px 16px 16px;
+    align-items: flex-start;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Desktop collapse toggle irrelevant on mobile — hide it */
+  .sidebar-collapse-btn {
+    display: none;
+  }
+}

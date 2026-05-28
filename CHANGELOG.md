@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0] - 2026-05-28
+
+### Added
+- **Full tablet & phone responsiveness**: App now works at 768px (tablet) and 375px (phone) with graceful degradation down to 320px.
+  - **Mobile sidebar overlay**: Hamburger button in header slides a fixed-position sidebar in from the left with a dark backdrop. Tapping backdrop or any nav item closes it. Desktop collapse toggle hidden on mobile.
+  - **Breakpoints added**: 768px, 600px, 480px, 375px across 16 CSS files.
+  - **Data tables scroll horizontally**: Invoices, Quotes, Clients, Products tables wrap in scrollable containers — all columns and action buttons remain accessible.
+  - **Page headers stack vertically**: Search bar and New button stack on narrow screens (all list pages).
+  - **DocumentEditor items grid**: Drag handle column hidden below 600px; rate and qty remain editable. Padding tightened further at 480px.
+  - **Dashboard hero orbs hidden** at ≤768px (decorative elements had fixed off-screen positions).
+  - **Modals & overlays** (ConfirmDialog, ClientModal, SyncConflictModal) clamp to viewport width at ≤600px/480px.
+  - **Settings**: Body padding and tab sizing reduced at ≤600px.
+  - **GitHub Auth, Bootstrap splash**: Padding and layout adjusted for narrow screens.
+  - `min-width` on `.app-container` lowered from 480px to 320px.
+
 ## [1.3.0] - 2026-05-22
 
 ### Added

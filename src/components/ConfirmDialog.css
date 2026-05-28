@@ -36,3 +36,20 @@
   justify-content: flex-end;
   gap: var(--space-md);
 }
+
+@media (max-width: 600px) {
+  .confirm-box {
+    max-width: calc(100vw - 32px);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+
+  .confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+}

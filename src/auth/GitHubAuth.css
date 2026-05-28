@@ -284,3 +284,20 @@
 }
 
 .gh-auth-link-btn:hover { color: var(--color-text-dark-primary); }
+
+@media (max-width: 768px) {
+  .gh-auth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gh-auth-grid > .gh-auth-label:first-child {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .gh-auth-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+}

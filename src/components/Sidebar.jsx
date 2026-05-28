@@ -13,7 +13,7 @@ import { version as appVersion } from '../../package.json';
 import { useT } from '../hooks/useUiTranslations';
 import './Sidebar.css';
 
-const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggleCollapse }) => {
+const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const t = useT();
 
   const mainNav = [
@@ -35,7 +35,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
       <button
         key={item.id}
         className={`nav-item ${isActive ? 'active' : ''}`}
-        onClick={() => setView(item.id)}
+        onClick={() => { setView(item.id); onMobileClose?.(); }}
         title={collapsed ? item.label : undefined}
         aria-label={item.label}
         aria-current={isActive ? 'page' : undefined}
@@ -57,7 +57,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   return (
-    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}${isMobileOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="logo">IF</div>
         {!collapsed && (

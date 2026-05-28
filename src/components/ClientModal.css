@@ -94,3 +94,11 @@
   gap: var(--space-md);
   margin-top: var(--space-lg);
 }
+
+@media (max-width: 480px) {
+  .modal-content {
+    max-width: calc(100vw - 16px);
+    max-height: 98vh;
+    border-radius: var(--radius-lg);
+  }
+}

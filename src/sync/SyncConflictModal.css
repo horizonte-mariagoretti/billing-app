@@ -74,3 +74,14 @@
 }
 
 .sync-conflict-close:hover { color: var(--color-text-dark-primary); }
+
+@media (max-width: 480px) {
+  .sync-conflict-card {
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+  }
+
+  .sync-conflict-actions {
+    gap: var(--space-sm);
+  }
+}

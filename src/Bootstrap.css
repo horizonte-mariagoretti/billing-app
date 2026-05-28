@@ -61,3 +61,10 @@
 @keyframes boot-spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 600px) {
+  .boot-splash-card {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+}

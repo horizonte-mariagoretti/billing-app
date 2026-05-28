@@ -426,3 +426,26 @@
 .category-select-row select {
   flex: 1;
 }
+
+@media (max-width: 600px) {
+  .products-page .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .products-page .search-bar {
+    max-width: 100%;
+  }
+
+  .products-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 375px) {
+  .lang-tabs button {
+    padding: var(--space-2xs) var(--space-xs);
+    font-size: 0.75rem;
+  }
+}
