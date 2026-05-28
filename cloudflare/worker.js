@@ -1,4 +1,4 @@
-const APP_URL = 'https://hotizonte-mariagoretti.github.io/billing-app/';
+const APP_URL = 'https://horizonte-mariagoretti.github.io/billing-app/';
 
 export default {
   async fetch(request, env) {
