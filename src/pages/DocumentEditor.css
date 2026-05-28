@@ -1020,8 +1020,35 @@
   }
 }
 
+@media (max-width: 768px) {
+  .editor-right-body .pdf-container {
+    padding: 16px;
+  }
+}
+
 @media (max-width: 600px) {
   .doc-editor-header { flex-wrap: wrap; gap: var(--space-sm); }
   .doc-editor-header .actions { justify-content: flex-start; }
   .editor-left { padding: var(--space-md); }
+
+  /* Items grid: drop 16px drag handle column only; rate stays editable */
+  .items-grid-header,
+  .item-row {
+    grid-template-columns: 1fr 42px 62px 96px 52px;
+  }
+
+  .col-drag {
+    display: none;
+  }
+
+  /* Prevent product picker popup from overflowing viewport edge */
+  .product-popup {
+    max-width: min(280px, calc(100vw - 32px));
+  }
+}
+
+@media (max-width: 480px) {
+  .editor-left { padding: var(--space-sm); }
+  .doc-editor-header { padding: var(--space-sm); }
+  .lifecycle-bar { padding: var(--space-sm); gap: var(--space-xs); }
 }

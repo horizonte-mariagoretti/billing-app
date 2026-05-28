@@ -509,3 +509,16 @@
   color: #FFFFFF;
   border-color: var(--color-indigo);
 }
+
+@media (max-width: 600px) {
+  .settings-page .settings-body {
+    padding: var(--space-md);
+    min-height: auto;
+  }
+
+  .settings-page .settings-tab {
+    min-width: 80px;
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+}

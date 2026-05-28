@@ -3,7 +3,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  min-width: 480px;
+  min-width: 320px;
 }
 
 .main-content {
@@ -170,4 +170,51 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile sidebar backdrop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 149;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Hamburger toggle button — hidden on desktop */
+.hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.hamburger-btn:hover {
+  background: #F1F5F9;
+  color: var(--color-text-dark-primary);
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay { display: block; }
+
+  .hamburger-btn { display: flex; }
+
+  .content-header {
+    padding: 0 var(--space-md);
+    gap: var(--space-sm);
+    z-index: 10;
+  }
+
+  /* Sidebar is now position:fixed — main content fills full width */
+  .main-content { width: 100%; }
+
+  .content-body { padding: var(--space-md); }
 }

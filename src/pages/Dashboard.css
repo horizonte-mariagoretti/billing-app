@@ -664,3 +664,13 @@
   outline: 2px solid var(--color-indigo);
   outline-offset: 2px;
 }
+
+@media (max-width: 768px) {
+  .hero-orb-1,
+  .hero-orb-2,
+  .hero-orb-3,
+  .hero-spark-1,
+  .hero-spark-2 {
+    display: none;
+  }
+}

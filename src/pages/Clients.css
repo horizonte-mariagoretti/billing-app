@@ -8,7 +8,8 @@
   background-color: var(--color-light-surface);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-card);
 }
 
@@ -148,3 +149,13 @@
   background-color: #F1F5F9;
 }
 
+@media (max-width: 600px) {
+  .clients-page .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clients-page .search-bar {
+    max-width: 100%;
+  }
+}
