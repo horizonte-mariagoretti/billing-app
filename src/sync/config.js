@@ -2,7 +2,7 @@
 // via the auth UI (Advanced section) and persisted in localStorage.
 
 export const DEFAULT_DATA_REPO = {
-  owner: 'hotizonte-mariagoretti',
+  owner: 'horizonte-mariagoretti',
   repo: 'billing-app-database',
   branch: 'main',
   dbPath: 'data/invoiceforge.db',
