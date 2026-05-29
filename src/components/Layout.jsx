@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import BottomNav from './BottomNav';
 import SyncStatusBadge from '../sync/SyncStatusBadge';
 import './Layout.css';
 
@@ -56,6 +57,10 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
           {children}
         </div>
       </main>
+      {/* Bottom nav: hidden in editor (noPadding) mode and on desktop via CSS */}
+      {!noPadding && (
+        <BottomNav currentView={currentView} setView={setView} />
+      )}
     </div>
   );
 };

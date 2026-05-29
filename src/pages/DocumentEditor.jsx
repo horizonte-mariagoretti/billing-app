@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
-  Download, GripVertical
+  Download, GripVertical, Edit3, Eye
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -86,6 +86,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const [draggingIdx, setDraggingIdx] = useState(null);
   const dragItemIdx = useRef(null);
   const dragOverIdx = useRef(null);
+  const [mobilePanel, setMobilePanel] = useState('form');
 
   // Auto-resize description textarea — called on mount (ref cb) and on change
   const resizeTextarea = useCallback((el) => {
@@ -385,6 +386,21 @@ ${previewCss}
     }
   };
 
+  // Recalculate preview scale when switching to the preview tab on mobile
+  useEffect(() => {
+    if (mobilePanel !== 'preview') return;
+    const el = rightBodyRef.current;
+    if (!el) return;
+    const A4_PX = 794;
+    const PADDING = 64;
+    requestAnimationFrame(() => {
+      const width = el.clientWidth;
+      if (width > 0) {
+        setPreviewScale(parseFloat(Math.min(1, Math.max(0.3, (width - PADDING) / A4_PX)).toFixed(4)));
+      }
+    });
+  }, [mobilePanel]);
+
   const nextStatuses = allowedNextStatuses(doc);
 
   const lifecycleActions = (() => {
@@ -445,8 +461,30 @@ ${previewCss}
         <div className="lifecycle-bar">{lifecycleActions}</div>
       )}
 
+      {/* ── Mobile: form / preview toggle (visible at ≤960px via CSS) ── */}
+      <div className="mobile-panel-tabs" role="tablist" aria-label="Editor panel">
+        <button
+          role="tab"
+          aria-selected={mobilePanel === 'form'}
+          className={`mobile-panel-tab${mobilePanel === 'form' ? ' active' : ''}`}
+          onClick={() => setMobilePanel('form')}
+        >
+          <Edit3 size={15} />
+          Edit
+        </button>
+        <button
+          role="tab"
+          aria-selected={mobilePanel === 'preview'}
+          className={`mobile-panel-tab${mobilePanel === 'preview' ? ' active' : ''}`}
+          onClick={() => setMobilePanel('preview')}
+        >
+          <Eye size={15} />
+          Preview
+        </button>
+      </div>
+
       {/* ── Split panel ── */}
-      <div className="editor-split">
+      <div className={`editor-split${mobilePanel === 'preview' ? ' mobile-preview-active' : ''}`}>
 
         {/* ── LEFT: form ── */}
         <div className="editor-left">

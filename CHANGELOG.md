@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.0] - 2026-05-29
+
+### Added
+- **Bottom navigation bar** (mobile ≤768px): Fixed 5-tab bar (Dashboard, Invoices, Quotes, Clients, Settings) at the bottom of the screen — thumb-reachable primary navigation. Hidden in document editor mode. Active tab shown with indigo color and bolder icon stroke.
+- **Document editor form/preview toggle** (≤960px): Sticky tab bar above the split panel lets users switch between "Edit" and "Preview" modes on mobile/tablet — eliminates mandatory scroll through a 540px PDF preview.
+
+### Changed
+- **iOS auto-zoom prevention**: All inputs, textareas, and selects are forced to `font-size: 16px` on mobile (≤768px). iOS Safari zooms the viewport when an input has `font-size < 16px` — this was the #1 iOS usability bug.
+- **Items grid — stacked card layout** (≤540px): Line-item rows now use a 2-row grid (name full-width on row 1; qty × rate = total + delete on row 2). Inputs get visible borders and min-height of 36px. Lifecycle action bar switches to horizontal scroll so buttons stay full-size.
+- **Tables reflow to card layout on mobile** (≤640px): Invoice and client tables reflow to compact 2-row cards at small widths — no more horizontal scrolling through 7 columns. Columns shown: Number + Client + Status + Amount + Actions (invoices); Name + Email + Phone + DocCount + Actions (clients).
+- **Products table overflow fix**: Changed `overflow: hidden` → `overflow-x: auto` on `.products-table-container` — content was silently clipped on mobile.
+- **Touch targets**: All buttons raised to 44×44px minimum on mobile (btn-sm → 40px, btn-md → 44px, hamburger → 44px, back button → 44px, sidebar nav items → 44px min-height). Action buttons in card views get 36×36px targets.
+- **Safe-area insets**: Sidebar footer and content-body bottom padding now respect `env(safe-area-inset-bottom)` for iPhone notch/home-indicator devices.
+- **Tap delay**: `touch-action: manipulation` added globally to all interactive elements — eliminates 300ms tap delay on older mobile browsers.
+
 ## [1.4.0] - 2026-05-28
 
 ### Added

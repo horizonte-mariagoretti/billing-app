@@ -211,10 +211,28 @@
     padding: 0 var(--space-md);
     gap: var(--space-sm);
     z-index: 10;
+    /* 44px minimum height for touch */
+    min-height: 56px;
   }
 
   /* Sidebar is now position:fixed — main content fills full width */
   .main-content { width: 100%; }
 
-  .content-body { padding: var(--space-md); }
+  /* Regular pages: add bottom room for the bottom nav bar */
+  .content-body {
+    padding: var(--space-md);
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Editor fills wall-to-wall — bottom nav hidden in editor, reset padding */
+  .content-body--no-padding {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Minimum 44px tap target for hamburger */
+  .hamburger-btn {
+    width: 44px;
+    height: 44px;
+  }
 }

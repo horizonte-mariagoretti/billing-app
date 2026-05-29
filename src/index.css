@@ -223,3 +223,22 @@ input[type=number] { -moz-appearance: textfield; }
 @media (max-width: 480px) {
   .page-header { flex-wrap: wrap; }
 }
+
+/* ── Mobile UX: iOS auto-zoom prevention ─────────────────────────────────────
+   iOS Safari zooms the viewport when a focused input has font-size < 16px.
+   This overrides all per-component sizes at mobile widths.              */
+@media (max-width: 768px) {
+  input:not([type='hidden']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* 300ms tap delay elimination */
+  button,
+  a,
+  [role='button'],
+  label {
+    touch-action: manipulation;
+  }
+}
