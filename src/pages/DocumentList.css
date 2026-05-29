@@ -144,3 +144,73 @@
     max-width: 100%;
   }
 }
+
+/* ── Mobile card view: reflow table rows as 2-row cards ── */
+@media (max-width: 640px) {
+  .doc-table-container {
+    overflow-x: visible;
+    border-radius: var(--radius-md);
+  }
+
+  .doc-table,
+  .doc-table tbody {
+    display: block;
+  }
+
+  .doc-table thead {
+    display: none;
+  }
+
+  .doc-table tr {
+    display: grid;
+    /* col1: text info | col2: status+amount | col3: actions */
+    grid-template-columns: 1fr auto 52px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "num    status act"
+      "client amount act";
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-light-theme);
+    column-gap: 10px;
+    row-gap: 3px;
+    align-items: center;
+  }
+
+  .doc-table tr:last-child { border-bottom: none; }
+  .doc-table tr:hover { background: #F8FAFC; }
+
+  /* col order: 1=number, 2=client, 3=title, 4=date, 5=status, 6=amount, 7=actions */
+  .doc-table td:nth-child(1) { grid-area: num;    padding: 0; border: none; }
+  .doc-table td:nth-child(2) { grid-area: client; padding: 0; border: none; font-size: 0.85rem; }
+  .doc-table td:nth-child(3) { display: none; }
+  .doc-table td:nth-child(4) { display: none; }
+  .doc-table td:nth-child(5) { grid-area: status; padding: 0; border: none; justify-self: end; }
+  .doc-table td:nth-child(6) { grid-area: amount; padding: 0; border: none; text-align: right; font-size: 0.95rem; }
+  .doc-table td:nth-child(7) {
+    grid-area: act;
+    padding: 0;
+    border: none;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-left: 1px solid var(--color-border-light-theme);
+    padding-left: 10px;
+  }
+
+  /* Touch-friendly action buttons in card view */
+  .doc-table .action-btns {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .doc-table .action-btns button {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

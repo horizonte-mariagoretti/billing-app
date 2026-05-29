@@ -998,6 +998,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Mobile panel toggle tabs (form ↔ preview) ── */
+.mobile-panel-tabs {
+  display: none;
+}
+
 /* ── Responsive: stack at ≤ 960px ── */
 @media (max-width: 960px) {
   .editor-split {
@@ -1018,11 +1023,77 @@
   .doc-editor-header {
     padding: var(--space-md);
   }
+
+  /* Show the form/preview toggle tabs */
+  .mobile-panel-tabs {
+    display: flex;
+    background: var(--color-light-surface);
+    border-bottom: 1px solid var(--color-border-light-theme);
+    flex-shrink: 0;
+  }
+
+  .mobile-panel-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px var(--space-md);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-dark-tertiary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .mobile-panel-tab.active {
+    color: var(--color-indigo);
+    border-bottom-color: var(--color-indigo);
+  }
+
+  .mobile-panel-tab:not(.active):hover {
+    color: var(--color-text-dark-secondary);
+  }
+
+  /* Hide the inactive panel — collapse height to 0 so ResizeObserver still
+     calculates the correct width for preview scaling */
+  .editor-split:not(.mobile-preview-active) .editor-right {
+    height: 0;
+    min-height: 0 !important;
+    overflow: hidden;
+    flex: 0 0 0;
+    border-bottom: none;
+  }
+
+  .editor-split.mobile-preview-active .editor-left {
+    display: none;
+  }
+
+  .editor-split.mobile-preview-active {
+    overflow-y: auto;
+  }
+
+  .editor-split.mobile-preview-active .editor-right {
+    min-height: 0;
+    flex: 1;
+    height: auto;
+  }
 }
 
 @media (max-width: 768px) {
   .editor-right-body .pdf-container {
     padding: 16px;
+  }
+
+  /* Larger back button for touch */
+  .back-btn {
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -1031,24 +1102,97 @@
   .doc-editor-header .actions { justify-content: flex-start; }
   .editor-left { padding: var(--space-md); }
 
-  /* Items grid: drop 16px drag handle column only; rate stays editable */
-  .items-grid-header,
-  .item-row {
-    grid-template-columns: 1fr 42px 62px 96px 52px;
-  }
-
-  .col-drag {
-    display: none;
-  }
-
   /* Prevent product picker popup from overflowing viewport edge */
   .product-popup {
     max-width: min(280px, calc(100vw - 32px));
   }
 }
 
+/* ── Items grid: stacked 2-row card layout on small phones ── */
+@media (max-width: 540px) {
+  /* Hide the desktop column header — layout is self-evident in card form */
+  .items-grid-header {
+    display: none;
+  }
+
+  .item-row {
+    display: grid;
+    /* desc spans cols 1-4 in row 1; qty/rate/total fill cols 2-4 in row 2 */
+    grid-template-columns: auto 70px 90px auto 48px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "desc desc desc desc act"
+      ".    qty  rate total act";
+    min-width: unset;
+    column-gap: 6px;
+    row-gap: 2px;
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .col-drag  { display: none; }
+  .col-desc  { grid-area: desc; }
+  .col-qty   { grid-area: qty; }
+  .col-rate  { grid-area: rate; }
+  .col-total {
+    grid-area: total;
+    padding-top: 5px;
+    font-size: 0.88rem;
+    min-width: 0;
+  }
+  .col-actions {
+    grid-area: act;
+    align-self: stretch;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 0;
+  }
+
+  /* Larger, visible inputs — iOS 16px prevents zoom */
+  .item-name-input {
+    min-height: 38px;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border-light-theme) !important;
+    border-radius: var(--radius-sm) !important;
+    background-color: #F8FAFC !important;
+  }
+
+  /* Always show description hint slot on mobile (no hover) */
+  .item-row:not(:focus-within) .item-desc-textarea:placeholder-shown {
+    height: 1.5em !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
+  /* Number inputs: visible box + sufficient width for touch */
+  .item-row input[type='number'] {
+    border: 1px solid var(--color-border-light-theme) !important;
+    border-radius: var(--radius-sm) !important;
+    background-color: #F8FAFC !important;
+    padding: 6px 4px !important;
+    min-height: 36px;
+    text-align: right;
+  }
+
+  /* Larger action buttons */
+  .row-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Lifecycle bar: horizontal scroll so buttons stay full-size */
+  .lifecycle-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding: var(--space-xs) var(--space-sm);
+    gap: var(--space-xs);
+    scrollbar-width: none;
+  }
+  .lifecycle-bar::-webkit-scrollbar { display: none; }
+}
+
 @media (max-width: 480px) {
   .editor-left { padding: var(--space-sm); }
   .doc-editor-header { padding: var(--space-sm); }
-  .lifecycle-bar { padding: var(--space-sm); gap: var(--space-xs); }
 }

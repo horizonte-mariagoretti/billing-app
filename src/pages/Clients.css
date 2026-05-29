@@ -159,3 +159,74 @@
     max-width: 100%;
   }
 }
+
+/* ── Mobile card view: reflow client table rows as 2-row cards ── */
+@media (max-width: 640px) {
+  .clients-table-container {
+    overflow-x: visible;
+    border-radius: var(--radius-md);
+  }
+
+  .clients-table,
+  .clients-table tbody {
+    display: block;
+  }
+
+  .clients-table thead {
+    display: none;
+  }
+
+  .clients-table tr {
+    display: grid;
+    /* col1: name+email | col2: phone+docs | col3: actions */
+    grid-template-columns: 1fr auto 52px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "name  docs act"
+      "email phone act";
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-light-theme);
+    column-gap: 10px;
+    row-gap: 3px;
+    align-items: center;
+  }
+
+  .clients-table tr:last-child { border-bottom: none; }
+  .clients-table tr:hover td { background: transparent; }
+  .clients-table tr:hover { background: #F8FAFC; }
+
+  /* col order: 1=name, 2=email, 3=phone, 4=city, 5=vat, 6=doc-count, 7=actions */
+  .clients-table td:nth-child(1) { grid-area: name;  padding: 0; border: none; }
+  .clients-table td:nth-child(2) { grid-area: email; padding: 0; border: none; font-size: 0.82rem; color: var(--color-text-dark-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+  .clients-table td:nth-child(3) { grid-area: phone; padding: 0; border: none; font-size: 0.82rem; color: var(--color-text-dark-tertiary); justify-self: end; }
+  .clients-table td:nth-child(4) { display: none; }
+  .clients-table td:nth-child(5) { display: none; }
+  .clients-table td:nth-child(6) { grid-area: docs;  padding: 0; border: none; font-size: 0.8rem; justify-self: end; }
+  .clients-table td:nth-child(7) {
+    grid-area: act;
+    padding: 0;
+    border: none;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-left: 1px solid var(--color-border-light-theme);
+    padding-left: 10px;
+  }
+
+  /* Touch-friendly action buttons in card view */
+  .clients-table .action-btns {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .clients-table .action-btns button {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

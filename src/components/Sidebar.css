@@ -336,6 +336,17 @@
     transform: translateX(0);
   }
 
+  /* Safe-area for notch/home-indicator phones */
+  .sidebar-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Larger touch targets for nav items on mobile */
+  .nav-item {
+    padding: 13px 12px;
+    min-height: 44px;
+  }
+
   /* Desktop collapse toggle irrelevant on mobile — hide it */
   .sidebar-collapse-btn {
     display: none;

@@ -94,3 +94,9 @@
   font-size: 1rem;
   height: 48px;
 }
+
+/* Mobile: enforce 44px minimum touch target on all button sizes */
+@media (max-width: 768px) {
+  .btn-sm { height: 40px; padding: var(--space-xs) var(--space-md); }
+  .btn-md { height: 44px; }
+}
