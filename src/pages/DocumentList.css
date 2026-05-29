@@ -63,7 +63,7 @@
 
 .doc-table th {
   padding: var(--space-md) var(--space-lg);
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-tertiary);
   font-size: 0.75rem;
   font-weight: 600;
@@ -83,7 +83,7 @@
 }
 
 .doc-table tr:hover td {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
 }
 
 .doc-num {
@@ -177,7 +177,7 @@
   }
 
   .doc-table tr:last-child { border-bottom: none; }
-  .doc-table tr:hover { background: #F8FAFC; }
+  .doc-table tr:hover { background: var(--color-surface-muted); }
 
   /* col order: 1=number, 2=client, 3=title, 4=date, 5=status, 6=amount, 7=actions */
   .doc-table td:nth-child(1) { grid-area: num;    padding: 0; border: none; }

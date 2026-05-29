@@ -74,7 +74,7 @@
 }
 
 .datepicker-icon-btn:hover {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-secondary);
 }
 

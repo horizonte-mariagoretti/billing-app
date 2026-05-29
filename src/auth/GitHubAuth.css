@@ -78,7 +78,7 @@
 
 .gh-auth-input {
   width: 100%;
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: 10px;
   padding: 12px 14px;

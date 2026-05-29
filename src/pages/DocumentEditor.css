@@ -38,7 +38,7 @@
 }
 
 .back-btn:hover {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-primary);
   border-color: #CBD5E1;
 }
@@ -281,7 +281,7 @@
 .item-row.dragging { opacity: 0.4; }
 
 .item-row:hover {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   border-radius: var(--radius-md);
   border-bottom-color: transparent;
 }
@@ -573,7 +573,7 @@
 }
 
 .notes-area textarea {
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
   resize: none;          /* height controlled by JS auto-expand */
@@ -667,7 +667,7 @@
 .discount-inputs {
   display: flex;
   align-items: center;
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
   padding: 2px;
@@ -692,7 +692,7 @@
 
 .tax-config input {
   width: 40px;
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
   text-align: center;
@@ -732,7 +732,7 @@
 .editor-left select.input-field {
   appearance: none;
   -webkit-appearance: none;
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
@@ -768,7 +768,7 @@
 
 .client-search-input {
   width: 100%;
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
   color: var(--color-text-dark-primary);
@@ -832,7 +832,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
   color: var(--color-text-dark-primary);
@@ -1154,7 +1154,7 @@
     padding: 6px 8px;
     border: 1px solid var(--color-border-light-theme) !important;
     border-radius: var(--radius-sm) !important;
-    background-color: #F8FAFC !important;
+    background-color: var(--color-surface-muted) !important;
   }
 
   /* Always show description hint slot on mobile (no hover) */
@@ -1168,7 +1168,7 @@
   .item-row input[type='number'] {
     border: 1px solid var(--color-border-light-theme) !important;
     border-radius: var(--radius-sm) !important;
-    background-color: #F8FAFC !important;
+    background-color: var(--color-surface-muted) !important;
     padding: 6px 4px !important;
     min-height: 36px;
     text-align: right;

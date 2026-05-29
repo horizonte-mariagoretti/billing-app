@@ -33,7 +33,7 @@
 }
 
 .btn-secondary {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-primary);
   border: 1px solid var(--color-border-light-theme);
 }
@@ -50,7 +50,7 @@
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-primary);
   border-color: #CBD5E1;
 }

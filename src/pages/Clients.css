@@ -30,7 +30,7 @@
 
 .clients-table th {
   padding: var(--space-md) var(--space-lg);
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: var(--color-text-dark-tertiary);
   font-size: 0.75rem;
   font-weight: 600;
@@ -51,7 +51,7 @@
 }
 
 .clients-table tr:hover td {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
 }
 
 .client-name-cell {
@@ -193,7 +193,7 @@
 
   .clients-table tr:last-child { border-bottom: none; }
   .clients-table tr:hover td { background: transparent; }
-  .clients-table tr:hover { background: #F8FAFC; }
+  .clients-table tr:hover { background: var(--color-surface-muted); }
 
   /* col order: 1=name, 2=email, 3=phone, 4=city, 5=vat, 6=doc-count, 7=actions */
   .clients-table td:nth-child(1) { grid-area: name;  padding: 0; border: none; }
