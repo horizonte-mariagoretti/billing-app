@@ -54,6 +54,7 @@
   /* ── Light theme surfaces ── */
   --color-light-bg: #F1F5F9;
   --color-light-surface: #FFFFFF;
+  --color-surface-muted: #F8FAFC;
 
   /* ── Light theme text ── */
   --color-text-dark-primary: #0F172A;

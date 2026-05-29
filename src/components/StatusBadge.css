@@ -12,7 +12,7 @@
 }
 
 .status-draft {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: #475569;
   border-color: #E2E8F0;
 }
@@ -48,7 +48,7 @@
 }
 
 .status-cancelled {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: #94A3B8;
   border-color: #E2E8F0;
   text-decoration: line-through;
@@ -61,7 +61,7 @@
 }
 
 .status-unknown {
-  background-color: #F8FAFC;
+  background-color: var(--color-surface-muted);
   color: #94A3B8;
   border-color: #E2E8F0;
 }

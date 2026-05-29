@@ -348,7 +348,7 @@
   transition: all var(--transition-fast);
 }
 .time-pill:hover {
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   color: var(--color-text-dark-primary);
 }
 .time-pill.active {
@@ -461,7 +461,7 @@
 }
 
 .recent-item:hover {
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
 }
 
 .recent-avatar {
@@ -585,7 +585,7 @@
   font-size: 0.88rem;
   cursor: pointer;
   border: 1px solid var(--color-border-light-theme);
-  background: #F8FAFC;
+  background: var(--color-surface-muted);
   color: var(--color-text-dark-primary);
   transition: all var(--transition-fast);
 }

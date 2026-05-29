@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.2] - 2026-05-29
+
+### Changed
+- Replaced all hardcoded `#F8FAFC` color values (41 occurrences across 13 CSS files) with `var(--color-surface-muted)`. Design token `--color-surface-muted: #F8FAFC` is now the single source of truth for the light muted surface color.
+
 ## [1.5.0] - 2026-05-29
 
 ### Added
