@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   pdf: {
     generate: (options) => ipcRenderer.invoke('generate-pdf', options),
+    save:     (options) => ipcRenderer.invoke('save-pdf-bytes', options),
   },
   versions: {
     node: () => process.versions.node,

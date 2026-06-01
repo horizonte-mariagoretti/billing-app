@@ -9,9 +9,12 @@
     "build": "vite build",
     "build:web": "cross-env BUILD_TARGET=web vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
     "better-sqlite3": "^12.9.0",
     "html2pdf.js": "^0.10.2",
     "libphonenumber-js": "^1.12.42",
