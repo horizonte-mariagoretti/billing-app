@@ -1,9 +1,9 @@
 import React from 'react';
 import { Document, Page, View, Text, StyleSheet, Font } from '@react-pdf/renderer';
-import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff2';
-import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff2';
-import InterBold from '@fontsource/inter/files/inter-latin-700-normal.woff2';
-import OutfitBold from '@fontsource/outfit/files/outfit-latin-700-normal.woff2';
+import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff';
+import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff';
+import InterBold from '@fontsource/inter/files/inter-latin-700-normal.woff';
+import OutfitBold from '@fontsource/outfit/files/outfit-latin-700-normal.woff';
 
 Font.register({
   family: 'Inter',
