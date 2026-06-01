@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.6] - 2026-06-01
+
+### Changed
+- **Hero card gradient**: Richer three-stop red gradient (`#1C0504 → #BB1615 → #8E1210` at 150°) with warm radial highlight at top-right and deep shadow at bottom-left for a dimensional, premium look.
+- **Chart area fill**: Fixed missed indigo hex in SVG `linearGradient` — now fades from `rgba(187,22,21,0.18)` to transparent, matching the CI red line.
+
 ## [1.5.5] - 2026-06-01
 
 ### Changed

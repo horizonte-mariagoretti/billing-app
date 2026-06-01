@@ -412,8 +412,8 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
           >
             <defs>
               <linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="rgba(99,102,241,0.30)" />
-                <stop offset="100%" stopColor="rgba(99,102,241,0)" />
+                <stop offset="0%" stopColor="rgba(187,22,21,0.18)" />
+                <stop offset="100%" stopColor="rgba(187,22,21,0)" />
               </linearGradient>
             </defs>
             {/* Y-axis tick labels + grid lines */}

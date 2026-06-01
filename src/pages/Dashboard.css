@@ -17,9 +17,9 @@
   gap: var(--space-xl);
   padding: 36px 40px;
   background:
-    radial-gradient(circle at 85% 20%, rgba(255, 150, 130, 0.18) 0%, transparent 55%),
-    radial-gradient(circle at 15% 80%, rgba(60, 5, 5, 0.30) 0%, transparent 55%),
-    linear-gradient(135deg, var(--color-primary) 0%, #6B0A09 100%);
+    radial-gradient(circle at 78% 18%, rgba(255, 200, 180, 0.22) 0%, transparent 50%),
+    radial-gradient(circle at 8% 85%, rgba(40, 0, 0, 0.55) 0%, transparent 45%),
+    linear-gradient(150deg, #1C0504 0%, var(--color-primary) 65%, #8E1210 100%);
   border-radius: 24px;
   color: #FFFFFF;
   overflow: hidden;
