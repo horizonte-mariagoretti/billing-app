@@ -23,9 +23,9 @@
 }
 
 .input-field:focus {
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
   background-color: var(--color-light-surface);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .input-field.has-error {

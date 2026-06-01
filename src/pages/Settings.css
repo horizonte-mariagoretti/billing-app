@@ -96,9 +96,9 @@
 }
 
 .settings-page .settings-tab.active {
-  background: var(--color-indigo-alpha);
-  color: var(--color-indigo);
-  border-color: rgba(99, 102, 241, 0.15);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border-faint);
   font-weight: 600;
 }
 
@@ -109,7 +109,7 @@
   top: 25%;
   height: 50%;
   width: 3px;
-  background-color: var(--color-indigo);
+  background-color: var(--color-primary);
   border-radius: 0 4px 4px 0;
 }
 
@@ -199,9 +199,9 @@
 .settings-page .input-field:focus,
 .settings-page .settings-textarea:focus {
   outline: none;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
   background-color: var(--input-focus-bg);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .settings-page .settings-textarea {
@@ -241,8 +241,8 @@
 }
 
 .settings-page .preview-badge {
-  background: var(--color-text-dark-primary);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-primary-border);
   padding: 6px 14px;
   border-radius: 10px;
   display: flex;
@@ -253,7 +253,7 @@
 }
 
 .settings-page .preview-badge span {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -261,7 +261,7 @@
 }
 
 .settings-page .preview-badge strong {
-  color: var(--color-indigo);
+  color: var(--color-primary);
   font-family: var(--font-mono);
   font-size: 0.95rem;
   letter-spacing: 0.04em;
@@ -311,8 +311,8 @@
 }
 
 .settings-page .pattern-row.drag-over {
-  border-color: var(--color-indigo);
-  background: var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  background: var(--color-primary-alpha);
 }
 
 .settings-page .row-actions {
@@ -364,9 +364,9 @@
 }
 
 .settings-page .row-btn.add:hover {
-  background: var(--color-indigo-alpha);
-  color: var(--color-indigo);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border-strong);
 }
 
 .settings-page .add-first-btn {
@@ -385,9 +385,9 @@
 }
 
 .settings-page .add-first-btn:hover {
-  background: var(--color-indigo-alpha);
-  border-color: rgba(99, 102, 241, 0.3);
-  color: var(--color-indigo);
+  background: var(--color-primary-alpha);
+  border-color: var(--color-primary-border-mid);
+  color: var(--color-primary);
 }
 
 /* Translation table */
@@ -454,7 +454,7 @@
 
 .settings-page .col-lang input:focus {
   background: var(--color-light-surface);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: var(--color-primary-border-mid);
   outline: none;
 }
 
@@ -505,9 +505,9 @@
 }
 
 .settings-page .lang-toggle-btn.active {
-  background: var(--color-indigo);
+  background: var(--color-primary);
   color: #FFFFFF;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
 }
 
 @media (max-width: 600px) {

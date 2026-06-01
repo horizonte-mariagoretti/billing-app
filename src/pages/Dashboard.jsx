@@ -412,8 +412,8 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
           >
             <defs>
               <linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="rgba(99,102,241,0.30)" />
-                <stop offset="100%" stopColor="rgba(99,102,241,0)" />
+                <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
               </linearGradient>
             </defs>
             {/* Y-axis tick labels + grid lines */}
@@ -441,7 +441,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                 <path
                   d={linePath}
                   fill="none"
-                  stroke="#6366F1"
+                  style={{ stroke: 'var(--color-primary)' }}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -451,7 +451,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                     key={i}
                     cx={p.x} cy={p.y} r="4"
                     fill="#FFFFFF"
-                    stroke="#6366F1"
+                    style={{ stroke: 'var(--color-primary)' }}
                     strokeWidth="2"
                   />
                 ))}

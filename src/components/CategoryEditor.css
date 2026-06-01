@@ -34,7 +34,7 @@
 
 .cat-input:focus {
   outline: none;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
 }
 
 .cat-color-picker {
@@ -87,14 +87,14 @@
 }
 
 .cat-btn-save {
-  background: var(--color-indigo);
+  background: var(--color-primary);
   color: #FFFFFF;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
 }
 
 .cat-btn-save:hover:not(:disabled) {
-  background: var(--color-indigo-hover);
-  border-color: var(--color-indigo-hover);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .cat-btn-save:disabled {

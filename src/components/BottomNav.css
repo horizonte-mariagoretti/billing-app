@@ -49,14 +49,14 @@
   }
 
   .bottom-nav-item.active {
-    color: var(--color-indigo);
+    color: var(--color-primary);
   }
 
   .bottom-nav-item.active svg {
-    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.35));
+    filter: drop-shadow(0 0 6px var(--color-primary-shadow));
   }
 
   .bottom-nav-item:active {
-    background: var(--color-indigo-alpha);
+    background: var(--color-primary-alpha);
   }
 }

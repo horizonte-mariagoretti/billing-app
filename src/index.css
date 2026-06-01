@@ -64,11 +64,21 @@
   /* ── Light theme borders ── */
   --color-border-light-theme: #E2E8F0;
 
-  /* ── Indigo accent ── */
-  --color-indigo: #6366F1;
-  --color-indigo-hover: #4F46E5;
-  --color-indigo-alpha: rgba(99, 102, 241, 0.10);
-  --color-indigo-soft: rgba(99, 102, 241, 0.04);
+  /* ── Brand red accent ── */
+  --color-primary: #BB1615;
+  --color-primary-hover: #9A1211;
+  --color-primary-soft: rgba(187, 22, 21, 0.04);
+  --color-primary-faint: rgba(187, 22, 21, 0.06);
+  --color-primary-alpha: rgba(187, 22, 21, 0.10);
+  --color-primary-bg-active: rgba(187, 22, 21, 0.18);
+  --color-primary-bg-hover: rgba(187, 22, 21, 0.22);
+  --color-primary-border: rgba(187, 22, 21, 0.25);
+  --color-primary-border-faint: rgba(187, 22, 21, 0.15);
+  --color-primary-border-light: rgba(187, 22, 21, 0.2);
+  --color-primary-border-mid: rgba(187, 22, 21, 0.3);
+  --color-primary-shadow: rgba(187, 22, 21, 0.35);
+  --color-primary-border-strong: rgba(187, 22, 21, 0.4);
+  --color-primary-hero: rgba(187, 22, 21, 0.45);
 
   /* ── Shadows ── */
   --shadow-card: none;
@@ -84,9 +94,9 @@
   --stat-pink-bg: #FDF2F8;
   --stat-pink-icon: #EC4899;
 
-  /* ── Refined sidebar dark ── */
-  --color-sidebar-bg: #1A1D23;
-  --color-sidebar-indigo-alpha: rgba(99, 102, 241, 0.12);
+  /* ── Sidebar ── */
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-primary-alpha: rgba(187, 22, 21, 0.12);
 }
 
 * {
@@ -115,7 +125,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 2px solid var(--color-indigo);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -131,7 +141,7 @@ input, textarea, select {
 }
 
 input:focus, textarea:focus, select:focus {
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
 }
 
 /* Scrollbar */
@@ -183,7 +193,7 @@ input:focus, textarea:focus, select:focus {
 .search-bar svg {
   position: absolute;
   left: var(--space-sm);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   pointer-events: none;
 }
 

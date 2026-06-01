@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.5.8] - 2026-06-01
+
+### Fixed
+- **Settings preview badge**: Dark background (`var(--color-text-dark-primary)`) replaced with `var(--color-light-surface)` white; label color fixed from dark-mode `--color-text-tertiary` to light-theme `--color-text-dark-tertiary`. Border upgraded to `--color-primary-border`.
+- **Stray dark-mode tokens**: `var(--color-text-tertiary)` (dark theme `#8B8F98`) replaced with `var(--color-text-dark-tertiary)` in `ClientModal.css`, `Clients.css`, `Products.css`, and the global search bar icon in `index.css`.
+
+## [1.5.7] - 2026-06-01
+
+### Changed
+- **Token hygiene**: Last two hardcoded `rgba(187,22,21,...)` values (SVG chart gradient stops in `Dashboard.jsx`) replaced with `stopColor="var(--color-primary)"` + `stopOpacity`. Zero hardcoded primary red hex/rgba values now exist outside `index.css`.
+
+## [1.5.6] - 2026-06-01
+
+### Changed
+- **Hero card gradient**: Richer three-stop red gradient (`#1C0504 → #BB1615 → #8E1210` at 150°) with warm radial highlight at top-right and deep shadow at bottom-left for a dimensional, premium look.
+- **Chart area fill**: Fixed missed indigo hex in SVG `linearGradient` — now fades from `rgba(187,22,21,0.18)` to transparent, matching the CI red line.
+
+## [1.5.5] - 2026-06-01
+
+### Changed
+- **Gradient purge**: Removed all CSS gradients except the hero dashboard card. Buttons, avatars, sidebar CTA, auth pages, bootstrap splash — all now use flat `var(--color-primary)` red.
+- **Hero card — red-only**: Replaced the indigo/purple radial overlay and dark-grey base with a pure red-to-dark-red gradient (`#BB1615 → #6B0A09`). Decorative orb-1 (was blue/indigo) updated to red tones.
+- Dropped unused `--color-primary-gradient` token from `index.css`.
+
+## [1.5.4] - 2026-06-01
+
+### Changed
+- **Token rename**: All `--color-indigo-*` design tokens renamed to `--color-primary-*` across 17 files. Removes the confusing colour-name coupling from the semantic token layer — changing the hex value no longer requires reasoning about "indigo".
+- **Sidebar light theme**: Sidebar background changed from dark (`#1A1D23`) to white (`#FFFFFF`). All text, border, and background values inside the sidebar flipped to light-theme equivalents using existing design tokens. Active nav item now uses `--color-primary-alpha` tint with `--color-primary` text instead of white-on-red.
+
+## [1.5.3] - 2026-06-01
+
+### Changed
+- **CI color rebrand**: Replaced indigo/purple brand color (`#6366F1`) with corporate identity red (`#BB1615`) across the entire app. All 15+ unique alpha and gradient values are now fully tokenised in `index.css` under `--color-indigo-*` tokens — a single variable change updates every tint, border, shadow, and gradient app-wide. Dashboard stat card colors unchanged.
+
 ## [1.5.2] - 2026-05-29
 
 ### Changed

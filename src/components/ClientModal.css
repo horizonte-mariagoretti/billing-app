@@ -4,7 +4,7 @@
 .val-icon.val-invalid { color: var(--color-danger); }
 .val-icon.val-error   { color: var(--color-warning); }
 .val-icon.val-pending {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   animation: cm-spin 1s linear infinite;
 }
 @keyframes cm-spin { to { transform: rotate(360deg); } }

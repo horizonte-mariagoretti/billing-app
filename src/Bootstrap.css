@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #F1F5F9 0%, #E0E7FF 100%);
+  background: var(--color-light-bg);
   padding: 24px;
 }
 
@@ -32,7 +32,7 @@
 .boot-splash-card.error button {
   margin-top: 14px;
   margin-right: 8px;
-  background: var(--color-indigo);
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -53,7 +53,7 @@
   height: 36px;
   border-radius: 50%;
   border: 3px solid var(--color-border-light-theme);
-  border-top-color: var(--color-indigo);
+  border-top-color: var(--color-primary);
   animation: boot-spin 0.9s linear infinite;
   margin: 0 auto 14px;
 }
