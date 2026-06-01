@@ -110,6 +110,21 @@ ipcMain.handle('generate-pdf', async (event, { html, filename }) => {
   }
 });
 
+// Save pre-rendered PDF bytes (from @react-pdf/renderer in the renderer process)
+ipcMain.handle('save-pdf-bytes', async (event, { bytes, filename }) => {
+  const safeName = path.basename(String(filename || 'document').replace(/\.pdf$/i, '')) + '.pdf';
+  const { filePath } = await dialog.showSaveDialog({
+    title: 'Save PDF',
+    defaultPath: safeName,
+    filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+  });
+  if (filePath) {
+    fs.writeFileSync(filePath, Buffer.from(bytes));
+    return filePath;
+  }
+  return null;
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,

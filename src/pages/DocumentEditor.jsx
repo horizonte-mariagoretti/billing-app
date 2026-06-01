@@ -14,7 +14,8 @@ import useSettings from '../hooks/useSettings';
 import { useT } from '../hooks/useUiTranslations';
 import { effectiveStatus, allowedNextStatuses } from '../utils/documentLifecycle';
 import DocumentPreview from './DocumentPreview';
-import previewCss from './DocumentPreview.css?inline';
+import DocumentPdfTemplate from './DocumentPdfTemplate';
+import { pdf } from '@react-pdf/renderer';
 import ClientModal from '../components/ClientModal';
 import DatePicker from '../components/DatePicker';
 import './DocumentEditor.css';
@@ -343,43 +344,27 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     v.toLocaleString('de-DE', { style: 'currency', currency: doc.currency || 'EUR' });
 
   const handleExportPDF = async () => {
-    const previewEl = document.querySelector('.pdf-container');
-    if (!previewEl) {
-      setTransitionError('Preview not found. Please try again.');
-      return;
-    }
-    const filename = `${doc.type}-${doc.number || 'draft'}.pdf`;
-    const html = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <style>
-${previewCss}
-      html, body { margin: 0; padding: 0; background: #fff; }
-      .pdf-container { padding: 0; background: none; }
-      .pdf-page { box-shadow: none; }
-    </style>
-  </head>
-  <body>${previewEl.outerHTML}</body>
-</html>`;
+    const filename = `${doc.number || `${doc.type}-draft`}.pdf`;
+    const client = clients.find((c) => c.id === doc.client_id) || null;
     try {
-      if (window.electron?.pdf?.generate) {
-        await window.electron.pdf.generate({ html, filename });
+      const blob = await pdf(
+        <DocumentPdfTemplate doc={doc} sender={settings} client={client} />
+      ).toBlob();
+
+      if (window.electron?.pdf?.save) {
+        // Electron: send bytes via IPC → native Save dialog
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        await window.electron.pdf.save({ bytes, filename });
       } else {
-        const printWin = window.open('', '_blank', 'width=900,height=700');
-        if (!printWin) {
-          setTransitionError('Pop-up blocked. Allow pop-ups for this site, then try again.');
-          return;
-        }
-        printWin.document.open();
-        printWin.document.write(html);
-        printWin.document.close();
-        printWin.addEventListener('load', () => {
-          setTimeout(() => { printWin.focus(); printWin.print(); }, 400);
-        });
+        // Web: trigger direct download — no popup, no print dialog
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     } catch (err) {
       setTransitionError(`PDF export failed: ${err.message}`);
