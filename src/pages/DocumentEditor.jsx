@@ -88,6 +88,10 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const dragItemIdx = useRef(null);
   const dragOverIdx = useRef(null);
   const [mobilePanel, setMobilePanel] = useState('form');
+  const [pdfExportOpen, setPdfExportOpen] = useState(false);
+  const [pdfExportName, setPdfExportName] = useState('');
+  const [pdfExportLang, setPdfExportLang] = useState('en');
+  const pdfExportInputRef = useRef(null);
 
   // Auto-resize description textarea — called on mount (ref cb) and on change
   const resizeTextarea = useCallback((el) => {
@@ -343,20 +347,41 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const fmt = (v) =>
     v.toLocaleString('de-DE', { style: 'currency', currency: doc.currency || 'EUR' });
 
-  const handleExportPDF = async () => {
-    const filename = `${doc.number || `${doc.type}-draft`}.pdf`;
+  const openPdfExportDialog = () => {
+    const defaultName = doc.number || `${doc.type}-draft`;
+    setPdfExportName(defaultName);
+    setPdfExportLang(doc.language || 'en');
+    setPdfExportOpen(true);
+    setTimeout(() => pdfExportInputRef.current?.select(), 50);
+  };
+
+  const handleExportPDF = async (customName, exportLang) => {
+    const filename = `${(customName || '').trim() || doc.number || `${doc.type}-draft`}.pdf`;
     const client = clients.find((c) => c.id === doc.client_id) || null;
+    const exportDoc = exportLang && exportLang !== doc.language
+      ? { ...doc, language: exportLang }
+      : doc;
+    setPdfExportOpen(false);
     try {
       const blob = await pdf(
-        <DocumentPdfTemplate doc={doc} sender={settings} client={client} />
+        <DocumentPdfTemplate doc={exportDoc} sender={settings} client={client} />
       ).toBlob();
 
       if (window.electron?.pdf?.save) {
-        // Electron: send bytes via IPC → native Save dialog
+        // Electron: send bytes via IPC → native OS Save dialog
         const bytes = new Uint8Array(await blob.arrayBuffer());
         await window.electron.pdf.save({ bytes, filename });
+      } else if (window.showSaveFilePicker) {
+        // Web (Chrome/Edge): File System Access API → native OS Save dialog
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'PDF Files', accept: { 'application/pdf': ['.pdf'] } }],
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
       } else {
-        // Web: trigger direct download — no popup, no print dialog
+        // Web fallback (Firefox/Safari): direct download to Downloads folder
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -367,7 +392,9 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         URL.revokeObjectURL(url);
       }
     } catch (err) {
-      setTransitionError(`PDF export failed: ${err.message}`);
+      if (err.name !== 'AbortError') {
+        setTransitionError(`PDF export failed: ${err.message}`);
+      }
     }
   };
 
@@ -859,7 +886,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'de' }))}>DE</button>
                 <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'fr' }))}>FR</button>
               </div>
-              <Button variant="outline" size="sm" icon={Download} onClick={handleExportPDF}>
+              <Button variant="outline" size="sm" icon={Download} onClick={openPdfExportDialog}>
                 {t('editor_export_pdf', 'PDF')}
               </Button>
             </div>
@@ -912,6 +939,66 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
           onConfirm={() => setTransitionError(null)}
           onCancel={() => setTransitionError(null)}
         />
+      )}
+
+      {pdfExportOpen && (
+        <div
+          className="confirm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pdf-export-title"
+          onKeyDown={(e) => { if (e.key === 'Escape') setPdfExportOpen(false); }}
+        >
+          <div className="confirm-box pdf-export-dialog">
+            <h3 id="pdf-export-title">{t('pdf_export_title', 'Export PDF')}</h3>
+            <div className="pdf-export-field">
+              <label className="pdf-export-label" htmlFor="pdf-export-name">
+                {t('pdf_export_filename', 'File name')}
+              </label>
+              <div className="pdf-export-input-row">
+                <input
+                  id="pdf-export-name"
+                  ref={pdfExportInputRef}
+                  className="pdf-export-input"
+                  type="text"
+                  value={pdfExportName}
+                  onChange={(e) => setPdfExportName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleExportPDF(pdfExportName, pdfExportLang); }}
+                  spellCheck={false}
+                />
+                <span className="pdf-export-ext">.pdf</span>
+              </div>
+              {!window.electron && !window.showSaveFilePicker && (
+                <p className="pdf-export-note">
+                  {t('pdf_export_web_note', 'File will be saved to your Downloads folder.')}
+                </p>
+              )}
+            </div>
+            <div className="pdf-export-field">
+              <span className="pdf-export-label">{t('pdf_export_language', 'Language')}</span>
+              <div className="pdf-export-lang-row">
+                {['en', 'de', 'fr'].map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    className={`pdf-export-lang-btn${pdfExportLang === l ? ' active' : ''}`}
+                    onClick={() => setPdfExportLang(l)}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="confirm-actions">
+              <Button variant="ghost" onClick={() => setPdfExportOpen(false)}>
+                {t('btn_cancel', 'Cancel')}
+              </Button>
+              <Button variant="primary" icon={Download} onClick={() => handleExportPDF(pdfExportName, pdfExportLang)}>
+                {t('pdf_export_save', 'Export')}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1196,3 +1196,93 @@
   .editor-left { padding: var(--space-sm); }
   .doc-editor-header { padding: var(--space-sm); }
 }
+
+/* ── PDF Export Dialog ── */
+.pdf-export-dialog {
+  max-width: 480px;
+}
+
+.pdf-export-field {
+  margin-bottom: var(--space-xl);
+}
+
+.pdf-export-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: var(--space-sm);
+}
+
+.pdf-export-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.pdf-export-input-row:focus-within {
+  border-color: var(--color-primary);
+}
+
+.pdf-export-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-dark-primary);
+  background: var(--color-light-surface);
+  min-width: 0;
+}
+
+.pdf-export-ext {
+  padding: 8px 12px 8px 4px;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-dark-tertiary);
+  background: var(--color-light-surface);
+  user-select: none;
+}
+
+.pdf-export-note {
+  margin-top: var(--space-sm);
+  font-size: 0.82rem;
+  color: var(--color-text-dark-tertiary);
+  line-height: 1.4;
+}
+
+.pdf-export-lang-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.pdf-export-lang-btn {
+  padding: 6px 18px;
+  border: 1.5px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background: var(--color-light-surface);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.pdf-export-lang-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pdf-export-lang-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
