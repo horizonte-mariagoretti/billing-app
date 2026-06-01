@@ -17,9 +17,9 @@
   gap: var(--space-xl);
   padding: 36px 40px;
   background:
-    radial-gradient(circle at 85% 20%, var(--color-primary-hero) 0%, transparent 55%),
-    radial-gradient(circle at 15% 80%, rgba(168, 85, 247, 0.30) 0%, transparent 55%),
-    linear-gradient(135deg, #1A1D23 0%, #24273A 100%);
+    radial-gradient(circle at 85% 20%, rgba(255, 150, 130, 0.18) 0%, transparent 55%),
+    radial-gradient(circle at 15% 80%, rgba(60, 5, 5, 0.30) 0%, transparent 55%),
+    linear-gradient(135deg, var(--color-primary) 0%, #6B0A09 100%);
   border-radius: 24px;
   color: #FFFFFF;
   overflow: hidden;
@@ -128,8 +128,8 @@
 .hero-orb-1 {
   right: 220px; top: 28px;
   width: 76px; height: 76px;
-  background: linear-gradient(135deg, #C7D2FE, #818CF8);
-  color: #1E1B4B;
+  background: linear-gradient(135deg, #FCA5A5, #DC2626);
+  color: #7A0000;
 }
 .hero-orb-2 {
   right: 110px; top: 90px;
@@ -468,8 +468,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #EEF2FF, #C7D2FE);
-  color: #4338CA;
+  background: var(--color-primary);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -526,7 +526,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 22px;
-  background: var(--color-primary-gradient);
+  background: var(--color-primary);
   color: #FFFFFF;
   border-radius: 20px;
 }

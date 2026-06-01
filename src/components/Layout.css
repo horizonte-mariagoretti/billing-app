@@ -142,7 +142,7 @@
 .header-avatar {
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: var(--color-primary-gradient);
+  background: var(--color-primary);
   color: #FFFFFF;
   display: flex;
   align-items: center;

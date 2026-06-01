@@ -1,7 +1,7 @@
 .gh-auth-page {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #F1F5F9 0%, #E0E7FF 100%);
+  background: var(--color-light-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +31,7 @@
   height: 56px;
   margin: 0 auto 14px;
   border-radius: 16px;
-  background: var(--color-primary-gradient);
+  background: var(--color-primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -214,7 +214,7 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(135deg, #FFF5F5, #FFF0F0);
+  background: #FFF5F5;
   border: 1px solid var(--color-primary-border);
   padding: 14px 22px;
   border-radius: 14px;
@@ -251,7 +251,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--color-primary-gradient);
+  background: var(--color-primary);
   color: #fff;
   border-radius: 12px;
   padding: 12px 18px;

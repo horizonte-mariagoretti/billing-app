@@ -67,7 +67,6 @@
   /* ── Brand red accent ── */
   --color-primary: #BB1615;
   --color-primary-hover: #9A1211;
-  --color-primary-gradient: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   --color-primary-soft: rgba(187, 22, 21, 0.04);
   --color-primary-faint: rgba(187, 22, 21, 0.06);
   --color-primary-alpha: rgba(187, 22, 21, 0.10);

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.5] - 2026-06-01
+
+### Changed
+- **Gradient purge**: Removed all CSS gradients except the hero dashboard card. Buttons, avatars, sidebar CTA, auth pages, bootstrap splash — all now use flat `var(--color-primary)` red.
+- **Hero card — red-only**: Replaced the indigo/purple radial overlay and dark-grey base with a pure red-to-dark-red gradient (`#BB1615 → #6B0A09`). Decorative orb-1 (was blue/indigo) updated to red tones.
+- Dropped unused `--color-primary-gradient` token from `index.css`.
+
 ## [1.5.4] - 2026-06-01
 
 ### Changed
