@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.8] - 2026-06-01
+
+### Fixed
+- **Settings preview badge**: Dark background (`var(--color-text-dark-primary)`) replaced with `var(--color-light-surface)` white; label color fixed from dark-mode `--color-text-tertiary` to light-theme `--color-text-dark-tertiary`. Border upgraded to `--color-primary-border`.
+- **Stray dark-mode tokens**: `var(--color-text-tertiary)` (dark theme `#8B8F98`) replaced with `var(--color-text-dark-tertiary)` in `ClientModal.css`, `Clients.css`, `Products.css`, and the global search bar icon in `index.css`.
+
+## [1.5.7] - 2026-06-01
+
+### Changed
+- **Token hygiene**: Last two hardcoded `rgba(187,22,21,...)` values (SVG chart gradient stops in `Dashboard.jsx`) replaced with `stopColor="var(--color-primary)"` + `stopOpacity`. Zero hardcoded primary red hex/rgba values now exist outside `index.css`.
+
 ## [1.5.6] - 2026-06-01
 
 ### Changed

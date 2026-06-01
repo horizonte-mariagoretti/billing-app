@@ -281,7 +281,7 @@
 
 .cat-chip-add {
   border-style: dashed;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
 }
 
 .cat-chip-add:hover {
@@ -371,7 +371,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   cursor: pointer;
   transition: all var(--transition-fast);
 }

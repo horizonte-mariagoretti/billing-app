@@ -112,7 +112,7 @@
 }
 
 .val-icon.val-pending {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   animation: spin 1s linear infinite;
 }
 

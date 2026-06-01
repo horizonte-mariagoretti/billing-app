@@ -193,7 +193,7 @@ input:focus, textarea:focus, select:focus {
 .search-bar svg {
   position: absolute;
   left: var(--space-sm);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   pointer-events: none;
 }
 

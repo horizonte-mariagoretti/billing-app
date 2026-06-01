@@ -241,8 +241,8 @@
 }
 
 .settings-page .preview-badge {
-  background: var(--color-text-dark-primary);
-  border: 1px solid var(--color-primary-border-light);
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-primary-border);
   padding: 6px 14px;
   border-radius: 10px;
   display: flex;
@@ -253,7 +253,7 @@
 }
 
 .settings-page .preview-badge span {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-dark-tertiary);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
