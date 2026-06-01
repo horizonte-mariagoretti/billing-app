@@ -67,7 +67,7 @@
   font-family: 'Outfit', sans-serif;
   font-size: 22pt;
   font-weight: 700;
-  color: var(--color-primary);
+  color: #BB1615;
   letter-spacing: -0.5px;
   line-height: 1.1;
   text-transform: uppercase;
@@ -155,8 +155,8 @@
   color: #333;
   margin-bottom: 7mm;
   padding: 6px 10px;
-  background: var(--color-surface-muted);
-  border-left: 3px solid var(--color-primary);
+  background: #F8FAFC;
+  border-left: 3px solid #BB1615;
 }
 
 /* ── Line items table ── */
@@ -281,7 +281,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--color-primary);
+  background: #BB1615;
   color: #fff;
   font-weight: 700;
   font-size: 11pt;
@@ -379,7 +379,8 @@
 
   /* Color preservation */
   .pdf-total-bar,
-  .pdf-subject {
+  .pdf-subject,
+  .pdf-doc-type {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
