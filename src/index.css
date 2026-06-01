@@ -64,11 +64,22 @@
   /* ── Light theme borders ── */
   --color-border-light-theme: #E2E8F0;
 
-  /* ── Indigo accent ── */
-  --color-indigo: #6366F1;
-  --color-indigo-hover: #4F46E5;
-  --color-indigo-alpha: rgba(99, 102, 241, 0.10);
-  --color-indigo-soft: rgba(99, 102, 241, 0.04);
+  /* ── Brand red accent ── */
+  --color-indigo: #BB1615;
+  --color-indigo-hover: #9A1211;
+  --color-indigo-gradient: linear-gradient(135deg, var(--color-indigo), var(--color-indigo-hover));
+  --color-indigo-soft: rgba(187, 22, 21, 0.04);
+  --color-indigo-faint: rgba(187, 22, 21, 0.06);
+  --color-indigo-alpha: rgba(187, 22, 21, 0.10);
+  --color-indigo-bg-active: rgba(187, 22, 21, 0.18);
+  --color-indigo-bg-hover: rgba(187, 22, 21, 0.22);
+  --color-indigo-border: rgba(187, 22, 21, 0.25);
+  --color-indigo-border-faint: rgba(187, 22, 21, 0.15);
+  --color-indigo-border-light: rgba(187, 22, 21, 0.2);
+  --color-indigo-border-mid: rgba(187, 22, 21, 0.3);
+  --color-indigo-shadow: rgba(187, 22, 21, 0.35);
+  --color-indigo-border-strong: rgba(187, 22, 21, 0.4);
+  --color-indigo-hero: rgba(187, 22, 21, 0.45);
 
   /* ── Shadows ── */
   --shadow-card: none;
@@ -86,7 +97,7 @@
 
   /* ── Refined sidebar dark ── */
   --color-sidebar-bg: #1A1D23;
-  --color-sidebar-indigo-alpha: rgba(99, 102, 241, 0.12);
+  --color-sidebar-indigo-alpha: rgba(187, 22, 21, 0.12);
 }
 
 * {

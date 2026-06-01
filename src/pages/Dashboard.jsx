@@ -441,7 +441,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                 <path
                   d={linePath}
                   fill="none"
-                  stroke="#6366F1"
+                  style={{ stroke: 'var(--color-indigo)' }}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -451,7 +451,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                     key={i}
                     cx={p.x} cy={p.y} r="4"
                     fill="#FFFFFF"
-                    stroke="#6366F1"
+                    style={{ stroke: 'var(--color-indigo)' }}
                     strokeWidth="2"
                   />
                 ))}

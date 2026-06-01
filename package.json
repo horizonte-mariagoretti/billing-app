@@ -1,7 +1,7 @@
 {
   "name": "billing-app",
   "private": true,
-  "version": "1.5.2",
+  "version": "1.5.3",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

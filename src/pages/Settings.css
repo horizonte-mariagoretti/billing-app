@@ -98,7 +98,7 @@
 .settings-page .settings-tab.active {
   background: var(--color-indigo-alpha);
   color: var(--color-indigo);
-  border-color: rgba(99, 102, 241, 0.15);
+  border-color: var(--color-indigo-border-faint);
   font-weight: 600;
 }
 
@@ -242,7 +242,7 @@
 
 .settings-page .preview-badge {
   background: var(--color-text-dark-primary);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid var(--color-indigo-border-light);
   padding: 6px 14px;
   border-radius: 10px;
   display: flex;
@@ -366,7 +366,7 @@
 .settings-page .row-btn.add:hover {
   background: var(--color-indigo-alpha);
   color: var(--color-indigo);
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--color-indigo-border-strong);
 }
 
 .settings-page .add-first-btn {
@@ -386,7 +386,7 @@
 
 .settings-page .add-first-btn:hover {
   background: var(--color-indigo-alpha);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: var(--color-indigo-border-mid);
   color: var(--color-indigo);
 }
 
@@ -454,7 +454,7 @@
 
 .settings-page .col-lang input:focus {
   background: var(--color-light-surface);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: var(--color-indigo-border-mid);
   outline: none;
 }
 

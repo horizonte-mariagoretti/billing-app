@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.3] - 2026-06-01
+
+### Changed
+- **CI color rebrand**: Replaced indigo/purple brand color (`#6366F1`) with corporate identity red (`#BB1615`) across the entire app. All 15+ unique alpha and gradient values are now fully tokenised in `index.css` under `--color-indigo-*` tokens — a single variable change updates every tint, border, shadow, and gradient app-wide. Dashboard stat card colors unchanged.
+
 ## [1.5.2] - 2026-05-29
 
 ### Changed

@@ -303,7 +303,7 @@
 
 .item-name-input:focus {
   outline: none;
-  background-color: rgba(99, 102, 241, 0.06);
+  background-color: var(--color-indigo-faint);
 }
 
 .item-name-input::placeholder { color: var(--color-text-dark-tertiary); }
@@ -341,7 +341,7 @@
 
 .item-row .item-desc-textarea:focus {
   outline: none;
-  background-color: rgba(99, 102, 241, 0.06);
+  background-color: var(--color-indigo-faint);
 }
 .item-row .item-desc-textarea::placeholder { color: var(--color-text-dark-tertiary); font-style: italic; }
 
@@ -388,7 +388,7 @@
 .item-row input[type="number"]:focus {
   outline: none;
   box-shadow: none;
-  background-color: rgba(99, 102, 241, 0.06);
+  background-color: var(--color-indigo-faint);
 }
 
 
@@ -413,7 +413,7 @@
 
 .row-action-btn.add:hover {
   color: var(--color-indigo);
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--color-indigo-border-strong);
   background-color: var(--color-indigo-alpha);
 }
 
@@ -719,7 +719,7 @@
   margin-top: var(--space-sm);
   padding: 6px 10px;
   background-color: var(--color-indigo-alpha);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  border: 1px solid var(--color-indigo-border);
   border-radius: var(--radius-sm);
   color: var(--color-indigo);
   font-size: 0.78rem;
