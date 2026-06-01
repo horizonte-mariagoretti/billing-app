@@ -67,7 +67,7 @@
   font-family: 'Outfit', sans-serif;
   font-size: 22pt;
   font-weight: 700;
-  color: var(--color-indigo);
+  color: var(--color-primary);
   letter-spacing: -0.5px;
   line-height: 1.1;
   text-transform: uppercase;
@@ -156,7 +156,7 @@
   margin-bottom: 7mm;
   padding: 6px 10px;
   background: var(--color-surface-muted);
-  border-left: 3px solid var(--color-indigo);
+  border-left: 3px solid var(--color-primary);
 }
 
 /* ── Line items table ── */
@@ -281,7 +281,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--color-indigo);
+  background: var(--color-primary);
   color: #fff;
   font-weight: 700;
   font-size: 11pt;

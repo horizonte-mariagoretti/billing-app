@@ -17,18 +17,18 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--color-indigo);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 /* Variants */
 .btn-primary {
-  background-color: var(--color-indigo);
+  background-color: var(--color-primary);
   color: #FFFFFF;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-indigo-hover);
+  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 

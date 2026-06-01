@@ -15,15 +15,15 @@
 
 .sync-badge[disabled] { opacity: 0.85; }
 .sync-badge:not([disabled]):hover {
-  background: var(--color-indigo-alpha);
-  color: var(--color-indigo);
-  border-color: var(--color-indigo-border-mid);
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border-mid);
   cursor: pointer;
 }
 
 .sync-idle    { color: var(--color-text-dark-tertiary); }
 .sync-dirty   { color: #B45309; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.06); }
-.sync-saving  { color: var(--color-indigo); border-color: var(--color-indigo-border-mid); background: var(--color-indigo-alpha); }
+.sync-saving  { color: var(--color-primary); border-color: var(--color-primary-border-mid); background: var(--color-primary-alpha); }
 .sync-saved   { color: #047857; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.08); }
 .sync-conflict{ color: #B91C1C; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08); }
 .sync-error   { color: #B91C1C; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.08); }

@@ -67,8 +67,8 @@
 
 .header-search:focus-within {
   background: #FFFFFF;
-  border-color: var(--color-indigo);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .header-search > svg {
@@ -105,8 +105,8 @@
 }
 
 .header-search-filter:hover {
-  border-color: var(--color-indigo);
-  color: var(--color-indigo);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .header-icon-btn {
@@ -142,7 +142,7 @@
 .header-avatar {
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: var(--color-indigo-gradient);
+  background: var(--color-primary-gradient);
   color: #FFFFFF;
   display: flex;
   align-items: center;

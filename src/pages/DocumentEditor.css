@@ -303,7 +303,7 @@
 
 .item-name-input:focus {
   outline: none;
-  background-color: var(--color-indigo-faint);
+  background-color: var(--color-primary-faint);
 }
 
 .item-name-input::placeholder { color: var(--color-text-dark-tertiary); }
@@ -341,7 +341,7 @@
 
 .item-row .item-desc-textarea:focus {
   outline: none;
-  background-color: var(--color-indigo-faint);
+  background-color: var(--color-primary-faint);
 }
 .item-row .item-desc-textarea::placeholder { color: var(--color-text-dark-tertiary); font-style: italic; }
 
@@ -388,7 +388,7 @@
 .item-row input[type="number"]:focus {
   outline: none;
   box-shadow: none;
-  background-color: var(--color-indigo-faint);
+  background-color: var(--color-primary-faint);
 }
 
 
@@ -412,9 +412,9 @@
 }
 
 .row-action-btn.add:hover {
-  color: var(--color-indigo);
-  border-color: var(--color-indigo-border-strong);
-  background-color: var(--color-indigo-alpha);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border-strong);
+  background-color: var(--color-primary-alpha);
 }
 
 .row-action-btn.delete:hover {
@@ -439,9 +439,9 @@
 }
 
 .add-item-btn:hover {
-  border-color: var(--color-indigo);
-  color: var(--color-indigo);
-  background-color: var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: var(--color-primary-alpha);
 }
 
 /* ── Items footer — Add New Line + Aus Produkten side by side ── */
@@ -459,7 +459,7 @@
   gap: 6px;
   background: transparent;
   border: none;
-  color: var(--color-indigo);
+  color: var(--color-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -547,8 +547,8 @@
 }
 
 .product-popup-item:hover {
-  background-color: var(--color-indigo-alpha);
-  color: var(--color-indigo);
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
 }
 
 .product-popup-empty {
@@ -592,8 +592,8 @@
 .notes-area textarea:focus {
   outline: none;
   background: var(--color-light-surface);
-  border-color: var(--color-indigo);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 /* ── Payment mode ── */
@@ -633,7 +633,7 @@
 }
 
 .payment-mode-toggle button.active {
-  background-color: var(--color-indigo);
+  background-color: var(--color-primary);
   color: #FFFFFF;
 }
 
@@ -712,16 +712,16 @@
 }
 
 .total-row.grand-total span:last-child {
-  color: var(--color-indigo);
+  color: var(--color-primary);
 }
 
 .cash-note-badge {
   margin-top: var(--space-sm);
   padding: 6px 10px;
-  background-color: var(--color-indigo-alpha);
-  border: 1px solid var(--color-indigo-border);
+  background-color: var(--color-primary-alpha);
+  border: 1px solid var(--color-primary-border);
   border-radius: var(--radius-sm);
-  color: var(--color-indigo);
+  color: var(--color-primary);
   font-size: 0.78rem;
   font-style: italic;
   text-align: center;
@@ -751,8 +751,8 @@
 .editor-left select.input-field:focus {
   outline: none;
   background-color: var(--color-light-surface);
-  border-color: var(--color-indigo);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .editor-left select:hover,
@@ -788,8 +788,8 @@
 .client-search-input:focus {
   outline: none;
   background-color: var(--color-light-surface);
-  border-color: var(--color-indigo);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .client-search-wrap .ss-dropdown { min-width: 100%; }
@@ -798,7 +798,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-indigo) !important;
+  color: var(--color-primary) !important;
   font-weight: 500;
 }
 
@@ -852,8 +852,8 @@
 
 .ss-root.ss-open .ss-trigger {
   background-color: var(--color-light-surface);
-  border-color: var(--color-indigo);
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .ss-trigger > span {
@@ -904,20 +904,20 @@
 }
 
 .ss-option:hover {
-  background-color: var(--color-indigo-alpha);
-  color: var(--color-indigo);
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
 }
 
 .ss-option--selected {
-  color: var(--color-indigo);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
-.ss-check { color: var(--color-indigo); flex-shrink: 0; }
+.ss-check { color: var(--color-primary); flex-shrink: 0; }
 
 .ss-option--focused {
-  background-color: var(--color-indigo-alpha);
-  color: var(--color-indigo);
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
 }
 
 .ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }
@@ -944,7 +944,7 @@
 }
 
 .lang-switcher button.active {
-  background-color: var(--color-indigo);
+  background-color: var(--color-primary);
   color: #FFFFFF;
 }
 
@@ -1052,8 +1052,8 @@
   }
 
   .mobile-panel-tab.active {
-    color: var(--color-indigo);
-    border-bottom-color: var(--color-indigo);
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
   }
 
   .mobile-panel-tab:not(.active):hover {

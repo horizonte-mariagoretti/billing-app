@@ -31,7 +31,7 @@
   height: 56px;
   margin: 0 auto 14px;
   border-radius: 16px;
-  background: var(--color-indigo-gradient);
+  background: var(--color-primary-gradient);
   color: #fff;
   display: flex;
   align-items: center;
@@ -90,9 +90,9 @@
 
 .gh-auth-input:focus {
   outline: none;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
 }
 
 .gh-auth-advanced { font-size: 0.85rem; }
@@ -102,7 +102,7 @@
   font-weight: 500;
   padding: 4px 0;
 }
-.gh-auth-advanced summary:hover { color: var(--color-indigo); }
+.gh-auth-advanced summary:hover { color: var(--color-primary); }
 
 .gh-auth-grid {
   display: grid;
@@ -164,7 +164,7 @@
 }
 
 .gh-auth-help a {
-  color: var(--color-indigo);
+  color: var(--color-primary);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -215,7 +215,7 @@
   align-items: center;
   gap: 12px;
   background: linear-gradient(135deg, #FFF5F5, #FFF0F0);
-  border: 1px solid var(--color-indigo-border);
+  border: 1px solid var(--color-primary-border);
   padding: 14px 22px;
   border-radius: 14px;
 }
@@ -225,13 +225,13 @@
   font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: var(--color-indigo);
+  color: var(--color-primary);
   background: none;
   padding: 0;
 }
 
 .device-code-copy {
-  background: var(--color-sidebar-indigo-alpha);
+  background: var(--color-sidebar-primary-alpha);
   border: none;
   border-radius: 8px;
   width: 32px;
@@ -239,19 +239,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-indigo);
+  color: var(--color-primary);
   cursor: pointer;
   transition: background var(--transition-fast);
 }
 
-.device-code-copy:hover { background: var(--color-indigo-bg-hover); }
+.device-code-copy:hover { background: var(--color-primary-bg-hover); }
 
 .device-open-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--color-indigo-gradient);
+  background: var(--color-primary-gradient);
   color: #fff;
   border-radius: 12px;
   padding: 12px 18px;

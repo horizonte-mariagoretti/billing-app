@@ -220,8 +220,8 @@
 }
 
 .lang-tabs button.active {
-  color: var(--color-indigo);
-  background-color: var(--color-indigo-alpha);
+  color: var(--color-primary);
+  background-color: var(--color-primary-alpha);
 }
 
 /* Categories strip */
@@ -260,9 +260,9 @@
 }
 
 .cat-chip.active {
-  background-color: var(--color-indigo);
+  background-color: var(--color-primary);
   color: #FFFFFF;
-  border-color: var(--color-indigo);
+  border-color: var(--color-primary);
 }
 
 .cat-chip-dot {
@@ -285,8 +285,8 @@
 }
 
 .cat-chip-add:hover {
-  border-color: var(--color-indigo);
-  color: var(--color-indigo);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .manage-categories-toggle {

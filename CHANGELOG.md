@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.4] - 2026-06-01
+
+### Changed
+- **Token rename**: All `--color-indigo-*` design tokens renamed to `--color-primary-*` across 17 files. Removes the confusing colour-name coupling from the semantic token layer — changing the hex value no longer requires reasoning about "indigo".
+- **Sidebar light theme**: Sidebar background changed from dark (`#1A1D23`) to white (`#FFFFFF`). All text, border, and background values inside the sidebar flipped to light-theme equivalents using existing design tokens. Active nav item now uses `--color-primary-alpha` tint with `--color-primary` text instead of white-on-red.
+
 ## [1.5.3] - 2026-06-01
 
 ### Changed
