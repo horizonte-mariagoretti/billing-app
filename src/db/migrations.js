@@ -475,6 +475,20 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 8,
+    up: (exec) => {
+      exec(`INSERT OR IGNORE INTO ui_translations (key, value_de, value_en) VALUES
+        ('pdf_export_title','PDF exportieren','Export PDF'),
+        ('pdf_export_filename','Dateiname','File name'),
+        ('pdf_export_web_note','Datei wird im Downloads-Ordner gespeichert.','File will be saved to your Downloads folder.'),
+        ('pdf_export_language','Sprache','Language'),
+        ('pdf_export_save','Exportieren','Export'),
+        ('editor_pdf_export_failed','PDF-Export fehlgeschlagen','PDF export failed'),
+        ('editor_transition_failed','Statuswechsel fehlgeschlagen','Transition failed');
+      `);
+    },
+  },
 ];
 
 // adapter shape:
@@ -493,4 +507,4 @@ export function runMigrations(adapter) {
   }
 }
 
-export const TARGET_SCHEMA_VERSION = 7;
+export const TARGET_SCHEMA_VERSION = 8;

@@ -249,7 +249,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         setPayments(refreshed);
       }
     } catch (err) {
-      setTransitionError(`Transition failed: ${err.message}`);
+      setTransitionError(`${t('editor_transition_failed', 'Transition failed')}: ${err.message}`);
     }
   };
 
@@ -393,7 +393,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setTransitionError(`PDF export failed: ${err.message}`);
+        setTransitionError(`${t('editor_pdf_export_failed', 'PDF export failed')}: ${err.message}`);
       }
     }
   };

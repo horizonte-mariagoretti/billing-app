@@ -485,6 +485,20 @@ if (getVersion() < 7) {
   setVersion(7);
 }
 
+// Migration 8: PDF export dialog and error message translations
+if (getVersion() < 8) {
+  db.exec(`INSERT OR IGNORE INTO ui_translations (key, value_de, value_en) VALUES
+    ('pdf_export_title','PDF exportieren','Export PDF'),
+    ('pdf_export_filename','Dateiname','File name'),
+    ('pdf_export_web_note','Datei wird im Downloads-Ordner gespeichert.','File will be saved to your Downloads folder.'),
+    ('pdf_export_language','Sprache','Language'),
+    ('pdf_export_save','Exportieren','Export'),
+    ('editor_pdf_export_failed','PDF-Export fehlgeschlagen','PDF export failed'),
+    ('editor_transition_failed','Statuswechsel fehlgeschlagen','Transition failed');
+  `);
+  setVersion(8);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
