@@ -1,5 +1,23 @@
 import React from 'react';
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Font } from '@react-pdf/renderer';
+import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff2';
+import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff2';
+import InterBold from '@fontsource/inter/files/inter-latin-700-normal.woff2';
+import OutfitBold from '@fontsource/outfit/files/outfit-latin-700-normal.woff2';
+
+Font.register({
+  family: 'Inter',
+  fonts: [
+    { src: InterRegular, fontWeight: 400 },
+    { src: InterSemiBold, fontWeight: 600 },
+    { src: InterBold, fontWeight: 700 },
+  ],
+});
+
+Font.register({
+  family: 'Outfit',
+  fonts: [{ src: OutfitBold, fontWeight: 700 }],
+});
 
 // ── Label dictionaries ────────────────────────────────────────────────────────
 const L = {
@@ -62,26 +80,28 @@ const fmtDate = (iso) => {
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  primary:   '#BB1615',
-  border:    '#E2E8F0',
-  borderFaint: '#F0F0F0',
-  textMain:  '#111111',
-  textSec:   '#444444',
-  textMuted: '#888888',
-  textDark:  '#333333',
-  textDim:   '#555555',
+  primary:      '#BB1615',
+  border:       '#E2E8F0',
+  borderFaint:  '#F0F0F0',
+  textMain:     '#111111',
+  textSec:      '#444444',
+  textMuted:    '#888888',
+  textDark:     '#333333',
+  textDim:      '#555555',
   surfaceMuted: '#F8FAFC',
   surfaceFaint: '#FAFAFA',
-  success:   '#16A34A',
-  white:     '#ffffff',
+  success:      '#16A34A',
+  white:        '#ffffff',
 };
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   page: {
-    fontFamily: 'Helvetica',
+    fontFamily: 'Inter',
+    fontWeight: 400,
     fontSize: 10,
     color: C.textMain,
+    lineHeight: 1.5,
     paddingTop: '20mm',
     paddingBottom: '20mm',
     paddingLeft: '22mm',
@@ -95,30 +115,36 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '10mm',
+    gap: '8mm',
   },
-  sender: { flex: 1, paddingRight: '8mm' },
+  sender: { flex: 1 },
   senderName: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Outfit',
+    fontWeight: 700,
     fontSize: 14,
     color: C.textMain,
     marginBottom: 4,
   },
-  senderAddressLine: { fontSize: 9.5, color: C.textSec },
-  senderMeta: { fontSize: 9, color: C.textDim, marginTop: 1 },
+  senderAddressLine: { fontSize: 9.5, color: C.textSec, lineHeight: 1.5, marginBottom: 4 },
+  senderMeta: { fontSize: 9, color: C.textDim, lineHeight: 1.6 },
   docMeta: { alignItems: 'flex-end' },
   docType: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Outfit',
+    fontWeight: 700,
     fontSize: 22,
     color: C.primary,
     textTransform: 'uppercase',
+    letterSpacing: -0.5,
+    lineHeight: 1.1,
   },
   docNumber: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 600,
     fontSize: 9.5,
     color: C.textDark,
     marginTop: 3,
     marginBottom: 8,
     textAlign: 'right',
+    letterSpacing: 0.3,
   },
   metaRow: {
     flexDirection: 'row',
@@ -129,10 +155,11 @@ const s = StyleSheet.create({
     fontSize: 8.5,
     color: C.textMuted,
     textTransform: 'uppercase',
+    letterSpacing: 0.3,
     marginRight: 8,
   },
   metaValue: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 600,
     fontSize: 9,
   },
 
@@ -148,24 +175,25 @@ const s = StyleSheet.create({
   clientBlock: { marginBottom: '8mm' },
   billToLabel: {
     fontSize: 7.5,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 600,
     color: C.textMuted,
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: 5,
   },
   clientName: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     fontSize: 11,
     color: C.textMain,
     marginBottom: 2,
   },
-  clientAddressLine: { fontSize: 9.5, color: C.textSec },
+  clientAddressLine: { fontSize: 9.5, color: C.textSec, lineHeight: 1.5 },
   clientVat: { fontSize: 9, color: C.textDim, marginTop: 3 },
 
   // Subject / title
   subject: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 600,
     color: C.textDark,
     marginBottom: '7mm',
     paddingTop: 6,
@@ -196,8 +224,9 @@ const s = StyleSheet.create({
   },
   th: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     textTransform: 'uppercase',
+    letterSpacing: 0.4,
     color: C.textDark,
   },
   colNum:   { width: '5%' },
@@ -206,9 +235,9 @@ const s = StyleSheet.create({
   colRate:  { width: '17%', textAlign: 'right' },
   colTotal: { width: '17%', textAlign: 'right' },
   numText:   { fontSize: 8.5, color: '#999999' },
-  itemName:  { fontFamily: 'Helvetica-Bold', fontSize: 9.5, color: C.textMain },
-  itemDesc:  { fontSize: 8.5, color: C.textDim, marginTop: 2 },
-  totalText: { fontFamily: 'Helvetica-Bold' },
+  itemName:  { fontWeight: 600, fontSize: 9.5, color: C.textMain },
+  itemDesc:  { fontSize: 8.5, color: C.textDim, lineHeight: 1.6, marginTop: 2 },
+  totalText: { fontWeight: 600 },
 
   // Totals
   totalsWrap: {
@@ -247,15 +276,17 @@ const s = StyleSheet.create({
     marginBottom: '6mm',
   },
   totalBarText: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
     fontSize: 11,
     color: C.white,
+    letterSpacing: 0.3,
   },
 
   // Notes
   notes: {
     fontSize: 9.5,
     color: C.textSec,
+    lineHeight: 1.6,
     marginBottom: '6mm',
     paddingTop: 6,
     paddingBottom: 6,
@@ -280,11 +311,15 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     fontSize: 9.5,
+    gap: 12,
+  },
+  bankName: {
+    fontWeight: 700,
+    color: C.textMain,
   },
   bankItem: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 600,
     color: C.textMain,
-    marginRight: 12,
   },
   footerLegal: {
     marginTop: 8,
@@ -480,7 +515,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
           <Text style={s.paymentLabel}>{labels.paymentNote}</Text>
           <View style={s.bankRow}>
             {sender?.company_name && (
-              <Text style={s.bankItem}>{sender.company_name}</Text>
+              <Text style={s.bankName}>{sender.company_name}</Text>
             )}
             {sender?.company_iban && (
               <Text style={s.bankItem}>IBAN: {sender.company_iban}</Text>
