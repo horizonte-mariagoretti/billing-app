@@ -486,9 +486,6 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                   onClick={() => onEditDoc?.(doc)}
                   onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onEditDoc?.(doc)}
                 >
-                  <div className="recent-avatar">
-                    {(doc.client_name || '??').slice(0, 1).toUpperCase()}
-                  </div>
                   <div className="recent-main">
                     <span className="recent-num">{doc.number}</span>
                     <span className="recent-client">{doc.client_name || t('doc_no_client', 'No Client')}</span>

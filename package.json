@@ -18,7 +18,7 @@
     "@fontsource/outfit": "^5.2.8",
     "@react-pdf/renderer": "^4.5.1",
     "better-sqlite3": "^12.9.0",
-    "html2pdf.js": "^0.10.2",
+    "html2pdf.js": "^0.14.0",
     "libphonenumber-js": "^1.12.42",
     "lucide-react": "^1.11.0",
     "react": "^19.2.5",
