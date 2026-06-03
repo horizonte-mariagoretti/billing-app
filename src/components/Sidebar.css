@@ -194,17 +194,6 @@
   top: 6px;
 }
 
-/* Footer */
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border-light-theme);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
 /* Theme toggle (visual) */
 .theme-toggle {
   display: flex;
@@ -264,59 +253,6 @@
   color: var(--color-danger);
 }
 
-/* User profile */
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 8px 4px;
-  border-top: 1px solid var(--color-border-light-theme);
-  margin-top: 4px;
-}
-
-.sidebar.collapsed .user-profile {
-  justify-content: center;
-  padding: 10px 0 4px;
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  background: var(--color-primary);
-  color: #FFFFFF;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.78rem;
-  font-family: var(--font-heading);
-  flex-shrink: 0;
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.user-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text-dark-primary);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.user-email {
-  font-size: 0.7rem;
-  color: var(--color-text-dark-tertiary);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
 
 @media (max-width: 768px) {
   .sidebar {
@@ -335,11 +271,6 @@
 
   .sidebar.mobile-open {
     transform: translateX(0);
-  }
-
-  /* Safe-area for notch/home-indicator phones */
-  .sidebar-footer {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Larger touch targets for nav items on mobile */
