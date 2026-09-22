@@ -47,13 +47,6 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
     );
   };
 
-  const initials = (() => {
-    const name = (settings?.company_name || '').trim();
-    if (!name) return '??';
-    const parts = name.split(/\s+/);
-    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '')).toUpperCase();
-  })();
-
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   return (
@@ -100,19 +93,6 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
         </nav>
       </div>
 
-      <div className="sidebar-footer">
-        <div className="user-profile">
-          <div className="avatar" title={collapsed ? (settings?.company_name || 'Company') : undefined}>
-            {initials}
-          </div>
-          {!collapsed && (
-            <div className="user-info">
-              <span className="user-name">{settings?.company_name || 'Company Name'}</span>
-              <span className="user-email">{settings?.company_email || 'Settings → Company'}</span>
-            </div>
-          )}
-        </div>
-      </div>
     </aside>
   );
 };

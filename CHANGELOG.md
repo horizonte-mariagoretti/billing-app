@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0] - 2026-08-13
+
+### Added
+- **Duration (hours) column**: New `duration` field on each line item (default 1). Item total is now `qty × rate × duration`. Column is togglable via checkboxes in the items section header.
+- **Per-document column visibility**: `visible_columns` JSON on the `documents` table controls which columns (Qty, Duration, Rate, Total) are shown in the editor, HTML preview, and PDF export. Description is always visible.
+- **Column toggle checkboxes**: Four checkboxes in the "Line Items" header let users show/hide Qty, Duration (h), Rate, and Total columns per document.
+- **DB migration 9**: Adds `duration REAL DEFAULT 1` to `document_items` and `visible_columns TEXT` to `documents`; seeds `col_duration` and `col_columns` translation keys.
+
 ## [1.5.8] - 2026-06-01
 
 ### Fixed

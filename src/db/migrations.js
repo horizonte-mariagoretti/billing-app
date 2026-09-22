@@ -489,6 +489,19 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 9,
+    up: (exec) => {
+      try { exec("ALTER TABLE document_items ADD COLUMN duration REAL DEFAULT 1;"); } catch(e) {}
+      try { exec("ALTER TABLE documents ADD COLUMN visible_columns TEXT;"); } catch(e) {}
+      try {
+        exec(`INSERT OR IGNORE INTO ui_translations (key, value_de, value_en) VALUES
+          ('col_duration','Dauer (h)','Duration (h)'),
+          ('col_columns','Spalten','Columns');
+        `);
+      } catch(e) {}
+    },
+  },
 ];
 
 // adapter shape:
@@ -507,4 +520,4 @@ export function runMigrations(adapter) {
   }
 }
 
-export const TARGET_SCHEMA_VERSION = 8;
+export const TARGET_SCHEMA_VERSION = 9;

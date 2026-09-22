@@ -7,10 +7,11 @@ const L = {
     description: 'Description',
     qty: 'Qty',
     rate: 'Rate',
+    total: 'Total',
+    duration: 'Duration (h)',
     subtotal: 'Subtotal',
     discount: 'Discount',
     tax: 'Tax',
-    total: 'Total',
     paymentNote: 'Please transfer the total amount to the following bank account:',
     date: 'Date',
     dueDate: 'Due Date',
@@ -21,10 +22,11 @@ const L = {
     description: 'Beschreibung',
     qty: 'Menge',
     rate: 'Einzelpreis',
+    total: 'Gesamt',
+    duration: 'Dauer (h)',
     subtotal: 'Zwischensumme',
     discount: 'Rabatt',
     tax: 'MwSt.',
-    total: 'Gesamt',
     paymentNote: 'Gesamtbetrag bitte auf folgendes Konto überweisen:',
     date: 'Datum',
     dueDate: 'Fälligkeitsdatum',
@@ -35,10 +37,11 @@ const L = {
     description: 'Description',
     qty: 'Qté',
     rate: 'Prix unit.',
+    total: 'Total',
+    duration: 'Durée (h)',
     subtotal: 'Sous-total',
     discount: 'Remise',
     tax: 'TVA',
-    total: 'Total',
     paymentNote: 'Veuillez virer le montant total sur le compte bancaire suivant :',
     date: 'Date',
     dueDate: 'Date d\'échéance',
@@ -75,7 +78,11 @@ const DocumentPreview = ({ doc, sender, client }) => {
   const isCash = doc.payment_mode === 'cash';
   const currency = doc.currency || 'EUR';
 
-  const subtotal = (doc.items || []).reduce((sum, item) => sum + (item.qty * item.rate), 0);
+  const vc = doc.visible_columns
+    ? (typeof doc.visible_columns === 'string' ? JSON.parse(doc.visible_columns) : doc.visible_columns)
+    : { qty: true, duration: true, rate: true, total: true };
+
+  const subtotal = (doc.items || []).reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
   const discountAmt = doc.discount_type === '%'
     ? subtotal * ((doc.discount_value || 0) / 100)
     : (doc.discount_value || 0);
@@ -161,9 +168,10 @@ const DocumentPreview = ({ doc, sender, client }) => {
             <tr>
               <th className="col-num">#</th>
               <th className="col-desc">{labels.description}</th>
-              <th className="col-qty">{labels.qty}</th>
-              <th className="col-rate">{labels.rate}</th>
-              <th className="col-total">{labels.total}</th>
+              {vc.qty !== false && <th className="col-qty">{labels.qty}</th>}
+              {vc.duration !== false && <th className="col-duration">{labels.duration}</th>}
+              {vc.rate !== false && <th className="col-rate">{labels.rate}</th>}
+              {vc.total !== false && <th className="col-total">{labels.total}</th>}
             </tr>
           </thead>
           <tbody>
@@ -188,9 +196,10 @@ const DocumentPreview = ({ doc, sender, client }) => {
                       </div>
                     )}
                   </td>
-                  <td className="col-qty">{item.qty}</td>
-                  <td className="col-rate">{fmt(item.rate, currency)}</td>
-                  <td className="col-total">{fmt(item.qty * item.rate, currency)}</td>
+                  {vc.qty !== false && <td className="col-qty">{item.qty}</td>}
+                  {vc.duration !== false && <td className="col-duration">{item.duration ?? 1}</td>}
+                  {vc.rate !== false && <td className="col-rate">{fmt(item.rate, currency)}</td>}
+                  {vc.total !== false && <td className="col-total">{fmt(item.qty * item.rate * (item.duration ?? 1), currency)}</td>}
                 </tr>
               );
             })}
