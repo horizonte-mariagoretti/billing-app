@@ -499,6 +499,19 @@ if (getVersion() < 8) {
   setVersion(8);
 }
 
+// Migration 9: duration column on items, visible_columns on documents
+if (getVersion() < 9) {
+  try { db.exec("ALTER TABLE document_items ADD COLUMN duration REAL DEFAULT 1;"); } catch(e) {}
+  try { db.exec("ALTER TABLE documents ADD COLUMN visible_columns TEXT;"); } catch(e) {}
+  try {
+    db.exec(`INSERT OR IGNORE INTO ui_translations (key, value_de, value_en) VALUES
+      ('col_duration','Dauer (h)','Duration (h)'),
+      ('col_columns','Spalten','Columns');
+    `);
+  } catch(e) {}
+  setVersion(9);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

@@ -216,8 +216,11 @@
 
 .items-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .items-header h3 {
@@ -232,9 +235,42 @@
   overflow-x: auto;
 }
 
+.items-col-toggles {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.col-toggle-btn {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-light-theme);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  user-select: none;
+}
+
+.col-toggle-btn:hover:not(.active) {
+  border-color: var(--color-text-dark-tertiary);
+  color: var(--color-text-dark-secondary);
+}
+
+.col-toggle-btn.active {
+  background: var(--color-indigo-alpha);
+  border-color: var(--color-indigo);
+  color: var(--color-indigo);
+  font-weight: 600;
+}
+
 .items-grid-header {
   display: grid;
-  grid-template-columns: 16px 1fr 42px 62px 96px 52px;
+  /* grid-template-columns set via inline style */
   gap: 6px;
   padding: var(--space-sm);
   border-bottom: 1px solid var(--color-border-light-theme);
@@ -252,9 +288,20 @@
   text-align: right;
 }
 
+.items-grid-header .col-duration,
+.item-row .col-duration {
+  text-align: right;
+}
+
+.item-row .col-duration {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
 .item-row {
   display: grid;
-  grid-template-columns: 16px 1fr 42px 62px 96px 52px;
+  /* grid-template-columns set via inline style */
   gap: 6px;
   padding: var(--space-sm);
   border-bottom: 1px solid var(--color-border-light-theme);
@@ -1116,23 +1163,24 @@
   }
 
   .item-row {
-    display: grid;
-    /* desc spans cols 1-4 in row 1; qty/rate/total fill cols 2-4 in row 2 */
-    grid-template-columns: auto 70px 90px auto 48px;
+    display: grid !important;
+    /* desc spans cols 1-5 in row 1; qty/dur/rate/total fill row 2 */
+    grid-template-columns: auto 70px 56px 90px auto 48px !important;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "desc desc desc desc act"
-      ".    qty  rate total act";
+      "desc desc desc desc desc act"
+      ".    qty  dur  rate total act";
     min-width: unset;
     column-gap: 6px;
     row-gap: 2px;
     padding: var(--space-sm) var(--space-xs);
   }
 
-  .col-drag  { display: none; }
-  .col-desc  { grid-area: desc; }
-  .col-qty   { grid-area: qty; }
-  .col-rate  { grid-area: rate; }
+  .col-drag     { display: none; }
+  .col-desc     { grid-area: desc; }
+  .col-qty      { grid-area: qty; }
+  .col-duration { grid-area: dur; }
+  .col-rate     { grid-area: rate; }
   .col-total {
     grid-area: total;
     padding-top: 5px;

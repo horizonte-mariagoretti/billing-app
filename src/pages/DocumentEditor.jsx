@@ -124,16 +124,21 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       payment_mode: 'standard',
       status: 'draft',
       locked: 0,
-      items: [{ id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0 }],
+      visible_columns: { qty: true, duration: true, rate: true, total: true },
+      items: [{ id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0, duration: 1 }],
     };
     if (initialData) {
+      const vcRaw = initialData.visible_columns;
+      const visible_columns = typeof vcRaw === 'string'
+        ? JSON.parse(vcRaw)
+        : (vcRaw || { qty: true, duration: true, rate: true, total: true });
       return {
         ...defaults,
         ...initialData,
-        items:
-          initialData.items && initialData.items.length > 0
-            ? initialData.items
-            : defaults.items,
+        visible_columns,
+        items: initialData.items && initialData.items.length > 0
+          ? initialData.items
+          : defaults.items,
       };
     }
     return defaults;
@@ -262,7 +267,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   };
 
   const addItem = (afterId = null) => {
-    const newItem = { id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0 };
+    const newItem = { id: crypto.randomUUID(), name: '', description: '', qty: 1, rate: 0, duration: 1 };
     updateDoc((d) => {
       if (afterId == null) return { ...d, items: [...d.items, newItem] };
       const idx = d.items.findIndex((i) => i.id === afterId);
@@ -284,7 +289,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     }
     updateDoc((d) => ({
       ...d,
-      items: [...d.items, { id: crypto.randomUUID(), name, description: desc || '', qty: 1, rate: prod.rate || 0 }],
+      items: [...d.items, { id: crypto.randomUUID(), name, description: desc || '', qty: 1, rate: prod.rate || 0, duration: 1 }],
     }));
   };
 
@@ -336,7 +341,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     });
   };
 
-  const subtotal = doc.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
+  const subtotal = doc.items.reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
   const discount =
     doc.discount_type === '%'
       ? subtotal * (doc.discount_value / 100)
@@ -621,23 +626,57 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
             </section>
 
             {/* Line items */}
+            {(() => {
+              const vc = doc.visible_columns || { qty: true, duration: false, rate: true, total: true };
+              const gridCols = [
+                '16px',
+                '1fr',
+                vc.qty !== false ? '52px' : null,
+                vc.duration !== false ? '60px' : null,
+                vc.rate !== false ? '72px' : null,
+                vc.total !== false ? '96px' : null,
+                '52px',
+              ].filter(Boolean).join(' ');
+              return (
             <section className="items-section card">
               <div className="items-header">
-                <h3>{t('editor_line_items', 'Product')}</h3>
+                <h3>{t('editor_line_items', 'Line Items')}</h3>
+                <div className="items-col-toggles">
+                  {[
+                    { key: 'qty',      label: t('col_qty',      'Qty') },
+                    { key: 'duration', label: t('col_duration', 'Duration (h)') },
+                    { key: 'rate',     label: t('col_rate',     'Rate') },
+                    { key: 'total',    label: t('col_total',    'Total') },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`col-toggle-btn${vc[key] !== false ? ' active' : ''}`}
+                      onClick={() => updateDoc((d) => ({
+                        ...d,
+                        visible_columns: { ...(d.visible_columns || {}), [key]: d.visible_columns?.[key] === false },
+                      }))}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="items-list">
-                <div className="items-grid-header">
+                <div className="items-grid-header" style={{ gridTemplateColumns: gridCols }}>
                   <div className="col-drag" />
                   <div className="col-desc">{t('col_description', 'Description')}</div>
-                  <div className="col-qty">{t('col_qty', 'Qty')}</div>
-                  <div className="col-rate">{t('col_rate', 'Rate')}</div>
-                  <div className="col-total">{t('col_total', 'Total')}</div>
+                  {vc.qty !== false && <div className="col-qty">{t('col_qty', 'Qty')}</div>}
+                  {vc.duration !== false && <div className="col-duration">{t('col_duration', 'Duration (h)')}</div>}
+                  {vc.rate !== false && <div className="col-rate">{t('col_rate', 'Rate')}</div>}
+                  {vc.total !== false && <div className="col-total">{t('col_total', 'Total')}</div>}
                   <div className="col-actions" />
                 </div>
                 {doc.items.map((item, idx) => (
                   <div
                     key={item.id}
                     className={`item-row${draggingIdx === idx ? ' dragging' : ''}`}
+                    style={{ gridTemplateColumns: gridCols }}
                     draggable
                     onDragStart={() => { dragItemIdx.current = idx; setDraggingIdx(idx); }}
                     onDragOver={(e) => { e.preventDefault(); dragOverIdx.current = idx; }}
@@ -670,19 +709,33 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                         }}
                       />
                     </div>
+                    {vc.qty !== false && (
                     <div className="col-qty">
                       <input
                         type="number" min="0" step="0.01" value={item.qty}
                         onChange={(e) => updateItem(item.id, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
                       />
                     </div>
+                    )}
+                    {vc.duration !== false && (
+                    <div className="col-duration">
+                      <input
+                        type="number" min="0" step="0.25" value={item.duration ?? 1}
+                        onChange={(e) => updateItem(item.id, 'duration', Math.max(0, parseFloat(e.target.value) || 0))}
+                      />
+                    </div>
+                    )}
+                    {vc.rate !== false && (
                     <div className="col-rate">
                       <input
                         type="number" min="0" step="0.01" value={item.rate}
                         onChange={(e) => updateItem(item.id, 'rate', Math.max(0, parseFloat(e.target.value) || 0))}
                       />
                     </div>
-                    <div className="col-total">{fmt(item.qty * item.rate)}</div>
+                    )}
+                    {vc.total !== false && (
+                    <div className="col-total">{fmt(item.qty * item.rate * (item.duration ?? 1))}</div>
+                    )}
                     <div className="col-actions">
                       <button type="button" className="row-action-btn add" title="Add item below" aria-label="Add item below" onClick={() => addItem(item.id)}>
                         <Plus size={16} />
@@ -754,6 +807,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 </div>
               </div>
             </section>
+              );
+            })()}
 
             {/* Notes */}
             <section className="form-section card">

@@ -213,6 +213,12 @@
   width: 8%;
 }
 
+.pdf-table .col-duration {
+  width: 10%;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .pdf-table .col-rate {
   width: 17%;
 }

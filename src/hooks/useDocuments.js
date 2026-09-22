@@ -12,7 +12,7 @@ const useDocuments = () => {
       SELECT
         d.*,
         c.name as client_name,
-        COALESCE(SUM(di.qty * di.rate), 0) as items_subtotal
+        COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) as items_subtotal
       FROM documents d
       LEFT JOIN clients c ON d.client_id = c.id
       LEFT JOIN document_items di ON di.document_id = d.id
@@ -63,12 +63,14 @@ const useDocuments = () => {
         sql: `UPDATE documents SET
           number = ?, date = ?, due_date = ?, status = ?, client_id = ?,
           title = ?, notes = ?, currency = ?, tax_rate = ?, discount_value = ?,
-          discount_type = ?, language = ?, payment_mode = ?
+          discount_type = ?, language = ?, payment_mode = ?, visible_columns = ?
           WHERE id = ?`,
         params: [
           doc.number, doc.date, doc.due_date, doc.status || 'draft', doc.client_id,
           doc.title, doc.notes, doc.currency, doc.tax_rate, doc.discount_value,
-          doc.discount_type, doc.language || 'en', doc.payment_mode || 'standard', id,
+          doc.discount_type, doc.language || 'en', doc.payment_mode || 'standard',
+          JSON.stringify(doc.visible_columns || { qty: true, duration: true, rate: true, total: true }),
+          id,
         ],
       });
       operations.push({
@@ -80,13 +82,14 @@ const useDocuments = () => {
         sql: `INSERT INTO documents (
           id, type, number, date, due_date, status, client_id,
           title, notes, currency, tax_rate, discount_value, discount_type, language,
-          payment_mode, source_quote_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          payment_mode, source_quote_id, visible_columns
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           id, doc.type, doc.number, doc.date, doc.due_date, doc.status || 'draft', doc.client_id,
           doc.title, doc.notes, doc.currency, doc.tax_rate, doc.discount_value,
           doc.discount_type, doc.language || 'en',
           doc.payment_mode || 'standard', doc.source_quote_id || null,
+          JSON.stringify(doc.visible_columns || { qty: true, duration: true, rate: true, total: true }),
         ],
       });
 
@@ -113,11 +116,11 @@ const useDocuments = () => {
 
     doc.items.forEach((item, i) => {
       operations.push({
-        sql: `INSERT INTO document_items (id, document_id, name, description, qty, rate, sort_order)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO document_items (id, document_id, name, description, qty, rate, duration, sort_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           newId(),
-          id, item.name ?? '', item.description ?? '', item.qty, item.rate, i,
+          id, item.name ?? '', item.description ?? '', item.qty, item.rate, item.duration ?? 1, i,
         ],
       });
     });

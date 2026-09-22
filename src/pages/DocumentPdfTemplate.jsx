@@ -26,10 +26,11 @@ const L = {
     description: 'Description',
     qty: 'Qty',
     rate: 'Rate',
+    total: 'Total',
+    duration: 'Duration (h)',
     subtotal: 'Subtotal',
     discount: 'Discount',
     tax: 'Tax',
-    total: 'Total',
     paymentNote: 'Please transfer the total amount to the following bank account:',
     date: 'Date',
     dueDate: 'Due Date',
@@ -40,10 +41,11 @@ const L = {
     description: 'Beschreibung',
     qty: 'Menge',
     rate: 'Einzelpreis',
+    total: 'Gesamt',
+    duration: 'Dauer (h)',
     subtotal: 'Zwischensumme',
     discount: 'Rabatt',
     tax: 'MwSt.',
-    total: 'Gesamt',
     paymentNote: 'Gesamtbetrag bitte auf folgendes Konto überweisen:',
     date: 'Datum',
     dueDate: 'Fälligkeitsdatum',
@@ -54,10 +56,11 @@ const L = {
     description: 'Description',
     qty: 'Qté',
     rate: 'Prix unit.',
+    total: 'Total',
+    duration: 'Durée (h)',
     subtotal: 'Sous-total',
     discount: 'Remise',
     tax: 'TVA',
-    total: 'Total',
     paymentNote: 'Veuillez virer le montant total sur le compte bancaire suivant :',
     date: 'Date',
     dueDate: "Date d'échéance",
@@ -339,6 +342,18 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
   const isCash  = doc.payment_mode === 'cash';
   const currency = doc.currency || 'EUR';
 
+  const vc = doc.visible_columns
+    ? (typeof doc.visible_columns === 'string' ? JSON.parse(doc.visible_columns) : doc.visible_columns)
+    : { qty: true, duration: true, rate: true, total: true };
+
+  // desc uses flex:1 — takes all remaining space after fixed-width cols
+  const colNumStyle   = { width: '5%' };
+  const colDescStyle  = { flex: 1 };
+  const colQtyStyle   = { width: '8%',  textAlign: 'right' };
+  const colDurStyle   = { width: '10%', textAlign: 'right' };
+  const colRateStyle  = { width: '17%', textAlign: 'right' };
+  const colTotalStyle = { width: '17%', textAlign: 'right' };
+
   const docTypeLabel =
     doc.type === 'quote'
       ? sender?.[`trans_quote_${lang}`]   || (lang === 'de' ? 'Angebot'  : lang === 'fr' ? 'Devis'   : 'Quote')
@@ -348,7 +363,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
   const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
 
   // Calculations
-  const subtotal    = (doc.items || []).reduce((sum, item) => sum + item.qty * item.rate, 0);
+  const subtotal    = (doc.items || []).reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
   const discountAmt = doc.discount_type === '%'
     ? subtotal * ((doc.discount_value || 0) / 100)
     : (doc.discount_value || 0);
@@ -427,11 +442,12 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
 
         {/* ── Line items table ── */}
         <View style={s.tableHeaderRow}>
-          <View style={s.colNum}><Text style={s.th}>#</Text></View>
-          <View style={s.colDesc}><Text style={s.th}>{labels.description}</Text></View>
-          <View style={s.colQty}><Text style={s.th}>{labels.qty}</Text></View>
-          <View style={s.colRate}><Text style={s.th}>{labels.rate}</Text></View>
-          <View style={s.colTotal}><Text style={s.th}>{labels.total}</Text></View>
+          <View style={colNumStyle}><Text style={s.th}>#</Text></View>
+          <View style={colDescStyle}><Text style={s.th}>{labels.description}</Text></View>
+          {vc.qty !== false && <View style={colQtyStyle}><Text style={s.th}>{labels.qty}</Text></View>}
+          {vc.duration !== false && <View style={colDurStyle}><Text style={s.th}>{labels.duration}</Text></View>}
+          {vc.rate !== false && <View style={colRateStyle}><Text style={s.th}>{labels.rate}</Text></View>}
+          <View style={colTotalStyle}><Text style={s.th}>{labels.total}</Text></View>
         </View>
 
         {(doc.items || []).map((item, i) => {
@@ -443,10 +459,10 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
 
           return (
             <View key={item.id || i} style={s.tableRow} wrap={false}>
-              <View style={s.colNum}>
+              <View style={colNumStyle}>
                 <Text style={s.numText}>{i + 1}</Text>
               </View>
-              <View style={s.colDesc}>
+              <View style={colDescStyle}>
                 <Text style={s.itemName}>{itemName}</Text>
                 {descLines.map((line, j) => (
                   <Text key={j} style={s.itemDesc}>
@@ -456,14 +472,23 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
                   </Text>
                 ))}
               </View>
-              <View style={s.colQty}>
+              {vc.qty !== false && (
+              <View style={colQtyStyle}>
                 <Text>{String(item.qty)}</Text>
               </View>
-              <View style={s.colRate}>
+              )}
+              {vc.duration !== false && (
+              <View style={colDurStyle}>
+                <Text>{String(item.duration ?? 1)}</Text>
+              </View>
+              )}
+              {vc.rate !== false && (
+              <View style={colRateStyle}>
                 <Text>{fmt(item.rate, currency)}</Text>
               </View>
-              <View style={s.colTotal}>
-                <Text style={s.totalText}>{fmt(item.qty * item.rate, currency)}</Text>
+              )}
+              <View style={colTotalStyle}>
+                <Text style={s.totalText}>{fmt(item.qty * item.rate * (item.duration ?? 1), currency)}</Text>
               </View>
             </View>
           );
