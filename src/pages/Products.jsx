@@ -38,7 +38,7 @@ const Products = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [activeLang, setActiveLang] = useState('en');
+  const [activeLang, setActiveLang] = useState('de');
   const [formData, setFormData] = useState(EMPTY_PRODUCT);
   const [error, setError] = useState(null);
   const [confirm, setConfirm] = useState(null); // { id, name } | { categoryId, categoryName }
@@ -420,33 +420,18 @@ const Products = () => {
             <h2>{editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}</h2>
 
             <div className="lang-tabs">
-              <button className={activeLang === 'en' ? 'active' : ''} onClick={() => setActiveLang('en')}>EN</button>
               <button className={activeLang === 'de' ? 'active' : ''} onClick={() => setActiveLang('de')}>DE</button>
               <button className={activeLang === 'fr' ? 'active' : ''} onClick={() => setActiveLang('fr')}>FR</button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              {activeLang === 'en' && (
-                <>
-                  <Input
-                    label={t('products_field_name_en', 'Product Name (EN)')}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                  <Input
-                    label={t('products_field_desc_en', 'Description (EN)')}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </>
-              )}
               {activeLang === 'de' && (
                 <>
                   <Input
                     label={t('products_field_name_de', 'Product Name (DE)')}
                     value={formData.name_de}
                     onChange={(e) => setFormData({ ...formData, name_de: e.target.value })}
+                    required
                   />
                   <Input
                     label={t('products_field_desc_de', 'Description (DE)')}
