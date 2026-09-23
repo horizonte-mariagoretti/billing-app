@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.1] - 2026-09-23
+
+### Fixed
+- **Products modal EN tab removed**: App dropped English support (`LANGUAGES = ['de', 'fr']` in `constants.js`) but the product edit modal still had a leftover EN tab with "Product Name (EN)"/"Description (EN)" fields. Removed; DE is now the default active tab and its name field is required.
+
 ## [1.7.0] - 2026-09-23
 
 ### Added
