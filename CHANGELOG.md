@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.6] - 2026-09-24
+
+### Fixed
+- **NumberingEditor row truncation, actually fixed this time**: the earlier `172px` type-select width fix (v1.7.2) only masked the problem at wide windows. Root cause was `.pattern-rows { min-width: 360px }` — smaller than what a row actually needs, so its `minmax(0, 1fr)` value/format columns silently crushed down to unreadable widths at normal window sizes instead of ever triggering the existing `overflow-x: auto` scroll. Raised the floor to `600px`, matching the row's real minimum content width, so a narrower window now scrolls horizontally instead of truncating "Datumskomponente"/"Heutiges Datum"/format labels.
+
 ## [1.7.5] - 2026-09-24
 
 ### Changed
