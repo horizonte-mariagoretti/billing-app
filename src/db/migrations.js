@@ -910,6 +910,21 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 15,
+    up: (exec) => {
+      // Category editor dropped its leftover English name field (app is
+      // DE/FR only) — the remaining primary field needed a non-English label.
+      try {
+        exec(`
+          INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+            ('cat_field_name','Kategoriename','Nom de catégorie','Category name');
+        `);
+      } catch (e) {
+        console.error('Migration 15 failed:', e.message);
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

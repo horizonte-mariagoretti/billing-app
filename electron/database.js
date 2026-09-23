@@ -914,6 +914,20 @@ if (getVersion() < 14) {
   setVersion(14);
 }
 
+// Migration 15: category editor dropped its leftover English name field
+// (app is DE/FR only) — the remaining primary field needed a non-English label.
+if (getVersion() < 15) {
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+        ('cat_field_name','Kategoriename','Nom de catégorie','Category name');
+    `);
+  } catch (e) {
+    console.error('Migration 15 failed:', e.message);
+  }
+  setVersion(15);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

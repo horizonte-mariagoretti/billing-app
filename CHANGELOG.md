@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.2] - 2026-09-23
+
+### Fixed
+- **Line-item name/description seam**: Each got independent `border-radius` on all four corners, so when the row's hover backdrop and the name field's own focus highlight were both visible at once, a rounded notch showed at the seam between them. Name is now rounded top-only, description bottom-only, so they always read as one seamless block; each still gets its own distinct rounding when highlighted alone.
+- **Menge/Dauer/Preis column alignment**: Duration had a stray `padding-top: 2px` + flex wrapper the other two columns didn't, sitting visibly lower. Removed; all three now align to the same top edge as Qty/Rate.
+- **"Dauer (h)" header wrap + narrow columns**: Widened Qty/Duration/Rate/Total columns (52→64px, 60→92px, 72→88px, 96→104px) so the header no longer breaks onto two lines. Added a `.col-desc` min-width floor so the description column can no longer get squeezed into 1-character-per-line wrapping at narrow widths (`.items-list` scrolls horizontally instead).
+- **Product picker showed no name**: "Aus Produkten hinzufügen" search list and `addProductItem` read the now-always-empty legacy `name` (English) field instead of falling back to `name_de`/`name_fr`. Added `getProductLabel`/`getProductDesc` helpers (doc-language-aware, DE/FR fallback chain) used by both the search filter and the inserted line item.
+- **Category dropdown used native `<select>`**: its open list is unstylable OS chrome and looked out of place next to the app's custom-styled controls. Extracted the ad-hoc `StyledSelect` from `DocumentEditor.jsx` into a shared `src/components/StyledSelect.jsx` (+ `.css`) and used it for the product modal's Kategorie and Einheit dropdowns.
+- **Category editor still had an EN field**: same leftover-English issue as the product modal — removed the "(EN)" name input; the remaining primary field now writes into both `name_de` and the legacy `name` column (kept for backward-compatible display code) and is labeled "Kategoriename". New migration seeds the `cat_field_name` translation key.
+- **Inline category editor overflowed the product modal**: `CategoryEditor`'s 3-column grid layout was built for the wide "manage categories" panel and didn't fit the narrower modal. Switched to a `flex-wrap` layout that reflows naturally, and added a `compact` prop (used only in the modal) that stacks the fields onto their own lines instead of squeezing.
+- **DB migration 15**: seeds `cat_field_name` translation keys (DE/FR/EN).
+
 ## [1.7.1] - 2026-09-23
 
 ### Fixed

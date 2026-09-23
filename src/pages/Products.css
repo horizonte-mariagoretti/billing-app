@@ -425,8 +425,12 @@
   gap: var(--space-sm);
 }
 
-.category-select-row select {
+.category-select-row .ss-root {
   flex: 1;
+}
+
+.inline-cat-editor-wrap {
+  margin-top: var(--space-sm);
 }
 
 @media (max-width: 600px) {

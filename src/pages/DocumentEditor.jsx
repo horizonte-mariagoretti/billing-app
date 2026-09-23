@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText, Search,
+  ChevronLeft, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
   Download, GripVertical, Edit3, Eye, PanelRightClose, PanelRightOpen, Maximize2, X
 } from 'lucide-react';
@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
+import StyledSelect from '../components/StyledSelect';
 import useDatabase from '../hooks/useDatabase';
 import useDocuments from '../hooks/useDocuments';
 import useSettings from '../hooks/useSettings';
@@ -20,47 +21,6 @@ import { pdf } from '@react-pdf/renderer';
 import ClientModal from '../components/ClientModal';
 import DatePicker from '../components/DatePicker';
 import './DocumentEditor.css';
-
-// ── Lightweight custom select ──────────────────────────────────────────────
-const StyledSelect = ({ value, onChange, children, placeholder, className = '', disabled = false }) => {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef(null);
-  React.useEffect(() => {
-    if (!open) return;
-    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [open]);
-  const options = React.Children.toArray(children)
-    .filter((c) => c.type === 'option')
-    .map((c) => ({ value: c.props.value ?? '', label: c.props.children }));
-  const sel = options.find((o) => String(o.value) === String(value));
-  const isEmpty = !sel || String(sel.value) === '';
-  return (
-    <div ref={ref} className={`ss-root${open ? ' ss-open' : ''}${disabled ? ' ss-disabled' : ''}${className ? ' ' + className : ''}`}>
-      <button type="button" className="ss-trigger" onClick={() => !disabled && setOpen((v) => !v)} disabled={disabled}>
-        <span className={isEmpty ? 'ss-placeholder' : ''}>{sel?.label || placeholder || ''}</span>
-        <ChevronDown size={14} className="ss-chevron" />
-      </button>
-      {open && (
-        <ul className="ss-dropdown" role="listbox">
-          {options.map((opt) => (
-            <li
-              key={String(opt.value)}
-              role="option"
-              aria-selected={String(opt.value) === String(value)}
-              className={`ss-option${String(opt.value) === String(value) ? ' ss-option--selected' : ''}`}
-              onMouseDown={(e) => { e.preventDefault(); onChange({ target: { value: opt.value } }); setOpen(false); }}
-            >
-              {opt.label}
-              {String(opt.value) === String(value) && <Check size={12} className="ss-check" />}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
 
 const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onConvertToInvoice }) => {
   const { query } = useDatabase();
@@ -279,21 +239,22 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     });
   };
 
+  // Products no longer have an English name/description (app is DE/FR only) —
+  // that plain `name`/`description` column now only exists for legacy rows,
+  // so prefer the doc's language, then whichever translation is filled in.
+  const getProductLabel = (prod, lang = doc.language) =>
+    prod[`name_${lang}`] || prod.name_de || prod.name_fr || prod.name || '';
+  const getProductDesc = (prod, lang = doc.language) =>
+    prod[`description_${lang}`] || prod.description_de || prod.description_fr || prod.description || '';
+
   const addProductItem = (productId) => {
     const prod = products.find((p) => p.id === productId);
     if (!prod) return;
-    let name = prod.name;
-    let desc = prod.description;
-    if (doc.language === 'de' && prod.name_de) {
-      name = prod.name_de;
-      desc = prod.description_de || desc;
-    } else if (doc.language === 'fr' && prod.name_fr) {
-      name = prod.name_fr;
-      desc = prod.description_fr || desc;
-    }
+    const name = getProductLabel(prod);
+    const desc = getProductDesc(prod);
     updateDoc((d) => ({
       ...d,
-      items: [...d.items, { id: crypto.randomUUID(), name, description: desc || '', qty: 1, rate: prod.rate || 0, duration: 1 }],
+      items: [...d.items, { id: crypto.randomUUID(), name, description: desc, qty: 1, rate: prod.rate || 0, duration: 1 }],
     }));
   };
 
@@ -663,10 +624,10 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               const gridCols = [
                 '16px',
                 '1fr',
-                vc.qty !== false ? '52px' : null,
-                vc.duration !== false ? '60px' : null,
-                vc.rate !== false ? '72px' : null,
-                vc.total !== false ? '96px' : null,
+                vc.qty !== false ? '64px' : null,
+                vc.duration !== false ? '92px' : null,
+                vc.rate !== false ? '88px' : null,
+                vc.total !== false ? '104px' : null,
                 '52px',
               ].filter(Boolean).join(' ');
               return (
@@ -821,7 +782,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <ul className="product-popup-list">
                         {(() => {
                           const filtered = products.filter(p =>
-                            p.name.toLowerCase().includes(productSearch.toLowerCase())
+                            getProductLabel(p).toLowerCase().includes(productSearch.toLowerCase())
                           );
                           return filtered.length === 0
                             ? <li className="product-popup-empty">{t('editor_no_products', 'Keine Produkte')}</li>
@@ -835,7 +796,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                                     setProductSearch('');
                                   }}
                                 >
-                                  {p.name}
+                                  {getProductLabel(p)}
                                 </li>
                               ));
                         })()}

@@ -1,0 +1,97 @@
+.ss-root { position: relative; width: 100%; }
+
+.ss-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 38px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+.ss-trigger:hover {
+  border-color: #CBD5E1;
+  background-color: var(--color-light-surface);
+}
+
+.ss-root.ss-open .ss-trigger {
+  background-color: var(--color-light-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.ss-trigger > span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-placeholder { color: var(--color-text-dark-tertiary); }
+
+.ss-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-dark-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.ss-root.ss-open .ss-chevron { transform: rotate(180deg); }
+
+.ss-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  z-index: 200;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ss-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 0.88rem;
+  color: var(--color-text-dark-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast);
+}
+
+.ss-option:hover {
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.ss-option--selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.ss-check { color: var(--color-primary); flex-shrink: 0; }
+
+.ss-option--focused {
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }

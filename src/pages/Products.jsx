@@ -5,6 +5,7 @@ import { useT, getUiLang } from '../hooks/useUiTranslations';
 import useFocusTrap from '../hooks/useFocusTrap';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import StyledSelect from '../components/StyledSelect';
 import CategoryEditor from '../components/CategoryEditor';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
@@ -466,8 +467,7 @@ const Products = () => {
                 />
                 <div className="input-group">
                   <label className="input-label">{t('products_field_unit', 'Unit')}</label>
-                  <select
-                    className="input-field"
+                  <StyledSelect
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   >
@@ -475,15 +475,14 @@ const Products = () => {
                     <option value="day">{t('products_unit_day', 'per day')}</option>
                     <option value="item">{t('products_unit_item', 'per item')}</option>
                     <option value="fixed">{t('products_unit_fixed', 'fixed price')}</option>
-                  </select>
+                  </StyledSelect>
                 </div>
               </div>
 
               <div className="input-group">
                 <label className="input-label">{t('products_field_category', 'Category')}</label>
                 <div className="category-select-row">
-                  <select
-                    className="input-field"
+                  <StyledSelect
                     value={formData.category_id}
                     onChange={(e) => {
                       if (e.target.value === '__new__') {
@@ -498,14 +497,15 @@ const Products = () => {
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                     <option value="__new__">{t('products_new_category_option', '+ New category…')}</option>
-                  </select>
+                  </StyledSelect>
                 </div>
                 {showInlineModalCatEditor && (
-                  <div style={{ marginTop: 'var(--space-sm)' }}>
+                  <div className="inline-cat-editor-wrap">
                     <CategoryEditor
                       initial={null}
                       onSave={handleModalCatSave}
                       onCancel={() => setShowInlineModalCatEditor(false)}
+                      compact
                     />
                   </div>
                 )}

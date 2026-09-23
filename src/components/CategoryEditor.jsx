@@ -10,7 +10,11 @@ const PRESET_COLORS = [
 
 const EMPTY = { name: '', name_de: '', name_fr: '', color: PRESET_COLORS[0] };
 
-const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
+// App is DE/FR only (no English UI) — `name` is a legacy column kept for
+// backward-compatible display code (`cat.name` is read directly all over
+// Products.jsx), so it's mirrored from the DE field on save rather than
+// edited on its own.
+const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true, compact = false }) => {
   const t = useT();
   const [data, setData] = useState(() => ({ ...EMPTY, ...(initial || {}) }));
 
@@ -18,11 +22,12 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
     setData({ ...EMPTY, ...(initial || {}) });
   }, [initial?.id]);
 
-  const canSave = data.name.trim().length > 0;
+  const canSave = data.name_de.trim().length > 0;
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave({ ...data, name: data.name.trim() });
+    const name_de = data.name_de.trim();
+    onSave({ ...data, name_de, name: name_de });
   };
 
   const handleKeyDown = (e) => {
@@ -36,20 +41,13 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
   };
 
   return (
-    <div className="category-editor" onKeyDown={handleKeyDown}>
+    <div className={`category-editor${compact ? ' compact' : ''}`} onKeyDown={handleKeyDown}>
       <div className="cat-editor-row">
         <input
           autoFocus={autoFocus}
           type="text"
           className="cat-input"
-          placeholder={t('cat_field_name_en', 'Category name (EN)')}
-          value={data.name}
-          onChange={(e) => setData({ ...data, name: e.target.value })}
-        />
-        <input
-          type="text"
-          className="cat-input"
-          placeholder={t('cat_field_de', 'DE')}
+          placeholder={t('cat_field_name', 'Category name')}
           value={data.name_de}
           onChange={(e) => setData({ ...data, name_de: e.target.value })}
         />
