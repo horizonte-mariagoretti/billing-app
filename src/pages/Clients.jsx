@@ -142,23 +142,23 @@ const Clients = () => {
                   <td>
                     <div className="cell-with-icon">
                       <span>{client.email || '—'}</span>
-                      {client.email_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label="Valid email" />}
-                      {client.email_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label="Invalid email" />}
+                      {client.email_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label={t('clients_email_valid', 'Valid email')} />}
+                      {client.email_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label={t('clients_email_invalid', 'Invalid email')} />}
                     </div>
                   </td>
                   <td>
                     <div className="cell-with-icon">
                       <span>{client.phone || '—'}</span>
-                      {client.phone_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label="Valid phone" />}
-                      {client.phone_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label="Invalid phone" />}
+                      {client.phone_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label={t('clients_phone_valid', 'Valid phone')} />}
+                      {client.phone_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label={t('clients_phone_invalid', 'Invalid phone')} />}
                     </div>
                   </td>
                   <td>{client.address_city || '—'}</td>
                   <td>
                     <div className="cell-with-icon">
                       <span className="vat-cell">{client.vat || '—'}</span>
-                      {client.vat_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label={`VAT valid${client.vat_company_name ? ` — ${client.vat_company_name}` : ''}`} />}
-                      {client.vat_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label="VAT invalid" />}
+                      {client.vat_valid === 1 && <Check size={14} className="val-icon val-valid" aria-label={`${t('clients_vat_valid', 'VAT valid')}${client.vat_company_name ? ` — ${client.vat_company_name}` : ''}`} />}
+                      {client.vat_valid === 0 && <X     size={14} className="val-icon val-invalid" aria-label={t('clients_vat_invalid', 'VAT invalid')} />}
                     </div>
                   </td>
                   <td className="doc-count-cell">{client.doc_count || 0}</td>

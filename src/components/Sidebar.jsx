@@ -80,7 +80,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
       </button>
 
       <div className="nav-section">
-        {!collapsed && <span className="nav-section-label">Main menu</span>}
+        {!collapsed && <span className="nav-section-label">{t('nav_main_menu', 'Main menu')}</span>}
         <nav className="sidebar-nav">
           {mainNav.map(renderItem)}
         </nav>

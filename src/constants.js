@@ -3,7 +3,7 @@ export const DOC_TYPES = {
   QUOTE: 'quote',
 };
 
-export const LANGUAGES = ['de', 'fr', 'en'];
+export const LANGUAGES = ['de', 'fr'];
 
 export const CURRENCIES = [
   { value: 'EUR', label: 'EUR — Euro (€)' },

@@ -541,7 +541,7 @@ const Products = () => {
           message={
             confirm.type === 'category'
               ? `"${confirm.name}" ${t('products_delete_cat_body', 'will be deleted. Products in this category will become uncategorised.')}`
-              : `"${confirm.name}" will be permanently deleted.`
+              : `"${confirm.name}" ${t('products_delete_body', 'will be permanently deleted.')}`
           }
           confirmLabel={t('btn_delete', 'Delete')}
           onConfirm={handleConfirmed}

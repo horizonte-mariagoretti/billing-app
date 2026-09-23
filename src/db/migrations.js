@@ -502,8 +502,397 @@ const MIGRATIONS = [
       } catch(e) {}
     },
   },
+  {
+    version: 10,
+    up: (exec) => {
+      // Backfill French (value_fr) for every existing ui_translations key --
+      // it was never populated before this migration (only value_de/value_en
+      // were ever inserted), so selecting French silently fell back to
+      // English everywhere in the app chrome.
+      try {
+        exec(`
+          UPDATE ui_translations SET value_fr = 'Tableau de bord' WHERE key = 'nav_dashboard';
+          UPDATE ui_translations SET value_fr = 'Factures' WHERE key = 'nav_invoices';
+          UPDATE ui_translations SET value_fr = 'Devis' WHERE key = 'nav_quotes';
+          UPDATE ui_translations SET value_fr = 'Clients' WHERE key = 'nav_clients';
+          UPDATE ui_translations SET value_fr = 'Produits' WHERE key = 'nav_products';
+          UPDATE ui_translations SET value_fr = 'Paramètres' WHERE key = 'nav_settings';
+          UPDATE ui_translations SET value_fr = 'Nouvelle facture' WHERE key = 'nav_new_invoice';
+          UPDATE ui_translations SET value_fr = 'Développer la barre latérale' WHERE key = 'sidebar_expand';
+          UPDATE ui_translations SET value_fr = 'Réduire la barre latérale' WHERE key = 'sidebar_collapse';
+          UPDATE ui_translations SET value_fr = 'Général' WHERE key = 'nav_general';
+          UPDATE ui_translations SET value_fr = 'Brouillon' WHERE key = 'status_draft';
+          UPDATE ui_translations SET value_fr = 'Envoyée' WHERE key = 'status_sent';
+          UPDATE ui_translations SET value_fr = 'Payée' WHERE key = 'status_paid';
+          UPDATE ui_translations SET value_fr = 'En retard' WHERE key = 'status_overdue';
+          UPDATE ui_translations SET value_fr = 'Acceptée' WHERE key = 'status_accepted';
+          UPDATE ui_translations SET value_fr = 'Refusée' WHERE key = 'status_declined';
+          UPDATE ui_translations SET value_fr = 'Annulée' WHERE key = 'status_cancelled';
+          UPDATE ui_translations SET value_fr = 'Convertie' WHERE key = 'status_converted';
+          UPDATE ui_translations SET value_fr = 'Annuler' WHERE key = 'btn_cancel';
+          UPDATE ui_translations SET value_fr = 'Enregistrer' WHERE key = 'btn_save';
+          UPDATE ui_translations SET value_fr = 'Supprimer' WHERE key = 'btn_delete';
+          UPDATE ui_translations SET value_fr = 'Modifier' WHERE key = 'btn_edit';
+          UPDATE ui_translations SET value_fr = 'Nouvelle facture' WHERE key = 'btn_new_invoice';
+          UPDATE ui_translations SET value_fr = 'Nouveau devis' WHERE key = 'btn_new_quote';
+          UPDATE ui_translations SET value_fr = 'Numéro' WHERE key = 'col_number';
+          UPDATE ui_translations SET value_fr = 'Client' WHERE key = 'col_client';
+          UPDATE ui_translations SET value_fr = 'Date' WHERE key = 'col_date';
+          UPDATE ui_translations SET value_fr = 'Statut' WHERE key = 'col_status';
+          UPDATE ui_translations SET value_fr = 'Montant' WHERE key = 'col_amount';
+          UPDATE ui_translations SET value_fr = 'Actions' WHERE key = 'col_actions';
+          UPDATE ui_translations SET value_fr = 'Description' WHERE key = 'col_description';
+          UPDATE ui_translations SET value_fr = 'Qté' WHERE key = 'col_qty';
+          UPDATE ui_translations SET value_fr = 'Prix' WHERE key = 'col_rate';
+          UPDATE ui_translations SET value_fr = 'Total' WHERE key = 'col_total';
+          UPDATE ui_translations SET value_fr = 'Méthode' WHERE key = 'col_method';
+          UPDATE ui_translations SET value_fr = 'Référence' WHERE key = 'col_reference';
+          UPDATE ui_translations SET value_fr = 'Chargement…' WHERE key = 'loading';
+          UPDATE ui_translations SET value_fr = 'Essayez un autre terme de recherche.' WHERE key = 'try_different_search';
+          UPDATE ui_translations SET value_fr = 'Bonjour' WHERE key = 'greeting_morning';
+          UPDATE ui_translations SET value_fr = 'Bon après-midi' WHERE key = 'greeting_afternoon';
+          UPDATE ui_translations SET value_fr = 'Bonsoir' WHERE key = 'greeting_evening';
+          UPDATE ui_translations SET value_fr = 'Chiffre d''affaires' WHERE key = 'kpi_total_revenue';
+          UPDATE ui_translations SET value_fr = 'Factures payées' WHERE key = 'kpi_paid_invoices';
+          UPDATE ui_translations SET value_fr = 'Devis en attente' WHERE key = 'kpi_pending_quotes';
+          UPDATE ui_translations SET value_fr = 'Total clients' WHERE key = 'kpi_total_clients';
+          UPDATE ui_translations SET value_fr = 'Gère ta facturation comme un pro' WHERE key = 'hero_title';
+          UPDATE ui_translations SET value_fr = 'Suis tes revenus, envoie tes factures et garde une vue d''ensemble sur tous tes devis — le tout au même endroit.' WHERE key = 'hero_subtitle';
+          UPDATE ui_translations SET value_fr = 'Aperçu du chiffre d''affaires' WHERE key = 'chart_title';
+          UPDATE ui_translations SET value_fr = 'quotidien' WHERE key = 'chart_mode_daily';
+          UPDATE ui_translations SET value_fr = 'factures payées' WHERE key = 'chart_mode_paid';
+          UPDATE ui_translations SET value_fr = 'Aucune facture payée pour l''instant — ton chiffre d''affaires apparaîtra ici.' WHERE key = 'chart_empty';
+          UPDATE ui_translations SET value_fr = 'Documents récents' WHERE key = 'recent_docs_title';
+          UPDATE ui_translations SET value_fr = 'Activité récente' WHERE key = 'recent_docs_subtitle';
+          UPDATE ui_translations SET value_fr = 'Aucun document pour l''instant. Crée ta première facture !' WHERE key = 'recent_docs_empty';
+          UPDATE ui_translations SET value_fr = 'Aucun client' WHERE key = 'doc_no_client';
+          UPDATE ui_translations SET value_fr = 'Ce mois-ci' WHERE key = 'this_month';
+          UPDATE ui_translations SET value_fr = 'Actions rapides' WHERE key = 'quick_actions';
+          UPDATE ui_translations SET value_fr = 'Rechercher des factures…' WHERE key = 'doclist_search_invoices';
+          UPDATE ui_translations SET value_fr = 'Rechercher des devis…' WHERE key = 'doclist_search_quotes';
+          UPDATE ui_translations SET value_fr = 'Nouveau' WHERE key = 'doclist_new';
+          UPDATE ui_translations SET value_fr = 'Échec du chargement. Veuillez redémarrer l''application.' WHERE key = 'doclist_load_error';
+          UPDATE ui_translations SET value_fr = 'Aucun résultat pour' WHERE key = 'doclist_no_match';
+          UPDATE ui_translations SET value_fr = 'Aucun document pour l''instant' WHERE key = 'doclist_no_docs_yet';
+          UPDATE ui_translations SET value_fr = 'Clique sur « Nouvelle facture » pour créer la première.' WHERE key = 'doclist_create_first_invoice';
+          UPDATE ui_translations SET value_fr = 'Clique sur « Nouveau devis » pour créer le premier.' WHERE key = 'doclist_create_first_quote';
+          UPDATE ui_translations SET value_fr = 'Supprimer ?' WHERE key = 'doclist_delete_title';
+          UPDATE ui_translations SET value_fr = 'sera supprimé définitivement, y compris toutes les lignes et tous les paiements.' WHERE key = 'doclist_delete_body';
+          UPDATE ui_translations SET value_fr = 'Description de l''article…' WHERE key = 'editor_item_description';
+          UPDATE ui_translations SET value_fr = 'Sélectionner un client…' WHERE key = 'editor_select_client';
+          UPDATE ui_translations SET value_fr = 'Titre du document / Objet' WHERE key = 'editor_doc_title';
+          UPDATE ui_translations SET value_fr = 'p.ex. Projet de conception web' WHERE key = 'editor_doc_title_placeholder';
+          UPDATE ui_translations SET value_fr = 'Numéro de document' WHERE key = 'editor_doc_number';
+          UPDATE ui_translations SET value_fr = 'Date' WHERE key = 'editor_field_date';
+          UPDATE ui_translations SET value_fr = 'Valable jusqu''au' WHERE key = 'editor_valid_until';
+          UPDATE ui_translations SET value_fr = 'Date d''échéance' WHERE key = 'editor_due_date';
+          UPDATE ui_translations SET value_fr = 'Lignes' WHERE key = 'editor_line_items';
+          UPDATE ui_translations SET value_fr = 'Ajouter depuis les produits…' WHERE key = 'editor_add_from_products';
+          UPDATE ui_translations SET value_fr = 'Ajouter une ligne' WHERE key = 'editor_add_item';
+          UPDATE ui_translations SET value_fr = 'Ajouter la première ligne' WHERE key = 'editor_add_first_item';
+          UPDATE ui_translations SET value_fr = 'Notes et conditions' WHERE key = 'editor_notes_terms';
+          UPDATE ui_translations SET value_fr = 'Conditions de paiement, notes de projet…' WHERE key = 'editor_notes_placeholder';
+          UPDATE ui_translations SET value_fr = 'Mode de paiement' WHERE key = 'editor_payment_mode';
+          UPDATE ui_translations SET value_fr = 'Standard' WHERE key = 'editor_standard';
+          UPDATE ui_translations SET value_fr = 'Comptant' WHERE key = 'editor_cash';
+          UPDATE ui_translations SET value_fr = 'Sous-total' WHERE key = 'editor_subtotal';
+          UPDATE ui_translations SET value_fr = 'Remise' WHERE key = 'editor_discount';
+          UPDATE ui_translations SET value_fr = 'Fixe' WHERE key = 'editor_fixed';
+          UPDATE ui_translations SET value_fr = 'TVA' WHERE key = 'editor_tax';
+          UPDATE ui_translations SET value_fr = 'Total' WHERE key = 'editor_total';
+          UPDATE ui_translations SET value_fr = 'Paiements' WHERE key = 'editor_payments';
+          UPDATE ui_translations SET value_fr = 'Ce document est verrouillé. Clique sur « Déverrouiller pour modifier » pour apporter des changements.' WHERE key = 'editor_locked_notice';
+          UPDATE ui_translations SET value_fr = 'Créer le document' WHERE key = 'editor_create';
+          UPDATE ui_translations SET value_fr = 'Modifier le document' WHERE key = 'editor_edit';
+          UPDATE ui_translations SET value_fr = 'Retour à l''éditeur' WHERE key = 'editor_back_to_editor';
+          UPDATE ui_translations SET value_fr = 'Aperçu' WHERE key = 'editor_preview';
+          UPDATE ui_translations SET value_fr = 'Exporter en PDF' WHERE key = 'editor_export_pdf';
+          UPDATE ui_translations SET value_fr = 'Enregistrer le document' WHERE key = 'editor_save';
+          UPDATE ui_translations SET value_fr = 'Marquer comme envoyée' WHERE key = 'editor_mark_sent';
+          UPDATE ui_translations SET value_fr = 'Déverrouiller pour modifier' WHERE key = 'editor_unlock_edit';
+          UPDATE ui_translations SET value_fr = 'Marquer comme payée' WHERE key = 'editor_mark_paid';
+          UPDATE ui_translations SET value_fr = 'Annuler la facture' WHERE key = 'editor_cancel_invoice';
+          UPDATE ui_translations SET value_fr = 'Marquer comme refusé' WHERE key = 'editor_mark_declined';
+          UPDATE ui_translations SET value_fr = 'Marquer comme accepté' WHERE key = 'editor_mark_accepted';
+          UPDATE ui_translations SET value_fr = 'Convertir en facture' WHERE key = 'editor_convert_to_invoice';
+          UPDATE ui_translations SET value_fr = 'Modifications non enregistrées' WHERE key = 'editor_unsaved_title';
+          UPDATE ui_translations SET value_fr = 'Tu as des modifications non enregistrées. Quitter sans enregistrer ?' WHERE key = 'editor_unsaved_body';
+          UPDATE ui_translations SET value_fr = 'Quitter' WHERE key = 'editor_leave';
+          UPDATE ui_translations SET value_fr = 'Remarque' WHERE key = 'editor_notice';
+          UPDATE ui_translations SET value_fr = 'Passe à l''aperçu avant d''exporter le PDF.' WHERE key = 'editor_preview_first';
+          UPDATE ui_translations SET value_fr = 'Enregistre le document avant de changer son statut.' WHERE key = 'editor_save_before_status';
+          UPDATE ui_translations SET value_fr = 'Enregistre le devis avant de le convertir.' WHERE key = 'editor_save_before_convert';
+          UPDATE ui_translations SET value_fr = 'Facture' WHERE key = 'editor_invoice_label';
+          UPDATE ui_translations SET value_fr = 'Devis' WHERE key = 'editor_quote_label';
+          UPDATE ui_translations SET value_fr = 'Rechercher des clients…' WHERE key = 'clients_search';
+          UPDATE ui_translations SET value_fr = 'Ajouter un client' WHERE key = 'clients_add';
+          UPDATE ui_translations SET value_fr = 'Échec du chargement. Veuillez redémarrer l''application.' WHERE key = 'clients_load_error';
+          UPDATE ui_translations SET value_fr = 'Nom' WHERE key = 'clients_col_name';
+          UPDATE ui_translations SET value_fr = 'E-mail' WHERE key = 'clients_col_email';
+          UPDATE ui_translations SET value_fr = 'Téléphone' WHERE key = 'clients_col_phone';
+          UPDATE ui_translations SET value_fr = 'Ville' WHERE key = 'clients_col_city';
+          UPDATE ui_translations SET value_fr = 'N° TVA' WHERE key = 'clients_col_vat';
+          UPDATE ui_translations SET value_fr = 'Documents' WHERE key = 'clients_col_documents';
+          UPDATE ui_translations SET value_fr = 'Aucun client pour' WHERE key = 'clients_no_match';
+          UPDATE ui_translations SET value_fr = 'Aucun client pour l''instant' WHERE key = 'clients_no_clients';
+          UPDATE ui_translations SET value_fr = 'Ajoute ton premier client pour commencer à créer des factures et des devis.' WHERE key = 'clients_no_clients_hint';
+          UPDATE ui_translations SET value_fr = 'Modifier le client' WHERE key = 'clients_edit_title';
+          UPDATE ui_translations SET value_fr = 'Ajouter un nouveau client' WHERE key = 'clients_add_title';
+          UPDATE ui_translations SET value_fr = 'Nom' WHERE key = 'clients_field_name';
+          UPDATE ui_translations SET value_fr = 'E-mail' WHERE key = 'clients_field_email';
+          UPDATE ui_translations SET value_fr = 'Téléphone' WHERE key = 'clients_field_phone';
+          UPDATE ui_translations SET value_fr = 'Rue et numéro' WHERE key = 'clients_field_street';
+          UPDATE ui_translations SET value_fr = 'Code postal' WHERE key = 'clients_field_zip';
+          UPDATE ui_translations SET value_fr = 'Ville' WHERE key = 'clients_field_city';
+          UPDATE ui_translations SET value_fr = 'Pays' WHERE key = 'clients_field_country';
+          UPDATE ui_translations SET value_fr = 'Numéro de TVA' WHERE key = 'clients_field_vat';
+          UPDATE ui_translations SET value_fr = 'p.ex. BE0123456789' WHERE key = 'clients_vat_placeholder';
+          UPDATE ui_translations SET value_fr = 'Format d''e-mail invalide' WHERE key = 'clients_invalid_email';
+          UPDATE ui_translations SET value_fr = 'Format de téléphone invalide' WHERE key = 'clients_invalid_phone';
+          UPDATE ui_translations SET value_fr = 'Validation en cours…' WHERE key = 'clients_validating';
+          UPDATE ui_translations SET value_fr = 'Enregistrer le client' WHERE key = 'clients_save';
+          UPDATE ui_translations SET value_fr = 'Supprimer le client ?' WHERE key = 'clients_delete_title';
+          UPDATE ui_translations SET value_fr = 'sera supprimé définitivement. Les documents liés seront conservés mais ne seront plus associés.' WHERE key = 'clients_delete_body';
+          UPDATE ui_translations SET value_fr = 'Valide' WHERE key = 'clients_valid';
+          UPDATE ui_translations SET value_fr = 'Invalide' WHERE key = 'clients_invalid';
+          UPDATE ui_translations SET value_fr = 'Service indisponible' WHERE key = 'clients_service_unavailable';
+          UPDATE ui_translations SET value_fr = 'Vérification en cours…' WHERE key = 'clients_checking';
+          UPDATE ui_translations SET value_fr = 'Adresse vérifiée' WHERE key = 'clients_addr_verified';
+          UPDATE ui_translations SET value_fr = 'L''adresse n''a pas pu être vérifiée' WHERE key = 'clients_addr_failed';
+          UPDATE ui_translations SET value_fr = 'Service d''adresse indisponible' WHERE key = 'clients_addr_unavailable';
+          UPDATE ui_translations SET value_fr = 'Rechercher des produits/services…' WHERE key = 'products_search';
+          UPDATE ui_translations SET value_fr = 'Ajouter un produit' WHERE key = 'products_add';
+          UPDATE ui_translations SET value_fr = 'Échec du chargement. Veuillez redémarrer l''application.' WHERE key = 'products_load_error';
+          UPDATE ui_translations SET value_fr = 'Tous' WHERE key = 'products_all';
+          UPDATE ui_translations SET value_fr = 'Nouvelle catégorie' WHERE key = 'products_new_category';
+          UPDATE ui_translations SET value_fr = 'Créer la catégorie' WHERE key = 'products_create_category';
+          UPDATE ui_translations SET value_fr = 'Gérer les catégories' WHERE key = 'products_manage_categories';
+          UPDATE ui_translations SET value_fr = 'Masquer' WHERE key = 'products_hide';
+          UPDATE ui_translations SET value_fr = 'Monter' WHERE key = 'products_move_up';
+          UPDATE ui_translations SET value_fr = 'Descendre' WHERE key = 'products_move_down';
+          UPDATE ui_translations SET value_fr = 'Supprimer la catégorie ?' WHERE key = 'products_delete_cat_title';
+          UPDATE ui_translations SET value_fr = 'sera supprimée. Les produits de cette catégorie ne seront plus associés.' WHERE key = 'products_delete_cat_body';
+          UPDATE ui_translations SET value_fr = 'Supprimer le produit ?' WHERE key = 'products_delete_title';
+          UPDATE ui_translations SET value_fr = 'Aucun produit pour' WHERE key = 'products_no_match';
+          UPDATE ui_translations SET value_fr = 'Aucun produit pour l''instant' WHERE key = 'products_no_products';
+          UPDATE ui_translations SET value_fr = 'Ajoute un produit ou un service pour remplir tes factures plus rapidement.' WHERE key = 'products_no_products_hint';
+          UPDATE ui_translations SET value_fr = 'Modifier le produit' WHERE key = 'products_edit_title';
+          UPDATE ui_translations SET value_fr = 'Ajouter un produit' WHERE key = 'products_add_title';
+          UPDATE ui_translations SET value_fr = 'Nom du produit (EN)' WHERE key = 'products_field_name_en';
+          UPDATE ui_translations SET value_fr = 'Description (EN)' WHERE key = 'products_field_desc_en';
+          UPDATE ui_translations SET value_fr = 'Nom du produit (DE)' WHERE key = 'products_field_name_de';
+          UPDATE ui_translations SET value_fr = 'Description (DE)' WHERE key = 'products_field_desc_de';
+          UPDATE ui_translations SET value_fr = 'Nom du produit (FR)' WHERE key = 'products_field_name_fr';
+          UPDATE ui_translations SET value_fr = 'Description (FR)' WHERE key = 'products_field_desc_fr';
+          UPDATE ui_translations SET value_fr = 'Prix (EUR)' WHERE key = 'products_field_rate';
+          UPDATE ui_translations SET value_fr = 'Unité' WHERE key = 'products_field_unit';
+          UPDATE ui_translations SET value_fr = 'par heure' WHERE key = 'products_unit_hour';
+          UPDATE ui_translations SET value_fr = 'par jour' WHERE key = 'products_unit_day';
+          UPDATE ui_translations SET value_fr = 'par pièce' WHERE key = 'products_unit_item';
+          UPDATE ui_translations SET value_fr = 'prix fixe' WHERE key = 'products_unit_fixed';
+          UPDATE ui_translations SET value_fr = 'Catégorie' WHERE key = 'products_field_category';
+          UPDATE ui_translations SET value_fr = 'Sans catégorie' WHERE key = 'products_uncategorised';
+          UPDATE ui_translations SET value_fr = '+ Nouvelle catégorie…' WHERE key = 'products_new_category_option';
+          UPDATE ui_translations SET value_fr = 'Entreprise' WHERE key = 'settings_tab_company';
+          UPDATE ui_translations SET value_fr = 'Facturation' WHERE key = 'settings_tab_billing';
+          UPDATE ui_translations SET value_fr = 'Numérotation' WHERE key = 'settings_tab_numbering';
+          UPDATE ui_translations SET value_fr = 'Traductions' WHERE key = 'settings_tab_translations';
+          UPDATE ui_translations SET value_fr = 'Identité de l''entreprise' WHERE key = 'settings_company_title';
+          UPDATE ui_translations SET value_fr = 'Configure la façon dont ton entreprise apparaît sur tous les documents générés.' WHERE key = 'settings_company_desc';
+          UPDATE ui_translations SET value_fr = 'Raison sociale' WHERE key = 'settings_field_legal_name';
+          UPDATE ui_translations SET value_fr = 'E-mail pour les demandes' WHERE key = 'settings_field_email';
+          UPDATE ui_translations SET value_fr = 'Numéro de contact' WHERE key = 'settings_field_phone';
+          UPDATE ui_translations SET value_fr = 'Numéro de TVA' WHERE key = 'settings_field_vat_id';
+          UPDATE ui_translations SET value_fr = 'Adresse légale de l''entreprise' WHERE key = 'settings_field_address';
+          UPDATE ui_translations SET value_fr = 'Valeurs financières par défaut' WHERE key = 'settings_billing_title';
+          UPDATE ui_translations SET value_fr = 'Devise et taux de TVA par défaut pour la création de documents.' WHERE key = 'settings_billing_desc';
+          UPDATE ui_translations SET value_fr = 'Devise principale' WHERE key = 'settings_field_currency';
+          UPDATE ui_translations SET value_fr = 'Taux de TVA standard (%)' WHERE key = 'settings_field_tax_rate';
+          UPDATE ui_translations SET value_fr = 'Modalités de paiement' WHERE key = 'settings_payment_title';
+          UPDATE ui_translations SET value_fr = 'Ces coordonnées bancaires apparaîtront dans le pied de page de tes PDF.' WHERE key = 'settings_payment_desc';
+          UPDATE ui_translations SET value_fr = 'IBAN' WHERE key = 'settings_field_iban';
+          UPDATE ui_translations SET value_fr = 'BIC / SWIFT' WHERE key = 'settings_field_bic';
+          UPDATE ui_translations SET value_fr = 'Numérotation intelligente des documents' WHERE key = 'settings_numbering_title';
+          UPDATE ui_translations SET value_fr = 'Définis des règles automatisées pour nommer tes documents.' WHERE key = 'settings_numbering_desc';
+          UPDATE ui_translations SET value_fr = 'Numérotation des factures' WHERE key = 'settings_invoice_numbering';
+          UPDATE ui_translations SET value_fr = 'Numérotation des devis' WHERE key = 'settings_quote_numbering';
+          UPDATE ui_translations SET value_fr = 'Modifications non enregistrées détectées. N''oublie pas d''enregistrer la nouvelle configuration.' WHERE key = 'settings_unsaved';
+          UPDATE ui_translations SET value_fr = 'Localisation des PDF' WHERE key = 'settings_pdf_title';
+          UPDATE ui_translations SET value_fr = 'Personnalise les libellés de tes PDF pour chaque langue.' WHERE key = 'settings_pdf_desc';
+          UPDATE ui_translations SET value_fr = 'Libellé du document' WHERE key = 'settings_doc_label';
+          UPDATE ui_translations SET value_fr = 'Anglais (EN)' WHERE key = 'settings_lang_en';
+          UPDATE ui_translations SET value_fr = 'Allemand (DE)' WHERE key = 'settings_lang_de';
+          UPDATE ui_translations SET value_fr = 'Français (FR)' WHERE key = 'settings_lang_fr';
+          UPDATE ui_translations SET value_fr = 'Enregistrer les paramètres' WHERE key = 'settings_save';
+          UPDATE ui_translations SET value_fr = 'Enregistré !' WHERE key = 'settings_saved';
+          UPDATE ui_translations SET value_fr = 'Le modèle de numérotation ne peut pas être vide.' WHERE key = 'settings_error_empty_pattern';
+          UPDATE ui_translations SET value_fr = 'Échec de l''enregistrement des paramètres' WHERE key = 'settings_error_save';
+          UPDATE ui_translations SET value_fr = 'Texte statique' WHERE key = 'settings_seg_static';
+          UPDATE ui_translations SET value_fr = 'Composant de date' WHERE key = 'settings_seg_date';
+          UPDATE ui_translations SET value_fr = 'Compteur' WHERE key = 'settings_seg_counter';
+          UPDATE ui_translations SET value_fr = 'Saisir un texte (p.ex. FA_)' WHERE key = 'settings_seg_text_placeholder';
+          UPDATE ui_translations SET value_fr = 'Date du jour' WHERE key = 'settings_seg_today';
+          UPDATE ui_translations SET value_fr = 'Date de création' WHERE key = 'settings_seg_creation';
+          UPDATE ui_translations SET value_fr = 'Aperçu en direct' WHERE key = 'settings_seg_live_preview';
+          UPDATE ui_translations SET value_fr = '(Modèle vide)' WHERE key = 'settings_seg_empty';
+          UPDATE ui_translations SET value_fr = 'Quatre chiffres (0001)' WHERE key = 'settings_seg_four_digits';
+          UPDATE ui_translations SET value_fr = 'Trois chiffres (001)' WHERE key = 'settings_seg_three_digits';
+          UPDATE ui_translations SET value_fr = 'Deux chiffres (01)' WHERE key = 'settings_seg_two_digits';
+          UPDATE ui_translations SET value_fr = 'Sans zéro (1)' WHERE key = 'settings_seg_no_padding';
+          UPDATE ui_translations SET value_fr = 'Construis ton modèle de numérotation' WHERE key = 'settings_seg_build';
+          UPDATE ui_translations SET value_fr = 'Ajouter un segment' WHERE key = 'settings_seg_add';
+          UPDATE ui_translations SET value_fr = 'Supprimer le segment' WHERE key = 'settings_seg_remove';
+          UPDATE ui_translations SET value_fr = 'Synchronisé' WHERE key = 'sync_synced';
+          UPDATE ui_translations SET value_fr = 'Non enregistré' WHERE key = 'sync_unsaved';
+          UPDATE ui_translations SET value_fr = 'Enregistrement en cours…' WHERE key = 'sync_saving';
+          UPDATE ui_translations SET value_fr = 'Enregistré' WHERE key = 'sync_saved';
+          UPDATE ui_translations SET value_fr = 'Conflit' WHERE key = 'sync_conflict';
+          UPDATE ui_translations SET value_fr = 'Erreur de synchro' WHERE key = 'sync_error';
+          UPDATE ui_translations SET value_fr = 'Enregistrer maintenant' WHERE key = 'sync_click_to_save';
+          UPDATE ui_translations SET value_fr = 'Conflit de synchronisation' WHERE key = 'sync_conflict_title';
+          UPDATE ui_translations SET value_fr = 'Un autre appareil a enregistré des modifications après que tu as commencé à éditer. Tes modifications locales n''ont pas encore été enregistrées sur GitHub.' WHERE key = 'sync_conflict_desc';
+          UPDATE ui_translations SET value_fr = 'Choisis une option :' WHERE key = 'sync_pick';
+          UPDATE ui_translations SET value_fr = 'Annuler mes modifications et recharger' WHERE key = 'sync_discard';
+          UPDATE ui_translations SET value_fr = 'Écraser la version distante avec la mienne' WHERE key = 'sync_overwrite';
+          UPDATE ui_translations SET value_fr = 'Décider plus tard' WHERE key = 'sync_decide_later';
+          UPDATE ui_translations SET value_fr = 'Se connecter à GitHub' WHERE key = 'auth_connect_title';
+          UPDATE ui_translations SET value_fr = 'InvoiceForge stocke tes données dans un dépôt GitHub privé. Connecte-toi pour lire et enregistrer tes factures.' WHERE key = 'auth_desc';
+          UPDATE ui_translations SET value_fr = 'Échec de l''authentification. Veuillez réessayer.' WHERE key = 'auth_error';
+          UPDATE ui_translations SET value_fr = 'Avancé — dépôt' WHERE key = 'auth_advanced';
+          UPDATE ui_translations SET value_fr = 'Propriétaire' WHERE key = 'auth_field_owner';
+          UPDATE ui_translations SET value_fr = 'Dépôt' WHERE key = 'auth_field_repo';
+          UPDATE ui_translations SET value_fr = 'Branche' WHERE key = 'auth_field_branch';
+          UPDATE ui_translations SET value_fr = 'Se connecter avec GitHub' WHERE key = 'auth_login';
+          UPDATE ui_translations SET value_fr = 'Nom de catégorie (EN)' WHERE key = 'cat_field_name_en';
+          UPDATE ui_translations SET value_fr = 'DE' WHERE key = 'cat_field_de';
+          UPDATE ui_translations SET value_fr = 'FR' WHERE key = 'cat_field_fr';
+          UPDATE ui_translations SET value_fr = 'Exporter en PDF' WHERE key = 'pdf_export_title';
+          UPDATE ui_translations SET value_fr = 'Nom du fichier' WHERE key = 'pdf_export_filename';
+          UPDATE ui_translations SET value_fr = 'Le fichier sera enregistré dans le dossier Téléchargements.' WHERE key = 'pdf_export_web_note';
+          UPDATE ui_translations SET value_fr = 'Langue' WHERE key = 'pdf_export_language';
+          UPDATE ui_translations SET value_fr = 'Exporter' WHERE key = 'pdf_export_save';
+          UPDATE ui_translations SET value_fr = 'Échec de l''export PDF' WHERE key = 'editor_pdf_export_failed';
+          UPDATE ui_translations SET value_fr = 'Échec du changement de statut' WHERE key = 'editor_transition_failed';
+          UPDATE ui_translations SET value_fr = 'Durée (h)' WHERE key = 'col_duration';
+          UPDATE ui_translations SET value_fr = 'Colonnes' WHERE key = 'col_columns';
+        `);
+      } catch (e) {
+        console.error('Migration 10 failed:', e.message);
+      }
+    },
+  },
+  {
+    version: 11,
+    up: (exec) => {
+      // New tokens for previously-hardcoded strings found in a full-app i18n audit
+      // (DatePicker, ErrorBoundary, BottomNav, editor odds and ends, Settings
+      // placeholders, etc). All three languages seeded together this time.
+      try {
+        exec(`
+          INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+            ('date_weekdays_short','Mo,Di,Mi,Do,Fr,Sa,So','Lu,Ma,Me,Je,Ve,Sa,Di','Mo,Tu,We,Th,Fr,Sa,Su'),
+            ('date_months','Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember','janvier,février,mars,avril,mai,juin,juillet,août,septembre,octobre,novembre,décembre','January,February,March,April,May,June,July,August,September,October,November,December'),
+            ('date_input_placeholder','TT.MM.JJJJ','JJ.MM.AAAA','DD.MM.YYYY'),
+            ('date_open_calendar','Kalender öffnen','Ouvrir le calendrier','Open calendar'),
+            ('date_picker_dialog','Datumsauswahl','Sélecteur de date','Date picker'),
+            ('date_prev_month','Vorheriger Monat','Mois précédent','Previous month'),
+            ('date_next_month','Nächster Monat','Mois suivant','Next month'),
+            ('error_title','Etwas ist schiefgelaufen','Une erreur est survenue','Something went wrong'),
+            ('error_body','Die Anwendung hat einen unerwarteten Fehler festgestellt. Versuche es erneut — deine Daten sind sicher in der lokalen Datenbank.','L''application a rencontré une erreur inattendue. Réessaie — tes données sont en sécurité dans la base de données locale.','The application hit an unexpected error. Try recovering — your data is safe in the local database.'),
+            ('error_try_again','Erneut versuchen','Réessayer','Try again'),
+            ('error_reload_app','App neu laden','Recharger l''application','Reload app'),
+            ('nav_primary','Primäre Navigation','Navigation principale','Primary navigation'),
+            ('editor_go_back','Zurück','Retour','Go back'),
+            ('editor_panel_aria','Editor-Bereich','Zone d''édition','Editor panel'),
+            ('editor_create_new_client','Neuen Kunden anlegen','Créer un nouveau client','Create new client'),
+            ('editor_item_name_placeholder','Artikelname…','Nom de l''article…','Item name…'),
+            ('editor_item_desc_placeholder','Beschreibung… (optional)','Description… (facultatif)','Description… (optional)'),
+            ('editor_add_item_below','Position darunter hinzufügen','Ajouter une ligne en dessous','Add item below'),
+            ('editor_remove_item','Position entfernen','Supprimer la ligne','Remove item'),
+            ('editor_search_products','Produkt suchen…','Rechercher un produit…','Search products…'),
+            ('editor_no_products','Keine Produkte','Aucun produit','No products'),
+            ('btn_ok','OK','OK','OK'),
+            ('clients_email_valid','Gültige E-Mail','E-mail valide','Valid email'),
+            ('clients_email_invalid','Ungültige E-Mail','E-mail invalide','Invalid email'),
+            ('clients_phone_valid','Gültige Telefonnummer','Téléphone valide','Valid phone'),
+            ('clients_phone_invalid','Ungültige Telefonnummer','Téléphone invalide','Invalid phone'),
+            ('clients_vat_valid','USt-ID gültig','N° TVA valide','VAT valid'),
+            ('clients_vat_invalid','USt-ID ungültig','N° TVA invalide','VAT invalid'),
+            ('products_delete_body','wird dauerhaft gelöscht.','sera supprimé définitivement.','will be permanently deleted.'),
+            ('settings_drag_reorder','Zum Neuanordnen ziehen','Glisser pour réorganiser','Drag to reorder'),
+            ('settings_ph_legal_name','z.B. Michel Munhoven Design','p.ex. Michel Munhoven Design','e.g. Michel Munhoven Design'),
+            ('settings_ph_email','deine@email.com','ton@email.com','your@email.com'),
+            ('settings_ph_phone','+32 ...','+32 ...','+32 ...'),
+            ('settings_ph_vat','BE0000.000.000','BE0000.000.000','BE0000.000.000'),
+            ('settings_ph_address','Straße und Hausnummer' || char(10) || 'Stadt, Postleitzahl' || char(10) || 'Land','Rue et numéro' || char(10) || 'Ville, code postal' || char(10) || 'Pays','Street and number' || char(10) || 'City, Postal Code' || char(10) || 'Country'),
+            ('settings_ph_iban','BE00 0000 0000 0000','BE00 0000 0000 0000','BE00 0000 0000 0000'),
+            ('settings_ph_bic','GEBABEBB','GEBABEBB','GEBABEBB'),
+            ('settings_cash_note_label','Barverkaufshinweis','Mention vente au comptant','Cash sale note'),
+            ('nav_main_menu','Hauptmenü','Menu principal','Main menu'),
+            ('nav_toggle','Navigation umschalten','Basculer la navigation','Toggle navigation'),
+            ('btn_close','Schließen','Fermer','Close'),
+            ('dashboard_chart_aria','Umsatz-Liniendiagramm','Graphique linéaire du chiffre d''affaires','Revenue line chart'),
+            ('dashboard_range_custom','Benutzerdefiniert','Personnalisé','Custom'),
+            ('dashboard_range_all','ALLE','TOUT','ALL'),
+            ('clients_name_required','Name ist erforderlich','Le nom est requis','Name is required'),
+            ('clients_detected_prefix','Erkannt: ','Détecté : ','Detected: '),
+            ('clients_registered_to_prefix','Registriert auf: ','Enregistré au nom de : ','Registered to: ');
+        `);
+      } catch (e) {
+        console.error('Migration 11 failed:', e.message);
+      }
+    },
+  },
+  {
+    version: 12,
+    up: (exec) => {
+      // A few keys missed on the first audit pass, plus two keys
+      // (editor_create_quote/editor_create_invoice) that DocumentEditor.jsx
+      // already called via t() but were never actually seeded -- so they
+      // silently rendered the English fallback in every language.
+      try {
+        exec(`
+          INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+            ('chart_months_short','Jan,Feb,Mär,Apr,Mai,Jun,Jul,Aug,Sep,Okt,Nov,Dez','janv.,févr.,mars,avr.,mai,juin,juil.,août,sept.,oct.,nov.,déc.','Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec'),
+            ('settings_load_error','Einstellungen konnten nicht geladen werden','Échec du chargement des paramètres','Settings failed to load'),
+            ('editor_create_quote','Neues Angebot','Nouveau devis','New Quote'),
+            ('editor_create_invoice','Neue Rechnung','Nouvelle facture','New Invoice'),
+            ('currency_eur_name','Euro','euro','Euro'),
+            ('currency_usd_name','US-Dollar','dollar américain','US Dollar'),
+            ('currency_gbp_name','Britisches Pfund','livre sterling britannique','British Pound'),
+            ('currency_chf_name','Schweizer Franken','franc suisse','Swiss Franc');
+        `);
+      } catch (e) {
+        console.error('Migration 12 failed:', e.message);
+      }
+    },
+  },
+  {
+    version: 13,
+    up: (exec) => {
+      // More keys called via t() but never seeded, found by cross-referencing
+      // every t(key, ...) call site in src/ against every seeded key (the
+      // preview collapse/expand/fullsize buttons, app-language section
+      // labels, a couple column headers).
+      try {
+        exec(`
+          INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+            ('col_name','Name','Nom','Name'),
+            ('col_line_total','Zeilensumme','Total ligne','Line Total'),
+            ('editor_currency','Währung','Devise','Currency'),
+            ('editor_add_line','Neue Zeile hinzufügen','Ajouter une nouvelle ligne','Add New Line'),
+            ('editor_preview_collapse','Vorschau einklappen','Réduire l''aperçu','Collapse preview'),
+            ('editor_preview_expand','Vorschau ausklappen','Développer l''aperçu','Expand preview'),
+            ('editor_preview_fullsize','In voller Größe öffnen','Ouvrir en taille réelle','Open full size'),
+            ('settings_ui_lang_title','App-Sprache','Langue de l''application','App Language'),
+            ('settings_ui_lang_desc','Legt die Sprache der App-Oberfläche fest. Änderungen wirken sich sofort aus.','Définit la langue de l''interface de l''application. Les modifications prennent effet immédiatement.','Controls the language of the app interface. Changes take effect immediately.');
+        `);
+      } catch (e) {
+        console.error('Migration 13 failed:', e.message);
+      }
+    },
+  },
 ];
-
 // adapter shape:
 //   exec(sql) -> void
 //   getVersion() -> number
@@ -520,4 +909,4 @@ export function runMigrations(adapter) {
   }
 }
 
-export const TARGET_SCHEMA_VERSION = 9;
+export const TARGET_SCHEMA_VERSION = 13;

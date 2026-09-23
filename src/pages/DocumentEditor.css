@@ -102,6 +102,12 @@
   flex-shrink: 0;
 }
 
+.editor-right-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .editor-right-title {
   font-size: 0.85rem;
   font-weight: 600;
@@ -129,6 +135,143 @@
 .preview-scale-wrap {
   transform-origin: top center;
   flex-shrink: 0;
+}
+
+/* ── Preview collapse / expand ── */
+.preview-collapse-btn,
+.preview-fullsize-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.preview-collapse-btn:hover,
+.preview-fullsize-btn:hover {
+  background-color: #F1F5F9;
+  color: var(--color-text-dark-primary);
+}
+
+/* Collapsed right panel: full-height vertical strip, click to expand */
+.editor-split.preview-collapsed-layout {
+  grid-template-columns: 1fr 44px;
+}
+
+.editor-right.collapsed {
+  background: var(--color-light-surface);
+  border-left: 1px solid var(--color-border-light-theme);
+}
+
+.preview-collapsed-strip {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.preview-collapsed-strip:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-alpha);
+}
+
+.preview-collapsed-strip span {
+  writing-mode: vertical-rl;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 960px) {
+  /* Mobile already switches form/preview via tabs — collapse control not needed there */
+  .editor-split.preview-collapsed-layout {
+    grid-template-columns: 1fr;
+  }
+  .preview-collapse-btn {
+    display: none;
+  }
+}
+
+/* ── Fullsize preview overlay ── */
+.preview-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  background: #DFE6EE;
+}
+
+.preview-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-light-surface);
+  border-bottom: 1px solid var(--color-border-light-theme);
+  flex-shrink: 0;
+}
+
+.preview-fullscreen-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.preview-fullscreen-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.preview-fullscreen-close:hover {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-primary);
+  border-color: #CBD5E1;
+}
+
+.preview-fullscreen-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+@media (max-width: 600px) {
+  .preview-fullscreen-header {
+    padding: var(--space-sm);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .preview-fullscreen-body {
+    padding: var(--space-md);
+  }
 }
 
 /* ── Form ── */

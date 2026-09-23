@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft, ChevronDown, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
-  Download, GripVertical, Edit3, Eye
+  Download, GripVertical, Edit3, Eye, PanelRightClose, PanelRightOpen, Maximize2, X
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -13,6 +13,7 @@ import useDocuments from '../hooks/useDocuments';
 import useSettings from '../hooks/useSettings';
 import { useT } from '../hooks/useUiTranslations';
 import { effectiveStatus, allowedNextStatuses } from '../utils/documentLifecycle';
+import { getVisibleColumns, calcDocTotals, getItemLineTotal } from '../utils/documentCalc';
 import DocumentPreview from './DocumentPreview';
 import DocumentPdfTemplate from './DocumentPdfTemplate';
 import { pdf } from '@react-pdf/renderer';
@@ -85,12 +86,15 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [draggingIdx, setDraggingIdx] = useState(null);
+  const [armedDragIdx, setArmedDragIdx] = useState(null);
   const dragItemIdx = useRef(null);
   const dragOverIdx = useRef(null);
   const [mobilePanel, setMobilePanel] = useState('form');
+  const [previewCollapsed, setPreviewCollapsed] = useState(true);
+  const [previewFullscreen, setPreviewFullscreen] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const [pdfExportName, setPdfExportName] = useState('');
-  const [pdfExportLang, setPdfExportLang] = useState('en');
+  const [pdfExportLang, setPdfExportLang] = useState('de');
   const pdfExportInputRef = useRef(null);
 
   // Auto-resize description textarea — called on mount (ref cb) and on change
@@ -121,7 +125,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       discount_value: 0,
       discount_type: '%',
       language: 'de',
-      payment_mode: 'standard',
+      payment_mode: 'cash',
       status: 'draft',
       locked: 0,
       visible_columns: { qty: true, duration: true, rate: true, total: true },
@@ -341,13 +345,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     });
   };
 
-  const subtotal = doc.items.reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
-  const discount =
-    doc.discount_type === '%'
-      ? subtotal * (doc.discount_value / 100)
-      : doc.discount_value;
-  const tax = isCash ? 0 : (subtotal - discount) * (doc.tax_rate / 100);
-  const total = subtotal - discount + tax;
+  const { subtotal, discountAmt: discount, tax, total } = calcDocTotals(doc);
 
   const fmt = (v) =>
     v.toLocaleString('de-DE', { style: 'currency', currency: doc.currency || 'EUR' });
@@ -355,7 +353,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const openPdfExportDialog = () => {
     const defaultName = doc.number || `${doc.type}-draft`;
     setPdfExportName(defaultName);
-    setPdfExportLang(doc.language || 'en');
+    setPdfExportLang(doc.language || 'de');
     setPdfExportOpen(true);
     setTimeout(() => pdfExportInputRef.current?.select(), 50);
   };
@@ -403,6 +401,36 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
     }
   };
 
+  // Disarm the drag handle on mouseup even when no drag actually started
+  // (e.g. a plain click on the grip) — otherwise the row would stay
+  // draggable=true and re-break text selection in its inputs.
+  useEffect(() => {
+    if (armedDragIdx === null) return;
+    const disarm = () => setArmedDragIdx(null);
+    window.addEventListener('mouseup', disarm);
+    return () => window.removeEventListener('mouseup', disarm);
+  }, [armedDragIdx]);
+
+  // The collapse toggle is desktop-only (hidden by CSS ≤960px) — if the window
+  // shrinks below that while collapsed, force it back open so mobile users
+  // aren't stuck on a strip with no visible way to expand it.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 960px)');
+    const handle = () => { if (mq.matches) setPreviewCollapsed(false); };
+    handle();
+    mq.addEventListener('change', handle);
+    return () => mq.removeEventListener('change', handle);
+  }, []);
+
+  // Close the fullscreen preview on Escape — outer div can't rely on onKeyDown
+  // since nothing inside it has focus by default.
+  useEffect(() => {
+    if (!previewFullscreen) return;
+    const close = (e) => { if (e.key === 'Escape') setPreviewFullscreen(false); };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [previewFullscreen]);
+
   // Recalculate preview scale when switching to the preview tab on mobile
   useEffect(() => {
     if (mobilePanel !== 'preview') return;
@@ -428,6 +456,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         acts.push(<Button key="send" variant="outline" icon={Send} onClick={() => handleTransition('sent')}>{t('editor_mark_sent', 'Mark as Sent')}</Button>);
       if (status === 'paid')
         acts.push(<Button key="unlock" variant="outline" icon={Unlock} onClick={() => handleTransition('sent')}>{t('editor_unlock_edit', 'Unlock for Edit')}</Button>);
+      if (nextStatuses.includes('draft'))
+        acts.push(<Button key="unlock-draft" variant="outline" icon={Unlock} onClick={() => handleTransition('draft')}>{t('editor_unlock_edit', 'Unlock for Edit')}</Button>);
       if (nextStatuses.includes('paid'))
         acts.push(<Button key="paid" variant="primary" icon={CheckCircle2} onClick={() => handleTransition('paid')}>{t('editor_mark_paid', 'Mark as Paid')}</Button>);
       if (nextStatuses.includes('cancelled'))
@@ -439,6 +469,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         acts.push(<Button key="accept" variant="primary" icon={ThumbsUp} onClick={() => handleTransition('accepted')}>{t('editor_mark_accepted', 'Mark Accepted')}</Button>);
       if (nextStatuses.includes('declined'))
         acts.push(<Button key="decline" variant="danger" icon={ThumbsDown} onClick={() => handleTransition('declined')}>{t('editor_mark_declined', 'Mark Declined')}</Button>);
+      if (nextStatuses.includes('draft'))
+        acts.push(<Button key="unlock-draft" variant="outline" icon={Unlock} onClick={() => handleTransition('draft')}>{t('editor_unlock_edit', 'Unlock for Edit')}</Button>);
       if (status === 'accepted')
         acts.push(<Button key="convert" variant="primary" icon={ArrowRightCircle} onClick={handleConvertClick}>{t('editor_convert_to_invoice', 'Convert to Invoice')}</Button>);
     }
@@ -451,7 +483,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       {/* ── Top header ── */}
       <header className="doc-editor-header">
         <div className="left">
-          <button className="back-btn" aria-label="Go back" onClick={handleCancel}>
+          <button className="back-btn" aria-label={t('editor_go_back', 'Go back')} onClick={handleCancel}>
             <ChevronLeft size={20} />
           </button>
           <h2>
@@ -479,7 +511,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       )}
 
       {/* ── Mobile: form / preview toggle (visible at ≤960px via CSS) ── */}
-      <div className="mobile-panel-tabs" role="tablist" aria-label="Editor panel">
+      <div className="mobile-panel-tabs" role="tablist" aria-label={t('editor_panel_aria', 'Editor panel')}>
         <button
           role="tab"
           aria-selected={mobilePanel === 'form'}
@@ -487,7 +519,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
           onClick={() => setMobilePanel('form')}
         >
           <Edit3 size={15} />
-          Edit
+          {t('btn_edit', 'Edit')}
         </button>
         <button
           role="tab"
@@ -496,12 +528,12 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
           onClick={() => setMobilePanel('preview')}
         >
           <Eye size={15} />
-          Preview
+          {t('editor_preview', 'Preview')}
         </button>
       </div>
 
       {/* ── Split panel ── */}
-      <div className={`editor-split${mobilePanel === 'preview' ? ' mobile-preview-active' : ''}`}>
+      <div className={`editor-split${mobilePanel === 'preview' ? ' mobile-preview-active' : ''}${previewCollapsed ? ' preview-collapsed-layout' : ''}`}>
 
         {/* ── LEFT: form ── */}
         <div className="editor-left">
@@ -521,7 +553,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               return (
                 <section className="form-section card">
                   <div className="input-col">
-                    <label>Kunde</label>
+                    <label>{t('col_client', 'Kunde')}</label>
                     <div ref={clientDropdownRef} className="client-search-wrap">
                       <input
                         className="client-search-input"
@@ -574,7 +606,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                           <li className={`ss-option client-create-option${clientFocusIdx === createIdx ? ' ss-option--focused' : ''}`}
                               onMouseDown={() => { setShowClientDropdown(false); setShowClientModal(true); }}>
                             <Plus size={13} />
-                            <span>Neuen Kunden anlegen</span>
+                            <span>{t('editor_create_new_client', 'Neuen Kunden anlegen')}</span>
                           </li>
                         </ul>
                       )}
@@ -604,10 +636,10 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     value={doc.currency}
                     onChange={(e) => updateDoc((d) => ({ ...d, currency: e.target.value }))}
                   >
-                    <option value="EUR">EUR — Euro</option>
-                    <option value="USD">USD — US Dollar</option>
-                    <option value="GBP">GBP — British Pound</option>
-                    <option value="CHF">CHF — Swiss Franc</option>
+                    <option value="EUR">EUR — {t('currency_eur_name', 'Euro')}</option>
+                    <option value="USD">USD — {t('currency_usd_name', 'US Dollar')}</option>
+                    <option value="GBP">GBP — {t('currency_gbp_name', 'British Pound')}</option>
+                    <option value="CHF">CHF — {t('currency_chf_name', 'Swiss Franc')}</option>
                   </StyledSelect>
                 </div>
               </div>
@@ -627,7 +659,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
             {/* Line items */}
             {(() => {
-              const vc = doc.visible_columns || { qty: true, duration: false, rate: true, total: true };
+              const vc = getVisibleColumns(doc);
               const gridCols = [
                 '16px',
                 '1fr',
@@ -643,15 +675,16 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                 <h3>{t('editor_line_items', 'Line Items')}</h3>
                 <div className="items-col-toggles">
                   {[
-                    { key: 'qty',      label: t('col_qty',      'Qty') },
-                    { key: 'duration', label: t('col_duration', 'Duration (h)') },
-                    { key: 'rate',     label: t('col_rate',     'Rate') },
-                    { key: 'total',    label: t('col_total',    'Total') },
+                    { key: 'qty',      label: t('col_qty',           'Qty') },
+                    { key: 'duration', label: t('col_duration',      'Duration (h)') },
+                    { key: 'rate',     label: t('col_rate',          'Rate') },
+                    { key: 'total',    label: t('col_line_total',    'Line Total') },
                   ].map(({ key, label }) => (
                     <button
                       key={key}
                       type="button"
                       className={`col-toggle-btn${vc[key] !== false ? ' active' : ''}`}
+                      aria-pressed={vc[key] !== false}
                       onClick={() => updateDoc((d) => ({
                         ...d,
                         visible_columns: { ...(d.visible_columns || {}), [key]: d.visible_columns?.[key] === false },
@@ -677,7 +710,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     key={item.id}
                     className={`item-row${draggingIdx === idx ? ' dragging' : ''}`}
                     style={{ gridTemplateColumns: gridCols }}
-                    draggable
+                    draggable={armedDragIdx === idx}
                     onDragStart={() => { dragItemIdx.current = idx; setDraggingIdx(idx); }}
                     onDragOver={(e) => { e.preventDefault(); dragOverIdx.current = idx; }}
                     onDragEnd={() => {
@@ -685,21 +718,26 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       dragItemIdx.current = null;
                       dragOverIdx.current = null;
                       setDraggingIdx(null);
+                      setArmedDragIdx(null);
                     }}
                   >
                     <div className="col-drag">
-                      <GripVertical size={14} className="drag-handle" />
+                      <GripVertical
+                        size={14}
+                        className="drag-handle"
+                        onMouseDown={() => setArmedDragIdx(idx)}
+                      />
                     </div>
                     <div className="col-desc">
                       <input
                         className="item-name-input"
-                        placeholder="Artikelname…"
+                        placeholder={t('editor_item_name_placeholder', 'Artikelname…')}
                         value={item.name || ''}
                         onChange={(e) => updateItem(item.id, 'name', e.target.value)}
                       />
                       <textarea
                         className="item-desc-textarea"
-                        placeholder="Beschreibung… (optional)"
+                        placeholder={t('editor_item_desc_placeholder', 'Beschreibung… (optional)')}
                         value={item.description || ''}
                         rows={1}
                         ref={resizeTextarea}
@@ -734,13 +772,13 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     </div>
                     )}
                     {vc.total !== false && (
-                    <div className="col-total">{fmt(item.qty * item.rate * (item.duration ?? 1))}</div>
+                    <div className="col-total">{fmt(getItemLineTotal(item))}</div>
                     )}
                     <div className="col-actions">
-                      <button type="button" className="row-action-btn add" title="Add item below" aria-label="Add item below" onClick={() => addItem(item.id)}>
+                      <button type="button" className="row-action-btn add" title={t('editor_add_item_below', 'Add item below')} aria-label={t('editor_add_item_below', 'Add item below')} onClick={() => addItem(item.id)}>
                         <Plus size={16} />
                       </button>
-                      <button type="button" className="row-action-btn delete" title="Remove item" aria-label="Remove item" onClick={() => removeItem(item.id)}>
+                      <button type="button" className="row-action-btn delete" title={t('editor_remove_item', 'Remove item')} aria-label={t('editor_remove_item', 'Remove item')} onClick={() => removeItem(item.id)}>
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -774,7 +812,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                         <input
                           autoFocus
                           type="text"
-                          placeholder="Produkt suchen…"
+                          placeholder={t('editor_search_products', 'Produkt suchen…')}
                           value={productSearch}
                           onChange={e => setProductSearch(e.target.value)}
                           className="product-popup-search-input"
@@ -786,7 +824,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                             p.name.toLowerCase().includes(productSearch.toLowerCase())
                           );
                           return filtered.length === 0
-                            ? <li className="product-popup-empty">Keine Produkte</li>
+                            ? <li className="product-popup-empty">{t('editor_no_products', 'Keine Produkte')}</li>
                             : filtered.map(p => (
                                 <li
                                   key={p.id}
@@ -932,38 +970,111 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         </div>
 
         {/* ── RIGHT: live preview ── */}
-        <div className="editor-right">
-          <div className="editor-right-header">
+        <div className={`editor-right${previewCollapsed ? ' collapsed' : ''}`}>
+          {previewCollapsed ? (
+            <button
+              type="button"
+              className="preview-collapsed-strip"
+              onClick={() => setPreviewCollapsed(false)}
+              aria-label={t('editor_preview_expand', 'Expand preview')}
+              title={t('editor_preview_expand', 'Expand preview')}
+            >
+              <PanelRightOpen size={16} />
+              <span>{t('editor_preview', 'Preview')}</span>
+            </button>
+          ) : (
+            <>
+              <div className="editor-right-header">
+                <div className="editor-right-header-left">
+                  <button
+                    type="button"
+                    className="preview-collapse-btn"
+                    onClick={() => setPreviewCollapsed(true)}
+                    aria-label={t('editor_preview_collapse', 'Collapse preview')}
+                    title={t('editor_preview_collapse', 'Collapse preview')}
+                  >
+                    <PanelRightClose size={16} />
+                  </button>
+                  <span className="editor-right-title">{t('editor_preview', 'Preview')}</span>
+                </div>
+                <div className="editor-right-actions">
+                  <div className="lang-switcher">
+                    <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'de' }))}>DE</button>
+                    <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'fr' }))}>FR</button>
+                  </div>
+                  <button
+                    type="button"
+                    className="preview-fullsize-btn"
+                    onClick={() => setPreviewFullscreen(true)}
+                    aria-label={t('editor_preview_fullsize', 'Open full size')}
+                    title={t('editor_preview_fullsize', 'Open full size')}
+                  >
+                    <Maximize2 size={15} />
+                  </button>
+                  <Button variant="outline" size="sm" icon={Download} onClick={openPdfExportDialog}>
+                    {t('editor_export_pdf', 'PDF')}
+                  </Button>
+                </div>
+              </div>
+              <div className="editor-right-body" ref={rightBodyRef}>
+                <div
+                  className="preview-scale-wrap"
+                  style={{
+                    transform: `scale(${previewScale})`,
+                    marginBottom: `calc((${previewScale} - 1) * 297mm)`,
+                  }}
+                >
+                  <DocumentPreview
+                    doc={doc}
+                    sender={settings}
+                    client={clients.find((c) => c.id === doc.client_id) || null}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+      </div>{/* end editor-split */}
+
+      {previewFullscreen && (
+        <div
+          className="preview-fullscreen-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('editor_preview', 'Preview')}
+          onKeyDown={(e) => { if (e.key === 'Escape') setPreviewFullscreen(false); }}
+        >
+          <div className="preview-fullscreen-header">
             <span className="editor-right-title">{t('editor_preview', 'Preview')}</span>
-            <div className="editor-right-actions">
+            <div className="preview-fullscreen-header-actions">
               <div className="lang-switcher">
-                <button className={doc.language === 'en' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'en' }))}>EN</button>
                 <button className={doc.language === 'de' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'de' }))}>DE</button>
                 <button className={doc.language === 'fr' ? 'active' : ''} onClick={() => updateDoc((d) => ({ ...d, language: 'fr' }))}>FR</button>
               </div>
               <Button variant="outline" size="sm" icon={Download} onClick={openPdfExportDialog}>
                 {t('editor_export_pdf', 'PDF')}
               </Button>
+              <button
+                type="button"
+                className="preview-fullscreen-close"
+                onClick={() => setPreviewFullscreen(false)}
+                aria-label={t('btn_close', 'Close')}
+                title={t('btn_close', 'Close')}
+              >
+                <X size={20} />
+              </button>
             </div>
           </div>
-          <div className="editor-right-body" ref={rightBodyRef}>
-            <div
-              className="preview-scale-wrap"
-              style={{
-                transform: `scale(${previewScale})`,
-                marginBottom: `calc((${previewScale} - 1) * 297mm)`,
-              }}
-            >
-              <DocumentPreview
-                doc={doc}
-                sender={settings}
-                client={clients.find((c) => c.id === doc.client_id) || null}
-              />
-            </div>
+          <div className="preview-fullscreen-body">
+            <DocumentPreview
+              doc={doc}
+              sender={settings}
+              client={clients.find((c) => c.id === doc.client_id) || null}
+            />
           </div>
         </div>
-
-      </div>{/* end editor-split */}
+      )}
 
       {showClientModal && (
         <ClientModal
@@ -990,7 +1101,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         <ConfirmDialog
           title={t('editor_notice', 'Notice')}
           message={transitionError}
-          confirmLabel="OK"
+          confirmLabel={t('btn_ok', 'OK')}
           onConfirm={() => setTransitionError(null)}
           onCancel={() => setTransitionError(null)}
         />
@@ -1032,7 +1143,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
             <div className="pdf-export-field">
               <span className="pdf-export-label">{t('pdf_export_language', 'Language')}</span>
               <div className="pdf-export-lang-row">
-                {['en', 'de', 'fr'].map((l) => (
+                {['de', 'fr'].map((l) => (
                   <button
                     key={l}
                     type="button"

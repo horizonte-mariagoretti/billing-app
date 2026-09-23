@@ -17,7 +17,7 @@
   display: grid;
   grid-template-columns: var(--settings-nav-width) minmax(0, 1fr);
   gap: var(--space-xl);
-  max-width: 1100px;
+  max-width: 1240px;
   margin: 0 auto;
   animation: pageFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -69,7 +69,7 @@
   padding: var(--space-sm);
   height: fit-content;
   position: sticky;
-  top: var(--space-lg);
+  top: 0;
   box-shadow: var(--shadow-card);
 }
 
@@ -399,12 +399,16 @@
 }
 
 .settings-page .translation-table-inner {
-  min-width: 420px;
+  min-width: 620px;
 }
 
+/* First column width must fit the longest localized column-label
+   ("Dokumentbezeichnung"), not just the English one — a fixed 130px let
+   longer labels visually collide with the next column's header text. */
 .settings-page .table-header {
   display: grid;
-  grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
   background: #F1F5F9;
   padding: 12px 20px;
   border-bottom: 1px solid var(--color-border-light-theme);
@@ -416,12 +420,16 @@
   color: var(--color-text-dark-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-page .table-row {
   display: grid;
-  grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  padding: 6px 20px;
+  grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--color-border-light-theme);
   align-items: center;
   transition: background var(--transition-fast);
@@ -439,16 +447,20 @@
   font-weight: 600;
   color: var(--color-text-dark-secondary);
   font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-page .col-lang input {
-  width: calc(100% - 8px);
+  width: 100%;
   background: transparent;
   border: 1px solid transparent;
   color: var(--color-text-dark-primary);
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 0.9rem;
+  text-overflow: ellipsis;
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 

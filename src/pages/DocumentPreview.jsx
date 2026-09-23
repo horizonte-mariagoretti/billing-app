@@ -1,102 +1,28 @@
 import React from 'react';
 import './DocumentPreview.css';
-
-const L = {
-  en: {
-    billTo: 'Bill to',
-    description: 'Description',
-    qty: 'Qty',
-    rate: 'Rate',
-    total: 'Total',
-    duration: 'Duration (h)',
-    subtotal: 'Subtotal',
-    discount: 'Discount',
-    tax: 'Tax',
-    paymentNote: 'Please transfer the total amount to the following bank account:',
-    date: 'Date',
-    dueDate: 'Due Date',
-    validUntil: 'Valid Until',
-  },
-  de: {
-    billTo: 'Rechnungsempfänger',
-    description: 'Beschreibung',
-    qty: 'Menge',
-    rate: 'Einzelpreis',
-    total: 'Gesamt',
-    duration: 'Dauer (h)',
-    subtotal: 'Zwischensumme',
-    discount: 'Rabatt',
-    tax: 'MwSt.',
-    paymentNote: 'Gesamtbetrag bitte auf folgendes Konto überweisen:',
-    date: 'Datum',
-    dueDate: 'Fälligkeitsdatum',
-    validUntil: 'Gültig bis',
-  },
-  fr: {
-    billTo: 'Facturer à',
-    description: 'Description',
-    qty: 'Qté',
-    rate: 'Prix unit.',
-    total: 'Total',
-    duration: 'Durée (h)',
-    subtotal: 'Sous-total',
-    discount: 'Remise',
-    tax: 'TVA',
-    paymentNote: 'Veuillez virer le montant total sur le compte bancaire suivant :',
-    date: 'Date',
-    dueDate: 'Date d\'échéance',
-    validUntil: 'Valable jusqu\'au',
-  },
-};
-
-const fmt = (value, currency) =>
-  value.toLocaleString('de-DE', {
-    minimumFractionDigits: 2,
-    style: 'currency',
-    currency: currency || 'EUR',
-  });
-
-const fmtDate = (iso) => {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
-};
+import {
+  getDocLabels, getVisibleColumns, isPricingHidden, fmtCurrency, fmtNum, fmtDocDate,
+  calcDocTotals, getDocTypeLabel, getClientAddressLines, splitItemNameDesc, getItemLineTotal,
+} from '../utils/documentCalc';
 
 const DocumentPreview = ({ doc, sender, client }) => {
   if (!doc) return null;
 
   const lang = doc.language || 'en';
-  const labels = L[lang] || L.en;
+  const labels = getDocLabels(lang);
 
-  const docTypeLabel =
-    doc.type === 'quote'
-      ? sender?.[`trans_quote_${lang}`] || (lang === 'de' ? 'Angebot' : lang === 'fr' ? 'Devis' : 'Quote')
-      : sender?.[`trans_invoice_${lang}`] || (lang === 'de' ? 'Rechnung' : lang === 'fr' ? 'Facture' : 'Invoice');
-
+  const docTypeLabel = getDocTypeLabel(doc, sender, lang);
   const totalLabel = sender?.[`trans_total_${lang}`] || labels.total;
 
   const isCash = doc.payment_mode === 'cash';
   const currency = doc.currency || 'EUR';
+  const vc = getVisibleColumns(doc);
+  const pricingHidden = isPricingHidden(vc);
 
-  const vc = doc.visible_columns
-    ? (typeof doc.visible_columns === 'string' ? JSON.parse(doc.visible_columns) : doc.visible_columns)
-    : { qty: true, duration: true, rate: true, total: true };
-
-  const subtotal = (doc.items || []).reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
-  const discountAmt = doc.discount_type === '%'
-    ? subtotal * ((doc.discount_value || 0) / 100)
-    : (doc.discount_value || 0);
-  const tax = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
-  const total = subtotal - discountAmt + tax;
+  const { subtotal, discountAmt, tax, total } = calcDocTotals(doc);
 
   const senderAddress = sender?.company_address || '';
-  const clientAddress = client
-    ? [
-        client.address_street,
-        [client.address_zip, client.address_city].filter(Boolean).join(' '),
-        client.address_country,
-      ].filter(Boolean).join('\n')
-    : '';
+  const clientAddress = getClientAddressLines(client).join('\n');
 
   const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
 
@@ -129,12 +55,12 @@ const DocumentPreview = ({ doc, sender, client }) => {
               <tbody>
                 <tr>
                   <td className="pdf-meta-label">{labels.date}</td>
-                  <td className="pdf-meta-value">{fmtDate(doc.date)}</td>
+                  <td className="pdf-meta-value">{fmtDocDate(doc.date)}</td>
                 </tr>
                 {doc.due_date && (
                   <tr>
                     <td className="pdf-meta-label">{dueDateLabel}</td>
-                    <td className="pdf-meta-value">{fmtDate(doc.due_date)}</td>
+                    <td className="pdf-meta-value">{fmtDocDate(doc.due_date)}</td>
                   </tr>
                 )}
               </tbody>
@@ -162,6 +88,12 @@ const DocumentPreview = ({ doc, sender, client }) => {
           <div className="pdf-subject">{doc.title}</div>
         )}
 
+        {pricingHidden && (
+          <div className="pdf-pricing-hidden-note">
+            Qty, Rate and Total columns are hidden — only the grand total below will be visible on this document.
+          </div>
+        )}
+
         {/* ── Line items table ── */}
         <table className="pdf-table">
           <thead>
@@ -176,11 +108,7 @@ const DocumentPreview = ({ doc, sender, client }) => {
           </thead>
           <tbody>
             {(doc.items || []).map((item, i) => {
-              const itemName = item.name || (item.description || '').split('\n')[0] || '';
-              const rawDesc = item.name
-                ? (item.description || '')
-                : (item.description || '').split('\n').slice(1).join('\n');
-              const descLines = rawDesc.split('\n').filter(l => l.trim());
+              const { itemName, descLines } = splitItemNameDesc(item);
               return (
                 <tr key={i}>
                   <td className="col-num">{i + 1}</td>
@@ -196,10 +124,10 @@ const DocumentPreview = ({ doc, sender, client }) => {
                       </div>
                     )}
                   </td>
-                  {vc.qty !== false && <td className="col-qty">{item.qty}</td>}
-                  {vc.duration !== false && <td className="col-duration">{item.duration ?? 1}</td>}
-                  {vc.rate !== false && <td className="col-rate">{fmt(item.rate, currency)}</td>}
-                  {vc.total !== false && <td className="col-total">{fmt(item.qty * item.rate * (item.duration ?? 1), currency)}</td>}
+                  {vc.qty !== false && <td className="col-qty">{fmtNum(item.qty)}</td>}
+                  {vc.duration !== false && <td className="col-duration">{fmtNum(item.duration ?? 1)}</td>}
+                  {vc.rate !== false && <td className="col-rate">{fmtCurrency(item.rate, currency)}</td>}
+                  {vc.total !== false && <td className="col-total">{fmtCurrency(getItemLineTotal(item), currency)}</td>}
                 </tr>
               );
             })}
@@ -211,7 +139,7 @@ const DocumentPreview = ({ doc, sender, client }) => {
           <div className="pdf-totals">
             <div className="pdf-totals-row">
               <span>{labels.subtotal}</span>
-              <span>{fmt(subtotal, currency)}</span>
+              <span>{fmtCurrency(subtotal, currency)}</span>
             </div>
             {(doc.discount_value || 0) > 0 && (
               <div className="pdf-totals-row">
@@ -219,13 +147,13 @@ const DocumentPreview = ({ doc, sender, client }) => {
                   {labels.discount}
                   {doc.discount_type === '%' ? ` (${doc.discount_value}%)` : ''}
                 </span>
-                <span className="pdf-discount">−{fmt(discountAmt, currency)}</span>
+                <span className="pdf-discount">−{fmtCurrency(discountAmt, currency)}</span>
               </div>
             )}
             {!isCash && (
               <div className="pdf-totals-row">
                 <span>{labels.tax}{doc.tax_rate ? ` (${doc.tax_rate}%)` : ''}</span>
-                <span>{fmt(tax, currency)}</span>
+                <span>{fmtCurrency(tax, currency)}</span>
               </div>
             )}
           </div>
@@ -234,7 +162,7 @@ const DocumentPreview = ({ doc, sender, client }) => {
         {/* ── Grand total bar ── */}
         <div className="pdf-total-bar">
           <span>{totalLabel.toUpperCase()}</span>
-          <span>{fmt(total, currency)}</span>
+          <span>{fmtCurrency(total, currency)}</span>
         </div>
 
         {/* ── Notes ── */}

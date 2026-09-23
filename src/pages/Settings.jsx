@@ -112,7 +112,7 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
             onDrop={(e) => handleDrop(e, idx)}
             onDragEnd={handleDragEnd}
           >
-            <div className="drag-handle" title="Drag to reorder">
+            <div className="drag-handle" title={t ? t('settings_drag_reorder', 'Drag to reorder') : 'Drag to reorder'}>
               <GripVertical size={16} />
             </div>
 
@@ -300,19 +300,19 @@ const Settings = () => {
             <div className="settings-grid">
               <div>
                 <label className="input-label">{t('settings_field_legal_name', 'Legal Name')}</label>
-                <input className="input-field" value={form.company_name} onChange={set('company_name')} placeholder="e.g. Michel Munhoven Design" />
+                <input className="input-field" value={form.company_name} onChange={set('company_name')} placeholder={t('settings_ph_legal_name', 'e.g. Michel Munhoven Design')} />
               </div>
               <div>
                 <label className="input-label">{t('settings_field_email', 'Email for Inquiries')}</label>
-                <input className="input-field" type="email" value={form.company_email} onChange={set('company_email')} placeholder="your@email.com" />
+                <input className="input-field" type="email" value={form.company_email} onChange={set('company_email')} placeholder={t('settings_ph_email', 'your@email.com')} />
               </div>
               <div>
                 <label className="input-label">{t('settings_field_phone', 'Contact Number')}</label>
-                <input className="input-field" value={form.company_phone} onChange={set('company_phone')} placeholder="+32 ..." />
+                <input className="input-field" value={form.company_phone} onChange={set('company_phone')} placeholder={t('settings_ph_phone', '+32 ...')} />
               </div>
               <div>
                 <label className="input-label">{t('settings_field_vat_id', 'VAT ID')}</label>
-                <input className="input-field" value={form.company_vat} onChange={set('company_vat')} placeholder="BE0000.000.000" />
+                <input className="input-field" value={form.company_vat} onChange={set('company_vat')} placeholder={t('settings_ph_vat', 'BE0000.000.000')} />
               </div>
             </div>
             <div className="settings-full">
@@ -321,7 +321,7 @@ const Settings = () => {
                 className="settings-textarea"
                 value={form.company_address}
                 onChange={set('company_address')}
-                placeholder="Street and number&#10;City, Postal Code&#10;Country"
+                placeholder={t('settings_ph_address', 'Street and number\nCity, Postal Code\nCountry')}
               />
             </div>
 
@@ -334,7 +334,6 @@ const Settings = () => {
               {[
                 { code: 'de', label: 'Deutsch' },
                 { code: 'fr', label: 'Français' },
-                { code: 'en', label: 'English' },
               ].map(({ code, label }) => (
                 <button
                   key={code}
@@ -358,10 +357,10 @@ const Settings = () => {
               <div>
                 <label className="input-label">{t('settings_field_currency', 'Primary Currency')}</label>
                 <select className="input-field" value={form.default_currency} onChange={set('default_currency')}>
-                  <option value="EUR">EUR — Euro (€)</option>
-                  <option value="USD">USD — US Dollar ($)</option>
-                  <option value="GBP">GBP — British Pound (£)</option>
-                  <option value="CHF">CHF — Swiss Franc</option>
+                  <option value="EUR">EUR — {t('currency_eur_name', 'Euro')} (€)</option>
+                  <option value="USD">USD — {t('currency_usd_name', 'US Dollar')} ($)</option>
+                  <option value="GBP">GBP — {t('currency_gbp_name', 'British Pound')} (£)</option>
+                  <option value="CHF">CHF — {t('currency_chf_name', 'Swiss Franc')}</option>
                 </select>
               </div>
               <div>
@@ -377,11 +376,11 @@ const Settings = () => {
             <div className="settings-grid">
               <div>
                 <label className="input-label">{t('settings_field_iban', 'IBAN')}</label>
-                <input className="input-field" value={form.company_iban} onChange={set('company_iban')} placeholder="BE00 0000 0000 0000" />
+                <input className="input-field" value={form.company_iban} onChange={set('company_iban')} placeholder={t('settings_ph_iban', 'BE00 0000 0000 0000')} />
               </div>
               <div>
                 <label className="input-label">{t('settings_field_bic', 'BIC / SWIFT')}</label>
-                <input className="input-field" value={form.company_bic} onChange={set('company_bic')} placeholder="GEBABEBB" />
+                <input className="input-field" value={form.company_bic} onChange={set('company_bic')} placeholder={t('settings_ph_bic', 'GEBABEBB')} />
               </div>
             </div>
           </div>
@@ -440,12 +439,12 @@ const Settings = () => {
                 </div>
 
                 {[
-                  { id: 'invoice', label: 'Invoice' },
-                  { id: 'quote', label: 'Quote' },
-                  { id: 'date', label: 'Date' },
-                  { id: 'due_date', label: 'Due Date' },
-                  { id: 'total', label: 'Total' },
-                  { id: 'cash_note', label: 'Cash sale note' },
+                  { id: 'invoice', label: t('editor_invoice_label', 'Invoice') },
+                  { id: 'quote', label: t('editor_quote_label', 'Quote') },
+                  { id: 'date', label: t('col_date', 'Date') },
+                  { id: 'due_date', label: t('editor_due_date', 'Due Date') },
+                  { id: 'total', label: t('editor_total', 'Total') },
+                  { id: 'cash_note', label: t('settings_cash_note_label', 'Cash sale note') },
                 ].map(item => (
                   <div key={item.id} className="table-row">
                     <div className="col-key">{item.label}</div>
