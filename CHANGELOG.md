@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.4] - 2026-09-23
+
+### Fixed
+- **Dashboard custom-range date fields too wide**: the shared `DatePicker`'s input is `flex:1` (built to fill a full form field), leaving a large empty gap before the calendar icon in the compact pill-row context. Scoped down under `.custom-range` in `Dashboard.css` only: fixed `11ch` width, smaller padding, and font-size matched to the panel's subtitle text (`0.82rem`). `DatePicker.jsx`/`.css` themselves are untouched, so every other usage (document editor dates) is unaffected.
+
 ## [1.7.3] - 2026-09-23
 
 ### Added

@@ -630,12 +630,35 @@
   color: #ffffff;
 }
 
-/* Custom date range picker */
+/* Custom date range picker — the shared DatePicker's input is flex:1 (fills
+   whatever width its parent gives it), sized/text for a full form field.
+   Scope it down here to sit compactly next to the range pills instead. */
 .custom-range {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 6px;
+}
+
+.custom-range .datepicker-wrap {
+  flex: 0 0 auto;
+}
+
+.custom-range .datepicker-input {
+  flex: 0 0 auto;
+  width: 11ch;
+  padding: 5px 6px;
+  font-size: 0.82rem;
+}
+
+.custom-range .datepicker-icon-btn {
+  padding: 0 6px;
+  min-height: 28px;
+}
+
+.custom-range .datepicker-icon {
+  width: 13px;
+  height: 13px;
 }
 
 .date-range-sep {
