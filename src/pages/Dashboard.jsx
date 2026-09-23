@@ -65,6 +65,9 @@ function heroClosedToday() {
   return localStorage.getItem('hero_last_closed') === todayStr;
 }
 
+const CUSTOM_FROM_KEY = 'dashboard_custom_from';
+const CUSTOM_TO_KEY = 'dashboard_custom_to';
+
 const CHART_H = 220;
 const CHART_PAD_Y = 20;
 const CHART_PAD_XL = 56; // left room for Y-axis labels
@@ -104,8 +107,10 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   const [chartRange, setChartRange] = useState('scout-year');
   const [showHero, setShowHero] = useState(!heroClosedToday());
   const fiscal = getFiscalYear();
-  const [customFrom, setCustomFrom] = useState(fiscal.from);
-  const [customTo, setCustomTo] = useState(fiscal.to);
+  const [customFrom, setCustomFromState] = useState(() => localStorage.getItem(CUSTOM_FROM_KEY) || fiscal.from);
+  const [customTo, setCustomToState] = useState(() => localStorage.getItem(CUSTOM_TO_KEY) || fiscal.to);
+  const setCustomFrom = (v) => { setCustomFromState(v); localStorage.setItem(CUSTOM_FROM_KEY, v); };
+  const setCustomTo = (v) => { setCustomToState(v); localStorage.setItem(CUSTOM_TO_KEY, v); };
   const chartContainerRef = useRef(null);
   const [chartWidth, setChartWidth] = useState(600);
   useEffect(() => {
@@ -377,14 +382,6 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         <div className="chart-toolbar">
           <div>
             <h3 className="chart-title">{t('chart_title', 'Revenue overview')}</h3>
-            <p className="chart-sub">
-              {chartRange === 'custom'
-                ? `${customFrom} – ${customTo} · ${t('chart_mode_paid', 'paid invoices')}`
-                : (() => {
-                    const b = getScoutYearBounds(chartRange === 'scout-year-last' ? 1 : 0);
-                    return `${b.startYear}/${String(b.endYear).slice(2)} · ${t('chart_mode_paid', 'paid invoices')}`;
-                  })()}
-            </p>
           </div>
           <div className="chart-controls">
             <div className="time-pills">

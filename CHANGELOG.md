@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.5] - 2026-09-24
+
+### Changed
+- **Umsatzübersicht (revenue chart) toolbar redesign**: separate outlined pills merged into one connected segmented control (single shared border, hairline dividers, no gaps). Removed the subtitle line under the title entirely (it duplicated info already visible on the pills / the custom-range date pickers). Custom range values now persist to `localStorage` (`dashboard_custom_from`/`_to`), so the last manually-picked date range survives a reload instead of resetting to the current fiscal year every time.
+
 ## [1.7.4] - 2026-09-23
 
 ### Fixed
