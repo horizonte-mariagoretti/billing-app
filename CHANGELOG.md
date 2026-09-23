@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.6] - 2026-09-24
+
+### Fixed
+- **NumberingEditor: too much space before the first dropdown**: the drag-handle column was 24px with 2px of its own padding for a 16px icon, plus 10px row padding — ~42px of empty space before "Statischer Text" started. Drag column tightened to 16px (icon-exact), its padding removed, and row padding evened to 8px all around, so the leading gap drops to ~33px. (The previous v1.7.6 attempt widened `.pattern-rows` min-width instead — reverted, that solved a different, unrelated problem.)
+
 ## [1.7.5] - 2026-09-24
 
 ### Changed
