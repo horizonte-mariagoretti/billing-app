@@ -464,6 +464,7 @@ const Products = () => {
                   step="0.01"
                   value={formData.rate}
                   onChange={(e) => setFormData({ ...formData, rate: parseLocaleNumber(e.target.value) })}
+                  onFocus={(e) => e.target.select()}
                 />
                 <div className="input-group">
                   <label className="input-label">{t('products_field_unit', 'Unit')}</label>

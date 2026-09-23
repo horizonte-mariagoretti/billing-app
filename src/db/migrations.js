@@ -925,6 +925,25 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 16,
+    up: (exec) => {
+      // Dashboard scout-year pills shortened to plain H1/H2/Dieses Jahr/
+      // Letztes Jahr/Eigene Dauer — the original wording was too long for
+      // the pill row.
+      try {
+        exec(`
+          UPDATE ui_translations SET value_de = 'H1' WHERE key = 'dashboard_range_h1';
+          UPDATE ui_translations SET value_de = 'H2' WHERE key = 'dashboard_range_h2';
+          UPDATE ui_translations SET value_de = 'Dieses Jahr' WHERE key = 'dashboard_range_current';
+          UPDATE ui_translations SET value_de = 'Letztes Jahr' WHERE key = 'dashboard_range_last';
+          UPDATE ui_translations SET value_de = 'Eigene Dauer' WHERE key = 'dashboard_range_custom';
+        `);
+      } catch (e) {
+        console.error('Migration 16 failed:', e.message);
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

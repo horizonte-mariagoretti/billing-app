@@ -279,7 +279,7 @@
 
 .settings-page .pattern-row {
   display: grid;
-  grid-template-columns: 24px 140px minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: 24px 172px minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   background: #FFFFFF;
@@ -328,7 +328,9 @@
 
 .settings-page .pattern-row select,
 .settings-page .pattern-row input {
+  width: 100%;
   height: 38px;
+  box-sizing: border-box;
   background-color: var(--color-light-surface);
   border: 1px solid var(--color-border-light-theme);
   color: var(--color-text-dark-primary);
@@ -388,86 +390,6 @@
   background: var(--color-primary-alpha);
   border-color: var(--color-primary-border-mid);
   color: var(--color-primary);
-}
-
-/* Translation table */
-.settings-page .translation-table {
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: 16px;
-  overflow-x: auto;
-}
-
-.settings-page .translation-table-inner {
-  min-width: 620px;
-}
-
-/* First column width must fit the longest localized column-label
-   ("Dokumentbezeichnung"), not just the English one — a fixed 130px let
-   longer labels visually collide with the next column's header text. */
-.settings-page .table-header {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
-  background: #F1F5F9;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--color-border-light-theme);
-}
-
-.settings-page .table-header > div {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--color-text-dark-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-page .table-row {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--color-border-light-theme);
-  align-items: center;
-  transition: background var(--transition-fast);
-}
-
-.settings-page .table-row:last-child {
-  border-bottom: none;
-}
-
-.settings-page .table-row:hover {
-  background: #F1F5F9;
-}
-
-.settings-page .col-key {
-  font-weight: 600;
-  color: var(--color-text-dark-secondary);
-  font-size: 0.95rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-page .col-lang input {
-  width: 100%;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--color-text-dark-primary);
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  text-overflow: ellipsis;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.settings-page .col-lang input:focus {
-  background: var(--color-light-surface);
-  border-color: var(--color-primary-border-mid);
-  outline: none;
 }
 
 /* Status & footer */

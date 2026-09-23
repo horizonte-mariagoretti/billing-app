@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.7.3] - 2026-09-23
+
+### Added
+- **Custom arrow-key stepping**: Qty/Duration/Rate/Discount/Tax number fields now step by 0.5 on plain ArrowUp/Down, 1.0 with Shift, 0.1 with Ctrl, and 10.0 with Shift+Ctrl — overriding the browser's single fixed `step`.
+- **Select-on-focus for number fields**: fields prefilled with `0` (or any value) now select their full contents on focus, so typing overrides instead of appending after the existing digit (e.g. typing "5" into "0" gives "5", not "05"). Applied across the item Qty/Duration/Rate/Discount/Tax fields, the Products rate field, and the Settings numbering counter/tax-rate fields.
+
+### Fixed
+- **Menge column narrower than Dauer/Preis**: widened to match (92px each) so all three line-item numeric columns are equal width.
+- **NumberingEditor row alignment**: the type-select column (e.g. "Datumskomponente") was a fixed 140px, truncating the longer German labels; widened to 172px. Also gave every `select`/`input` in a numbering row an explicit `width: 100%` — the "Counter" value field and the "Format" dropdown weren't reliably filling their grid column, so they visually misaligned row to row.
+- **Settings "Translations" tab removed**: the PDF-label override table (EN/DE/FR per document label) is dropped along with its dead CSS; the legacy `trans_*` fields stay in the settings object for backward compatibility but are no longer editable from the UI.
+- **Discount type UI clarity**: replaced the plain "%"/"Fixed" native `<select>` with the app's `StyledSelect` (custom dropdown, no OS-native popup), matching the Kategorie/Einheit dropdowns; widened the discount amount input from 40px to 64px.
+- **Dashboard scout-year pill labels**: shortened to "H1"/"H2"/"Dieses Jahr"/"Letztes Jahr"/"Eigene Dauer" (DE) and made the pills hug their own text instead of using generous fixed padding.
+- **Dashboard custom-range date inputs**: replaced native `<input type="date">` with the app's own `DatePicker` component for visual consistency with the rest of the app.
+- **DB migration 16**: updates `dashboard_range_h1/h2/current/last/custom` DE translation values to the new shorter labels.
+
 ## [1.7.2] - 2026-09-23
 
 ### Fixed

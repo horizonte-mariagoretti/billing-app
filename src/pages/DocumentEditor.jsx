@@ -22,6 +22,22 @@ import ClientModal from '../components/ClientModal';
 import DatePicker from '../components/DatePicker';
 import './DocumentEditor.css';
 
+// Custom arrow-key stepping for numeric fields: plain arrow = 0.5, +Shift =
+// 1.0, +Ctrl = 0.1, +Shift+Ctrl = 10.0. Overrides the browser's native
+// stepUp/stepDown (which only knows a single fixed `step`).
+const handleNumberArrowKey = (value, onChange, { min = 0 } = {}) => (e) => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  e.preventDefault();
+  const dir = e.key === 'ArrowUp' ? 1 : -1;
+  const step = e.shiftKey && e.ctrlKey ? 10 : e.shiftKey ? 1 : e.ctrlKey ? 0.1 : 0.5;
+  const next = Math.round(Math.max(min, (value || 0) + dir * step) * 100) / 100;
+  onChange(next);
+};
+
+// Number fields default to 0 — without this, typing into one appends after
+// the "0" (e.g. "0" -> "05") instead of replacing it.
+const selectOnFocus = (e) => e.target.select();
+
 const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onConvertToInvoice }) => {
   const { query } = useDatabase();
   const { transitionDocument, fetchPayments } = useDocuments();
@@ -624,9 +640,9 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               const gridCols = [
                 '16px',
                 '1fr',
-                vc.qty !== false ? '64px' : null,
+                vc.qty !== false ? '92px' : null,
                 vc.duration !== false ? '92px' : null,
-                vc.rate !== false ? '88px' : null,
+                vc.rate !== false ? '92px' : null,
                 vc.total !== false ? '104px' : null,
                 '52px',
               ].filter(Boolean).join(' ');
@@ -713,6 +729,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <input
                         type="number" min="0" step="0.01" value={item.qty}
                         onChange={(e) => updateItem(item.id, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                        onKeyDown={handleNumberArrowKey(item.qty, (n) => updateItem(item.id, 'qty', n))}
+                        onFocus={selectOnFocus}
                       />
                     </div>
                     )}
@@ -721,6 +739,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <input
                         type="number" min="0" step="0.25" value={item.duration ?? 1}
                         onChange={(e) => updateItem(item.id, 'duration', Math.max(0, parseFloat(e.target.value) || 0))}
+                        onKeyDown={handleNumberArrowKey(item.duration ?? 1, (n) => updateItem(item.id, 'duration', n))}
+                        onFocus={selectOnFocus}
                       />
                     </div>
                     )}
@@ -729,6 +749,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <input
                         type="number" min="0" step="0.01" value={item.rate}
                         onChange={(e) => updateItem(item.id, 'rate', Math.max(0, parseFloat(e.target.value) || 0))}
+                        onKeyDown={handleNumberArrowKey(item.rate, (n) => updateItem(item.id, 'rate', n))}
+                        onFocus={selectOnFocus}
                       />
                     </div>
                     )}
@@ -863,14 +885,20 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                           if (doc.discount_type === '%') v = Math.min(100, v);
                           updateDoc((d) => ({ ...d, discount_value: v }));
                         }}
+                        onKeyDown={handleNumberArrowKey(doc.discount_value, (n) => {
+                          const v = doc.discount_type === '%' ? Math.min(100, n) : n;
+                          updateDoc((d) => ({ ...d, discount_value: v }));
+                        })}
+                        onFocus={selectOnFocus}
                       />
-                      <select
+                      <StyledSelect
+                        className="discount-type-select"
                         value={doc.discount_type}
                         onChange={(e) => updateDoc((d) => ({ ...d, discount_type: e.target.value }))}
                       >
                         <option value="%">%</option>
-                        <option value="fixed">{t('editor_fixed', 'Fixed')}</option>
-                      </select>
+                        <option value="fixed">€</option>
+                      </StyledSelect>
                     </div>
                   </div>
                   <span>-{fmt(discount)}</span>
@@ -883,6 +911,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                       <input
                         type="number" min="0" step="0.01" value={doc.tax_rate}
                         onChange={(e) => updateDoc((d) => ({ ...d, tax_rate: Math.max(0, parseFloat(e.target.value) || 0) }))}
+                        onKeyDown={handleNumberArrowKey(doc.tax_rate, (n) => updateDoc((d) => ({ ...d, tax_rate: n })))}
+                        onFocus={selectOnFocus}
                       />
                       <span>%</span>
                     </div>

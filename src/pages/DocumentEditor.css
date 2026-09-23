@@ -870,20 +870,12 @@
 }
 
 .discount-inputs input {
-  width: 40px;
+  width: 64px;
   background: transparent;
   border: none;
   text-align: right;
   font-size: 0.85rem;
   color: var(--color-text-dark-primary);
-}
-
-.discount-inputs select {
-  background: transparent;
-  border: none;
-  font-size: 0.8rem;
-  color: var(--color-text-dark-secondary);
-  padding: 0;
 }
 
 .tax-config input {
@@ -998,18 +990,34 @@
   font-weight: 500;
 }
 
-/* discount type select */
-.discount-inputs select {
-  appearance: none;
-  -webkit-appearance: none;
+/* Discount type — bordered + chevron (via StyledSelect) so it reads as a
+   percent/fixed-amount toggle instead of plain text sitting next to the input. */
+.discount-type-select.ss-root {
+  width: auto;
+}
+
+.discount-type-select .ss-trigger {
   background: transparent;
   border: none;
-  padding: 0 4px;
-  box-shadow: none;
-  width: auto;
-  cursor: pointer;
+  border-radius: 0;
+  min-height: auto;
+  padding: 4px 8px 4px 8px;
   color: var(--color-text-dark-secondary);
   font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.discount-type-select .ss-trigger:hover,
+.discount-type-select.ss-open .ss-trigger {
+  background: transparent;
+  border-color: var(--color-border-light-theme);
+  box-shadow: none;
+  color: var(--color-text-dark-primary);
+}
+
+.discount-type-select .ss-chevron {
+  width: 12px;
+  height: 12px;
 }
 
 /* ── Doc meta row (doc number + issue date — secondary) ── */

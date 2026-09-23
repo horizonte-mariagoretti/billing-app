@@ -928,6 +928,24 @@ if (getVersion() < 15) {
   setVersion(15);
 }
 
+// Migration 16: dashboard scout-year pills shortened to plain H1/H2/
+// Dieses Jahr/Letztes Jahr/Eigene Dauer — the original wording ("1. Halbjahr",
+// "Aktuelles Pfadfinderjahr", "Benutzerdefiniert") was too long for the pill row.
+if (getVersion() < 16) {
+  try {
+    db.exec(`
+      UPDATE ui_translations SET value_de = 'H1' WHERE key = 'dashboard_range_h1';
+      UPDATE ui_translations SET value_de = 'H2' WHERE key = 'dashboard_range_h2';
+      UPDATE ui_translations SET value_de = 'Dieses Jahr' WHERE key = 'dashboard_range_current';
+      UPDATE ui_translations SET value_de = 'Letztes Jahr' WHERE key = 'dashboard_range_last';
+      UPDATE ui_translations SET value_de = 'Eigene Dauer' WHERE key = 'dashboard_range_custom';
+    `);
+  } catch (e) {
+    console.error('Migration 16 failed:', e.message);
+  }
+  setVersion(16);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

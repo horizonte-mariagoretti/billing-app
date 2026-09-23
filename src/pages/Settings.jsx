@@ -3,7 +3,7 @@ import useSettings from '../hooks/useSettings';
 import { useT, getUiLang, setUiLang } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { Save, Building2, CreditCard, FileText, RefreshCw, Languages, Trash2, Plus, AlertTriangle, GripVertical } from 'lucide-react';
+import { Save, Building2, CreditCard, FileText, RefreshCw, Trash2, Plus, AlertTriangle, GripVertical } from 'lucide-react';
 import './Settings.css';
 
 // TABS are built inside Settings component to use t()
@@ -163,6 +163,7 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
                     const n = parseInt(e.target.value, 10);
                     onNextNumberChange(Number.isFinite(n) && n >= 1 ? String(n) : '1');
                   }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="1"
                 />
                 <select className="format-select" value={row.format} onChange={(e) => updateRow(row.id, { format: e.target.value })}>
@@ -205,7 +206,6 @@ const Settings = () => {
     { id: 'company', label: t('settings_tab_company', 'Company Info'), icon: Building2 },
     { id: 'billing', label: t('settings_tab_billing', 'Billing'), icon: CreditCard },
     { id: 'numbering', label: t('settings_tab_numbering', 'Numbering'), icon: FileText },
-    { id: 'translations', label: t('settings_tab_translations', 'Translations'), icon: Languages },
   ];
   const [saved, setSaved] = useState(false);
   const [savedForm, setSavedForm] = useState(null);
@@ -365,7 +365,7 @@ const Settings = () => {
               </div>
               <div>
                 <label className="input-label">{t('settings_field_tax_rate', 'Standard Tax Rate (%)')}</label>
-                <input type="number" className="input-field" value={form.default_tax_rate} onChange={set('default_tax_rate')} />
+                <input type="number" className="input-field" value={form.default_tax_rate} onChange={set('default_tax_rate')} onFocus={(e) => e.target.select()} />
               </div>
             </div>
             <div className="settings-divider" />
@@ -419,42 +419,6 @@ const Settings = () => {
               onNextNumberChange={(val) => setDirect('quote_next_number', val)}
               t={t}
             />
-          </div>
-        )}
-
-        {activeTab === 'translations' && (
-          <div className="settings-section">
-            <div className="section-title">
-              <h2>{t('settings_pdf_title', 'PDF Localization')}</h2>
-              <p>{t('settings_pdf_desc', 'Customise how your PDF labels appear in different languages.')}</p>
-            </div>
-
-            <div className="translation-table">
-              <div className="translation-table-inner">
-                <div className="table-header">
-                  <div className="col-key">{t('settings_doc_label', 'Document Label')}</div>
-                  <div className="col-lang">{t('settings_lang_en', 'English (EN)')}</div>
-                  <div className="col-lang">{t('settings_lang_de', 'Deutsch (DE)')}</div>
-                  <div className="col-lang">{t('settings_lang_fr', 'Français (FR)')}</div>
-                </div>
-
-                {[
-                  { id: 'invoice', label: t('editor_invoice_label', 'Invoice') },
-                  { id: 'quote', label: t('editor_quote_label', 'Quote') },
-                  { id: 'date', label: t('col_date', 'Date') },
-                  { id: 'due_date', label: t('editor_due_date', 'Due Date') },
-                  { id: 'total', label: t('editor_total', 'Total') },
-                  { id: 'cash_note', label: t('settings_cash_note_label', 'Cash sale note') },
-                ].map(item => (
-                  <div key={item.id} className="table-row">
-                    <div className="col-key">{item.label}</div>
-                    <div className="col-lang"><input value={form[`trans_${item.id}_en`]} onChange={set(`trans_${item.id}_en`)} /></div>
-                    <div className="col-lang"><input value={form[`trans_${item.id}_de`]} onChange={set(`trans_${item.id}_de`)} /></div>
-                    <div className="col-lang"><input value={form[`trans_${item.id}_fr`]} onChange={set(`trans_${item.id}_fr`)} /></div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 

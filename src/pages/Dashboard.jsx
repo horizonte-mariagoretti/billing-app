@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import StatusBadge from '../components/StatusBadge';
+import DatePicker from '../components/DatePicker';
 import { effectiveStatus } from '../utils/documentLifecycle';
 import { useT } from '../hooks/useUiTranslations';
 import {
@@ -403,19 +404,9 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
             </div>
             {chartRange === 'custom' && (
               <div className="custom-range">
-                <input
-                  type="date"
-                  className="date-range-input"
-                  value={customFrom}
-                  onChange={e => setCustomFrom(e.target.value)}
-                />
+                <DatePicker value={customFrom} onChange={setCustomFrom} />
                 <span className="date-range-sep">–</span>
-                <input
-                  type="date"
-                  className="date-range-input"
-                  value={customTo}
-                  onChange={e => setCustomTo(e.target.value)}
-                />
+                <DatePicker value={customTo} onChange={setCustomTo} />
               </div>
             )}
           </div>
