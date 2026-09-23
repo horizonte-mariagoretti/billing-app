@@ -10,7 +10,7 @@ const INVOICE_TRANSITIONS = {
   sent: ['paid', 'cancelled', 'draft'],     // draft = unlock for edit
   overdue: ['paid', 'cancelled', 'draft'],
   paid: ['sent'],                            // unlock for edit
-  cancelled: [],
+  cancelled: ['draft'],                       // unlock for edit
 };
 
 const QUOTE_TRANSITIONS = {
@@ -18,7 +18,7 @@ const QUOTE_TRANSITIONS = {
   sent: ['accepted', 'declined', 'draft'],  // draft = unlock for edit
   accepted: ['converted', 'draft'],
   declined: ['draft'],
-  converted: [],
+  converted: ['draft'],                       // unlock for edit
 };
 
 const transitionsFor = (type) => (type === 'quote' ? QUOTE_TRANSITIONS : INVOICE_TRANSITIONS);

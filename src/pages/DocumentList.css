@@ -86,6 +86,10 @@
   background-color: var(--color-surface-muted);
 }
 
+.doc-row-clickable {
+  cursor: pointer;
+}
+
 .doc-num {
   font-family: var(--font-mono);
   font-weight: 600;

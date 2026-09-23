@@ -54,6 +54,10 @@
   background-color: var(--color-surface-muted);
 }
 
+.client-row-clickable {
+  cursor: pointer;
+}
+
 .client-name-cell {
   font-weight: 600;
   color: var(--color-text-dark-primary) !important;

@@ -97,7 +97,7 @@ const DocumentList = ({ type = 'invoice', onEdit, onNew }) => {
             </thead>
             <tbody>
               {filteredDocs.map(doc => (
-                <tr key={doc.id}>
+                <tr key={doc.id} className="doc-row-clickable" onClick={() => onEdit(doc)}>
                   <td className="doc-num">{doc.number}</td>
                   <td className="client-name">{doc.client_name || t('doc_no_client', 'No Client')}</td>
                   <td className="doc-title-cell">{doc.title || '—'}</td>
@@ -111,14 +111,14 @@ const DocumentList = ({ type = 'invoice', onEdit, onNew }) => {
                       <button
                         title={t('btn_edit', 'Edit')}
                         aria-label={`${t('btn_edit', 'Edit')} ${type} ${doc.number}`}
-                        onClick={() => onEdit(doc)}
+                        onClick={(e) => { e.stopPropagation(); onEdit(doc); }}
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         title={t('btn_delete', 'Delete')}
                         aria-label={`${t('btn_delete', 'Delete')} ${type} ${doc.number}`}
-                        onClick={() => setConfirm({ id: doc.id, number: doc.number })}
+                        onClick={(e) => { e.stopPropagation(); setConfirm({ id: doc.id, number: doc.number }); }}
                       >
                         <Trash2 size={16} />
                       </button>

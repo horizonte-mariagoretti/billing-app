@@ -137,7 +137,7 @@ const Clients = () => {
             </thead>
             <tbody>
               {filteredClients.map(client => (
-                <tr key={client.id}>
+                <tr key={client.id} className="client-row-clickable" onClick={() => handleEdit(client)}>
                   <td className="client-name-cell">{client.name}</td>
                   <td>
                     <div className="cell-with-icon">
@@ -167,14 +167,14 @@ const Clients = () => {
                       <button
                         title={t('btn_edit', 'Edit')}
                         aria-label={`${t('btn_edit', 'Edit')} ${client.name}`}
-                        onClick={() => handleEdit(client)}
+                        onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         title={t('btn_delete', 'Delete')}
                         aria-label={`${t('btn_delete', 'Delete')} ${client.name}`}
-                        onClick={() => setConfirm({ id: client.id, name: client.name })}
+                        onClick={(e) => { e.stopPropagation(); setConfirm({ id: client.id, name: client.name }); }}
                       >
                         <Trash2 size={16} />
                       </button>

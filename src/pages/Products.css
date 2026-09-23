@@ -39,6 +39,7 @@
 
 .products-table tr:last-child td { border-bottom: none; }
 .products-table tr:hover td { background-color: var(--color-surface-muted); }
+.product-row-clickable { cursor: pointer; }
 
 .product-name-cell {
   display: flex;

@@ -897,6 +897,23 @@ if (getVersion() < 13) {
   setVersion(13);
 }
 
+// Migration 14: scout-year dashboard range pills (H1/H2/current/last scout year)
+// replaced the old rolling 1M/3M/6M/1Y/ALL set — new pill labels need translations.
+if (getVersion() < 14) {
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+        ('dashboard_range_h1','1. Halbjahr','1er semestre','H1'),
+        ('dashboard_range_h2','2. Halbjahr','2e semestre','H2'),
+        ('dashboard_range_current','Aktuelles Pfadfinderjahr','Année scoute actuelle','Current Year'),
+        ('dashboard_range_last','Letztes Pfadfinderjahr','Année scoute précédente','Last Year');
+    `);
+  } catch (e) {
+    console.error('Migration 14 failed:', e.message);
+  }
+  setVersion(14);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
