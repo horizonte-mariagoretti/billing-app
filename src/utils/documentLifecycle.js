@@ -7,17 +7,17 @@ export const QUOTE_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'convert
 
 const INVOICE_TRANSITIONS = {
   draft: ['sent'],
-  sent: ['paid', 'cancelled'],
-  overdue: ['paid', 'cancelled'],
-  paid: ['sent'],            // unlock for edit
+  sent: ['paid', 'cancelled', 'draft'],     // draft = unlock for edit
+  overdue: ['paid', 'cancelled', 'draft'],
+  paid: ['sent'],                            // unlock for edit
   cancelled: [],
 };
 
 const QUOTE_TRANSITIONS = {
   draft: ['sent'],
-  sent: ['accepted', 'declined'],
-  accepted: ['converted'],
-  declined: [],
+  sent: ['accepted', 'declined', 'draft'],  // draft = unlock for edit
+  accepted: ['converted', 'draft'],
+  declined: ['draft'],
   converted: [],
 };
 
@@ -56,6 +56,9 @@ export const applyTransition = (doc, nextStatus) => {
       // explicit "unlock for edit"
       updates.locked = 0;
       updates.paid_at = null;
+    } else if (nextStatus === 'draft') {
+      // explicit "unlock for edit" from sent/overdue — back to draft, fully editable
+      updates.locked = 0;
     } else if (nextStatus === 'sent') {
       updates.locked = 1;
       if (!doc.issued_at) updates.issued_at = ts;
@@ -67,7 +70,10 @@ export const applyTransition = (doc, nextStatus) => {
       updates.locked = 1;
     }
   } else if (doc.type === 'quote') {
-    if (nextStatus === 'sent') {
+    if (nextStatus === 'draft') {
+      // explicit "unlock for edit" from sent/accepted/declined
+      updates.locked = 0;
+    } else if (nextStatus === 'sent') {
       updates.locked = 1;
       if (!doc.issued_at) updates.issued_at = ts;
     } else if (nextStatus === 'converted') {

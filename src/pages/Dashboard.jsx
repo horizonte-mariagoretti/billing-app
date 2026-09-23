@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import './Dashboard.css';
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DEFAULT_CHART_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const RANGES = [
   { id: '1m', label: '1M', months: 1 },
   { id: '3m', label: '3M', months: 3 },
@@ -65,6 +65,7 @@ const smoothPath = (pts, yMin = -Infinity, yMax = Infinity) => {
 const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   const { query } = useDatabase();
   const t = useT();
+  const MONTHS = t('chart_months_short', DEFAULT_CHART_MONTHS.join(',')).split(',');
   const [stats, setStats] = useState({
     revenue: 0, paidInvoices: 0, pendingQuotes: 0, totalClients: 0
   });
@@ -209,18 +210,23 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
     setShowHero(false);
   };
 
-  // Slice monthlyRevenue based on selected range; 1m uses daily granularity
+  // Slice monthlyRevenue based on selected range; 1m uses daily granularity.
+  // monthlyRevenue's own .label was baked in once by the mount-time fetch
+  // effect (using whatever MONTHS resolved to before translations had
+  // loaded) — relabel from .key here so it stays reactive to language
+  // changes without needing to refetch.
+  const relabelMonth = (m) => ({ ...m, label: MONTHS[parseInt(m.key.slice(5, 7), 10) - 1] });
   const visibleMonths = useMemo(() => {
     if (chartRange === '1m') return dailyRevenue;
-    if (chartRange === 'all') return monthlyRevenue;
+    if (chartRange === 'all') return monthlyRevenue.map(relabelMonth);
     if (chartRange === 'custom') {
       const fromKey = customFrom.slice(0, 7);
       const toKey = customTo.slice(0, 7);
-      return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey);
+      return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey).map(relabelMonth);
     }
     const months = RANGES.find(r => r.id === chartRange)?.months || 12;
-    return monthlyRevenue.slice(-months);
-  }, [monthlyRevenue, dailyRevenue, chartRange, customFrom, customTo]);
+    return monthlyRevenue.slice(-months).map(relabelMonth);
+  }, [monthlyRevenue, dailyRevenue, chartRange, customFrom, customTo, MONTHS]);
 
   const filteredRevenue = useMemo(
     () => visibleMonths.reduce((sum, m) => sum + m.value, 0),
@@ -304,7 +310,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
       {/* HERO PROMO CARD */}
       {showHero && (
         <section className="hero-card">
-          <button className="hero-close" onClick={handleCloseHero} aria-label="Close">
+          <button className="hero-close" onClick={handleCloseHero} aria-label={t('btn_close', 'Close')}>
             <X size={18} />
           </button>
           <div className="hero-content">
@@ -373,7 +379,9 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                   className={`time-pill ${chartRange === r.id ? 'active' : ''}`}
                   onClick={() => setChartRange(r.id)}
                 >
-                  {r.label}
+                  {r.id === 'all' ? t('dashboard_range_all', r.label)
+                    : r.id === 'custom' ? t('dashboard_range_custom', r.label)
+                    : r.label}
                 </button>
               ))}
             </div>
@@ -408,7 +416,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
             viewBox={`0 0 ${chartWidth} ${CHART_H}`}
             preserveAspectRatio="none"
             role="img"
-            aria-label="Revenue line chart"
+            aria-label={t('dashboard_chart_aria', 'Revenue line chart')}
           >
             <defs>
               <linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">

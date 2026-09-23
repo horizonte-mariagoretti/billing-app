@@ -3,8 +3,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const UiTranslationsContext = createContext(null);
 
-const VALID_LANGS = ['de', 'fr', 'en'];
-const COL_MAP = { de: 'value_de', fr: 'value_fr', en: 'value_en' };
+const VALID_LANGS = ['de', 'fr'];
+const COL_MAP = { de: 'value_de', fr: 'value_fr' };
 
 export function getUiLang() {
   const raw = localStorage.getItem('app_ui_lang');

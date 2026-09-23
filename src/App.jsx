@@ -8,10 +8,13 @@ import DocumentList from './pages/DocumentList';
 import DocumentEditor from './pages/DocumentEditor';
 import useDocuments from './hooks/useDocuments';
 import useSettings from './hooks/useSettings';
-import { UiTranslationsProvider } from './hooks/useUiTranslations';
+import { UiTranslationsProvider, useT } from './hooks/useUiTranslations';
 import './index.css';
 
-function App() {
+// AppInner is a child of UiTranslationsProvider (see App() below) so it can
+// use useT() — App() itself can't, since it's the one creating the provider.
+function AppInner() {
+  const t = useT();
   const [view, setView] = useState('dashboard');
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState(null);
@@ -102,40 +105,53 @@ function App() {
       case 'settings':
         return <Settings />;
       default:
-        return <div>Dashboard</div>;
+        return <div>{t('nav_dashboard', 'Dashboard')}</div>;
     }
   };
 
+  // Mirrors the same title logic DocumentEditor.jsx uses internally for its
+  // own header, so the page-level title (here) and the editor's own <h2>
+  // agree instead of one being hardcoded English and the other localized.
   const editorTitle = isEditing
-    ? `${editingData?.id ? 'Edit' : 'Create'} ${(editingData?.type || 'invoice').replace(/^./, c => c.toUpperCase())}`
+    ? (editingData?.id
+        ? t('editor_edit', 'Edit Document')
+        : editingData?.type === 'quote'
+          ? t('editor_create_quote', 'New Quote')
+          : t('editor_create_invoice', 'New Invoice'))
     : null;
 
   return (
+    <Layout
+      currentView={view}
+      setView={(v) => { setView(v); setIsEditing(false); }}
+      onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
+      title={editorTitle}
+      settings={appSettings}
+      noPadding={isEditing}
+    >
+      {settingsError && (
+        <div className="page-error" role="alert">
+          {t('settings_load_error', 'Settings failed to load')}: {settingsError}
+        </div>
+      )}
+      {isEditing ? (
+        <DocumentEditor
+          key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}
+          type={editingData?.type || 'invoice'}
+          initialData={editingData}
+          onSave={handleSaveDoc}
+          onCancel={() => setIsEditing(false)}
+          onConvertToInvoice={handleConvertToInvoice}
+        />
+      ) : renderContent()}
+    </Layout>
+  );
+}
+
+function App() {
+  return (
     <UiTranslationsProvider>
-      <Layout
-        currentView={view}
-        setView={(v) => { setView(v); setIsEditing(false); }}
-        onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
-        title={editorTitle}
-        settings={appSettings}
-        noPadding={isEditing}
-      >
-        {settingsError && (
-          <div className="page-error" role="alert">
-            Settings failed to load: {settingsError}
-          </div>
-        )}
-        {isEditing ? (
-          <DocumentEditor
-            key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}
-            type={editingData?.type || 'invoice'}
-            initialData={editingData}
-            onSave={handleSaveDoc}
-            onCancel={() => setIsEditing(false)}
-            onConvertToInvoice={handleConvertToInvoice}
-          />
-        ) : renderContent()}
-      </Layout>
+      <AppInner />
     </UiTranslationsProvider>
   );
 }

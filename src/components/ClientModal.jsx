@@ -15,10 +15,11 @@ import {
 import './ClientModal.css';
 
 const ValidationIcon = ({ status, title }) => {
-  if (status === 'pending') return <Loader2 size={14} className="val-icon val-pending" title={title || 'Checking...'} aria-label="Validating" />;
-  if (status === 'valid')   return <Check   size={14} className="val-icon val-valid"   title={title || 'Valid'}       aria-label="Valid" />;
-  if (status === 'invalid') return <X       size={14} className="val-icon val-invalid" title={title || 'Invalid'}     aria-label="Invalid" />;
-  if (status === 'error')   return <AlertCircle size={14} className="val-icon val-error" title={title || 'Service unavailable'} aria-label="Service unavailable" />;
+  const t = useT();
+  if (status === 'pending') return <Loader2 size={14} className="val-icon val-pending" title={title || t('clients_checking', 'Checking...')} aria-label={t('clients_checking', 'Checking...')} />;
+  if (status === 'valid')   return <Check   size={14} className="val-icon val-valid"   title={title || t('clients_valid', 'Valid')}       aria-label={t('clients_valid', 'Valid')} />;
+  if (status === 'invalid') return <X       size={14} className="val-icon val-invalid" title={title || t('clients_invalid', 'Invalid')}     aria-label={t('clients_invalid', 'Invalid')} />;
+  if (status === 'error')   return <AlertCircle size={14} className="val-icon val-error" title={title || t('clients_service_unavailable', 'Service unavailable')} aria-label={t('clients_service_unavailable', 'Service unavailable')} />;
   return null;
 };
 
@@ -91,7 +92,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
 
   const validate = () => {
     const errors = {};
-    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.name.trim()) errors.name = t('clients_name_required', 'Name is required');
     if (formData.email && emailState.status === 'invalid') errors.email = t('clients_invalid_email', 'Invalid email format');
     if (formData.phone && phoneState.status === 'invalid') errors.phone = t('clients_invalid_phone', 'Invalid phone format');
     setFormErrors(errors);
@@ -191,7 +192,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
             </div>
           </div>
           {phoneHint && (
-            <div className="field-hint">Detected: {phoneHint}</div>
+            <div className="field-hint">{t('clients_detected_prefix', 'Detected: ')}{phoneHint}</div>
           )}
 
           <div className="address-section">
@@ -245,7 +246,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
             />
           </div>
           {vatCompany && (
-            <div className="field-hint vat-hint">Registered to: <strong>{vatCompany}</strong></div>
+            <div className="field-hint vat-hint">{t('clients_registered_to_prefix', 'Registered to: ')}<strong>{vatCompany}</strong></div>
           )}
 
           <div className="modal-actions">

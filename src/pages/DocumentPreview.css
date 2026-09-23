@@ -159,9 +159,23 @@
   border-left: 3px solid #BB1615;
 }
 
+/* Editor-only warning — never appears in the exported PDF, only this live
+   in-app preview — flags that a client reading the doc would see no
+   per-line pricing at all, just the grand total. */
+.pdf-pricing-hidden-note {
+  font-size: 8.5pt;
+  font-weight: 600;
+  color: #92400E;
+  margin-bottom: 5mm;
+  padding: 5px 10px;
+  background: #FFFBEB;
+  border-left: 3px solid #FFD600;
+}
+
 /* ── Line items table ── */
 .pdf-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   margin-bottom: 0;
 }
@@ -171,7 +185,7 @@
 }
 
 .pdf-table th {
-  padding: 6px 0;
+  padding: 6px 18px 6px 0;
   font-size: 8pt;
   font-weight: 700;
   text-transform: uppercase;
@@ -186,7 +200,7 @@
 }
 
 .pdf-table td {
-  padding: 9px 0;
+  padding: 9px 18px 9px 0;
   font-size: 9.5pt;
   vertical-align: top;
   text-align: right;
@@ -198,33 +212,47 @@
   text-align: left;
 }
 
+/* Numeric columns are tight on width (8-10%) — without their own right
+   padding, adjacent headers like MENGE / DAUER (H) crowd with no gutter
+   between them. Last column sits flush against the page margin instead. */
+.pdf-table th.col-total,
+.pdf-table td.col-total {
+  padding-right: 0;
+}
+
+/* Numeric columns are sized to fit their own header/content (not stretched
+   proportionally like col-desc) — %-based widths made short labels like
+   MENGE sit in an oversized column while EINZELPREIS nearly filled its own,
+   so the visual gap between adjacent right-aligned headers varied wildly.
+   Fixed widths sized to content give every header the same trailing gutter. */
 .pdf-table .col-num {
-  width: 24px;
+  width: 26px;
   color: #999;
   font-size: 8.5pt;
-  padding-right: 6px !important;
+  padding-right: 10px !important;
 }
 
 .pdf-table .col-desc {
-  width: 55%;
+  width: calc(100% - 26px - 62px - 78px - 100px - 92px);
+  padding-right: 22px;
 }
 
 .pdf-table .col-qty {
-  width: 8%;
+  width: 62px;
 }
 
 .pdf-table .col-duration {
-  width: 10%;
+  width: 78px;
   text-align: right;
   white-space: nowrap;
 }
 
 .pdf-table .col-rate {
-  width: 17%;
+  width: 100px;
 }
 
 .pdf-table .col-total {
-  width: 17%;
+  width: 92px;
   font-weight: 600;
 }
 

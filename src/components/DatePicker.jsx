@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { useT } from '../hooks/useUiTranslations';
 import './DatePicker.css';
 
-const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const MONTHS = [
+const DEFAULT_WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const DEFAULT_MONTHS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ];
@@ -29,6 +30,9 @@ function formatDisplay(str) {
 }
 
 const DatePicker = ({ label, value, onChange, disabled }) => {
+  const t = useT();
+  const WEEKDAYS = t('date_weekdays_short', DEFAULT_WEEKDAYS.join(',')).split(',');
+  const MONTHS = t('date_months', DEFAULT_MONTHS.join(',')).split(',');
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState(() => value ? formatDisplay(value) : '');
   const [viewYear, setViewYear] = useState(() => {
@@ -136,7 +140,7 @@ const DatePicker = ({ label, value, onChange, disabled }) => {
           value={inputText}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          placeholder="TT.MM.JJJJ"
+          placeholder={t('date_input_placeholder', 'TT.MM.JJJJ')}
           disabled={disabled}
           aria-haspopup="dialog"
           aria-expanded={open}
@@ -147,20 +151,20 @@ const DatePicker = ({ label, value, onChange, disabled }) => {
           onClick={handleCalendarClick}
           tabIndex={-1}
           disabled={disabled}
-          aria-label="Kalender öffnen"
+          aria-label={t('date_open_calendar', 'Kalender öffnen')}
         >
           <Calendar size={16} className="datepicker-icon" />
         </button>
       </div>
 
       {open && (
-        <div className="datepicker-popup" role="dialog" aria-label="Datumsauswahl">
+        <div className="datepicker-popup" role="dialog" aria-label={t('date_picker_dialog', 'Datumsauswahl')}>
           <div className="datepicker-header">
-            <button type="button" className="dp-nav-btn" onClick={prevMonth} aria-label="Vorheriger Monat">
+            <button type="button" className="dp-nav-btn" onClick={prevMonth} aria-label={t('date_prev_month', 'Vorheriger Monat')}>
               <ChevronLeft size={16} />
             </button>
             <span className="dp-month-label">{MONTHS[viewMonth]} {viewYear}</span>
-            <button type="button" className="dp-nav-btn" onClick={nextMonth} aria-label="Nächster Monat">
+            <button type="button" className="dp-nav-btn" onClick={nextMonth} aria-label={t('date_next_month', 'Nächster Monat')}>
               <ChevronRight size={16} />
             </button>
           </div>

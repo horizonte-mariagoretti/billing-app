@@ -3,16 +3,30 @@ import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import SyncStatusBadge from '../sync/SyncStatusBadge';
+import { useT } from '../hooks/useUiTranslations';
 import './Layout.css';
 
 const isWebRuntime = typeof window !== 'undefined' && window.__ELECTRON_PRELOAD__ !== true;
 
 const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noPadding = false }) => {
+  const t = useT();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => { setIsMobileOpen(false); }, [currentView]);
-  const resolvedTitle = title ?? (currentView.charAt(0).toUpperCase() + currentView.slice(1));
+  // Falls back to the sidebar's own nav_* token for this view instead of
+  // just capitalizing the raw view key (which always rendered in English,
+  // regardless of app language).
+  const VIEW_TITLE_KEYS = {
+    dashboard: ['nav_dashboard', 'Dashboard'],
+    invoices: ['nav_invoices', 'Invoices'],
+    quotes: ['nav_quotes', 'Quotes'],
+    clients: ['nav_clients', 'Clients'],
+    products: ['nav_products', 'Products'],
+    settings: ['nav_settings', 'Settings'],
+  };
+  const [fallbackKey, fallbackText] = VIEW_TITLE_KEYS[currentView] || [null, currentView];
+  const resolvedTitle = title ?? (fallbackKey ? t(fallbackKey, fallbackText) : fallbackText);
   const initials = (() => {
     const name = (settings?.company_name || '').trim();
     if (!name) return '??';
@@ -41,7 +55,7 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
           <button
             className="hamburger-btn"
             onClick={() => setIsMobileOpen(v => !v)}
-            aria-label="Toggle navigation"
+            aria-label={t('nav_toggle', 'Toggle navigation')}
             aria-expanded={isMobileOpen}
           >
             <Menu size={20} />

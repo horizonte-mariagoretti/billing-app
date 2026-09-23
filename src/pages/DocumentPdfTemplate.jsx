@@ -4,6 +4,10 @@ import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff';
 import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff';
 import InterBold from '@fontsource/inter/files/inter-latin-700-normal.woff';
 import OutfitBold from '@fontsource/outfit/files/outfit-latin-700-normal.woff';
+import {
+  getDocLabels, getVisibleColumns, fmtCurrency as fmt, fmtNum, fmtDocDate as fmtDate,
+  calcDocTotals, getDocTypeLabel, getClientAddressLines, splitItemNameDesc, getItemLineTotal,
+} from '../utils/documentCalc';
 
 Font.register({
   family: 'Inter',
@@ -18,68 +22,6 @@ Font.register({
   family: 'Outfit',
   fonts: [{ src: OutfitBold, fontWeight: 700 }],
 });
-
-// ── Label dictionaries ────────────────────────────────────────────────────────
-const L = {
-  en: {
-    billTo: 'Bill to',
-    description: 'Description',
-    qty: 'Qty',
-    rate: 'Rate',
-    total: 'Total',
-    duration: 'Duration (h)',
-    subtotal: 'Subtotal',
-    discount: 'Discount',
-    tax: 'Tax',
-    paymentNote: 'Please transfer the total amount to the following bank account:',
-    date: 'Date',
-    dueDate: 'Due Date',
-    validUntil: 'Valid Until',
-  },
-  de: {
-    billTo: 'Rechnungsempfänger',
-    description: 'Beschreibung',
-    qty: 'Menge',
-    rate: 'Einzelpreis',
-    total: 'Gesamt',
-    duration: 'Dauer (h)',
-    subtotal: 'Zwischensumme',
-    discount: 'Rabatt',
-    tax: 'MwSt.',
-    paymentNote: 'Gesamtbetrag bitte auf folgendes Konto überweisen:',
-    date: 'Datum',
-    dueDate: 'Fälligkeitsdatum',
-    validUntil: 'Gültig bis',
-  },
-  fr: {
-    billTo: 'Facturer à',
-    description: 'Description',
-    qty: 'Qté',
-    rate: 'Prix unit.',
-    total: 'Total',
-    duration: 'Durée (h)',
-    subtotal: 'Sous-total',
-    discount: 'Remise',
-    tax: 'TVA',
-    paymentNote: 'Veuillez virer le montant total sur le compte bancaire suivant :',
-    date: 'Date',
-    dueDate: "Date d'échéance",
-    validUntil: "Valable jusqu'au",
-  },
-};
-
-const fmt = (value, currency) =>
-  Number(value).toLocaleString('de-DE', {
-    minimumFractionDigits: 2,
-    style: 'currency',
-    currency: currency || 'EUR',
-  });
-
-const fmtDate = (iso) => {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
-};
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -338,47 +280,34 @@ const s = StyleSheet.create({
 // ── Component ─────────────────────────────────────────────────────────────────
 const DocumentPdfTemplate = ({ doc, sender, client }) => {
   const lang    = doc.language || 'en';
-  const labels  = L[lang] || L.en;
+  const labels  = getDocLabels(lang);
   const isCash  = doc.payment_mode === 'cash';
   const currency = doc.currency || 'EUR';
 
-  const vc = doc.visible_columns
-    ? (typeof doc.visible_columns === 'string' ? JSON.parse(doc.visible_columns) : doc.visible_columns)
-    : { qty: true, duration: true, rate: true, total: true };
+  const vc = getVisibleColumns(doc);
 
-  // desc uses flex:1 — takes all remaining space after fixed-width cols
-  const colNumStyle   = { width: '5%' };
-  const colDescStyle  = { flex: 1 };
-  const colQtyStyle   = { width: '8%',  textAlign: 'right' };
-  const colDurStyle   = { width: '10%', textAlign: 'right' };
-  const colRateStyle  = { width: '17%', textAlign: 'right' };
-  const colTotalStyle = { width: '17%', textAlign: 'right' };
+  // desc uses flex:1 — takes all remaining space. Numeric columns are sized
+  // to fit their own header/content in points (not a % of the row width) —
+  // %-based widths made short labels like MENGE sit in an oversized column
+  // while EINZELPREIS nearly filled its own, so the gap between adjacent
+  // right-aligned headers varied wildly. Fixed widths give every header the
+  // same trailing gutter regardless of label length.
+  const colNumStyle   = { width: 19 };
+  const colDescStyle  = { flex: 1, paddingRight: 16 };
+  const colQtyStyle   = { width: 46, textAlign: 'right', paddingRight: 14 };
+  const colDurStyle   = { width: 58, textAlign: 'right', paddingRight: 14 };
+  const colRateStyle  = { width: 75, textAlign: 'right', paddingRight: 14 };
+  const colTotalStyle = { width: 69, textAlign: 'right' };
 
-  const docTypeLabel =
-    doc.type === 'quote'
-      ? sender?.[`trans_quote_${lang}`]   || (lang === 'de' ? 'Angebot'  : lang === 'fr' ? 'Devis'   : 'Quote')
-      : sender?.[`trans_invoice_${lang}`] || (lang === 'de' ? 'Rechnung' : lang === 'fr' ? 'Facture' : 'Invoice');
-
+  const docTypeLabel = getDocTypeLabel(doc, sender, lang);
   const totalLabel   = sender?.[`trans_total_${lang}`] || labels.total;
   const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
 
-  // Calculations
-  const subtotal    = (doc.items || []).reduce((sum, item) => sum + item.qty * item.rate * (item.duration ?? 1), 0);
-  const discountAmt = doc.discount_type === '%'
-    ? subtotal * ((doc.discount_value || 0) / 100)
-    : (doc.discount_value || 0);
-  const tax   = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
-  const total = subtotal - discountAmt + tax;
+  const { subtotal, discountAmt, tax, total } = calcDocTotals(doc);
 
   // Address lines
   const senderAddressLines = (sender?.company_address || '').split('\n').filter(Boolean);
-  const clientAddressLines = client
-    ? [
-        client.address_street,
-        [client.address_zip, client.address_city].filter(Boolean).join(' '),
-        client.address_country,
-      ].filter(Boolean)
-    : [];
+  const clientAddressLines = getClientAddressLines(client);
 
   return (
     <Document>
@@ -451,11 +380,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
         </View>
 
         {(doc.items || []).map((item, i) => {
-          const itemName = item.name || (item.description || '').split('\n')[0] || '';
-          const rawDesc  = item.name
-            ? (item.description || '')
-            : (item.description || '').split('\n').slice(1).join('\n');
-          const descLines = rawDesc.split('\n').filter(l => l.trim());
+          const { itemName, descLines } = splitItemNameDesc(item);
 
           return (
             <View key={item.id || i} style={s.tableRow} wrap={false}>
@@ -474,12 +399,12 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
               </View>
               {vc.qty !== false && (
               <View style={colQtyStyle}>
-                <Text>{String(item.qty)}</Text>
+                <Text>{fmtNum(item.qty)}</Text>
               </View>
               )}
               {vc.duration !== false && (
               <View style={colDurStyle}>
-                <Text>{String(item.duration ?? 1)}</Text>
+                <Text>{fmtNum(item.duration ?? 1)}</Text>
               </View>
               )}
               {vc.rate !== false && (
@@ -488,7 +413,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
               </View>
               )}
               <View style={colTotalStyle}>
-                <Text style={s.totalText}>{fmt(item.qty * item.rate * (item.duration ?? 1), currency)}</Text>
+                <Text style={s.totalText}>{fmt(getItemLineTotal(item), currency)}</Text>
               </View>
             </View>
           );

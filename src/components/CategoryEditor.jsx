@@ -75,10 +75,10 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true }) => {
           ))}
         </div>
         <div className="cat-editor-actions">
-          <button type="button" className="cat-btn-cancel" onClick={onCancel} title="Cancel">
+          <button type="button" className="cat-btn-cancel" onClick={onCancel} title={t('btn_cancel', 'Cancel')}>
             <X size={14} />
           </button>
-          <button type="button" className="cat-btn-save" disabled={!canSave} onClick={handleSave} title="Save">
+          <button type="button" className="cat-btn-save" disabled={!canSave} onClick={handleSave} title={t('btn_save', 'Save')}>
             <Check size={14} />
           </button>
         </div>

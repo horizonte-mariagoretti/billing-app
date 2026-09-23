@@ -1,4 +1,24 @@
 import React from 'react';
+import { getUiLang } from '../hooks/useUiTranslations';
+
+// This boundary wraps the whole app in main.jsx, OUTSIDE UiTranslationsProvider
+// (App.jsx) — if the crash happens during boot, that provider/DB may not even
+// be mounted. So this can't use the t() context; it reads the language
+// directly from localStorage instead, with its own tiny inline dictionary.
+const STRINGS = {
+  de: {
+    title: 'Etwas ist schiefgelaufen',
+    body: 'Die Anwendung hat einen unerwarteten Fehler festgestellt. Versuche es erneut — deine Daten sind sicher in der lokalen Datenbank.',
+    tryAgain: 'Erneut versuchen',
+    reload: 'App neu laden',
+  },
+  fr: {
+    title: 'Une erreur est survenue',
+    body: "L'application a rencontré une erreur inattendue. Réessaie — tes données sont en sécurité dans la base de données locale.",
+    tryAgain: 'Réessayer',
+    reload: "Recharger l'application",
+  },
+};
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -24,6 +44,7 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.error) {
+      const s = STRINGS[getUiLang()] || STRINGS.de;
       return (
         <div style={{
           padding: '32px',
@@ -32,8 +53,8 @@ class ErrorBoundary extends React.Component {
           maxWidth: '720px',
           margin: '40px auto',
         }}>
-          <h1 style={{ color: '#dc2626' }}>Something went wrong</h1>
-          <p>The application hit an unexpected error. Try recovering — your data is safe in the local database.</p>
+          <h1 style={{ color: '#dc2626' }}>{s.title}</h1>
+          <p>{s.body}</p>
           <pre style={{
             background: '#f3f4f6',
             padding: '12px',
@@ -51,7 +72,7 @@ class ErrorBoundary extends React.Component {
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
-            }}>Try again</button>
+            }}>{s.tryAgain}</button>
             <button onClick={this.handleReload} style={{
               padding: '10px 16px',
               background: '#fff',
@@ -59,7 +80,7 @@ class ErrorBoundary extends React.Component {
               border: '1px solid #d1d5db',
               borderRadius: '6px',
               cursor: 'pointer',
-            }}>Reload app</button>
+            }}>{s.reload}</button>
           </div>
         </div>
       );
