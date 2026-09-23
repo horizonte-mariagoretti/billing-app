@@ -11,26 +11,53 @@ import './Dashboard.css';
 
 const DEFAULT_CHART_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const RANGES = [
-  { id: '1m', label: '1M', months: 1 },
-  { id: '3m', label: '3M', months: 3 },
-  { id: '6m', label: '6M', months: 6 },
-  { id: '1y', label: '1Y', months: 12 },
-  { id: 'all', label: 'ALL', months: null },
-  { id: 'custom', label: 'Custom', months: null },
+  { id: 'scout-h1', label: 'H1' },
+  { id: 'scout-h2', label: 'H2' },
+  { id: 'scout-year', label: 'Current Year' },
+  { id: 'scout-year-last', label: 'Last Year' },
+  { id: 'custom', label: 'Custom' },
 ];
 
 const TODAY = new Date();
 const todayStr = TODAY.toISOString().split('T')[0];
 
-function getFiscalYear() {
+// Scout year runs Sept 1 -> Aug 31. yearsAgo=0 is the scout year containing
+// today; yearsAgo=1 is the previous one.
+function getScoutYearBounds(yearsAgo = 0) {
   const now = new Date();
   const isBefore = now.getMonth() < 8; // before Sept (0-indexed)
-  const startYear = isBefore ? now.getFullYear() - 1 : now.getFullYear();
+  const startYear = (isBefore ? now.getFullYear() - 1 : now.getFullYear()) - yearsAgo;
   const endYear = startYear + 1;
+  return { startYear, endYear };
+}
+
+function getFiscalYear() {
+  const { startYear, endYear } = getScoutYearBounds();
   return {
     from: `${startYear}-09-01`,
     to: `${endYear}-08-31`,
   };
+}
+
+// Fixed from/to date bounds for each non-custom range pill.
+function getRangeDates(rangeId) {
+  if (rangeId === 'scout-h1') {
+    const { startYear } = getScoutYearBounds();
+    return { from: `${startYear}-09-01`, to: `${startYear}-12-31` };
+  }
+  if (rangeId === 'scout-h2') {
+    const { endYear } = getScoutYearBounds();
+    return { from: `${endYear}-01-01`, to: `${endYear}-08-31` };
+  }
+  if (rangeId === 'scout-year') {
+    const { startYear, endYear } = getScoutYearBounds();
+    return { from: `${startYear}-09-01`, to: `${endYear}-08-31` };
+  }
+  if (rangeId === 'scout-year-last') {
+    const { startYear, endYear } = getScoutYearBounds(1);
+    return { from: `${startYear}-09-01`, to: `${endYear}-08-31` };
+  }
+  return null;
 }
 
 function heroClosedToday() {
@@ -71,10 +98,9 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   });
   const [recentDocs, setRecentDocs] = useState([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-  const [dailyRevenue, setDailyRevenue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [chartRange, setChartRange] = useState('1y');
+  const [chartRange, setChartRange] = useState('scout-year');
   const [showHero, setShowHero] = useState(!heroClosedToday());
   const fiscal = getFiscalYear();
   const [customFrom, setCustomFrom] = useState(fiscal.from);
@@ -115,7 +141,6 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
 
       let totalRevenue = 0;
       const byMonth = new Map();
-      const byDay = new Map();
 
       for (const inv of invoices) {
         const subtotal = inv.items_subtotal;
@@ -129,21 +154,24 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         if (inv.status === 'paid' && inv.date) {
           const monthKey = inv.date.slice(0, 7);
           byMonth.set(monthKey, (byMonth.get(monthKey) || 0) + total);
-          const dayKey = inv.date.slice(0, 10);
-          byDay.set(dayKey, (byDay.get(dayKey) || 0) + total);
           totalRevenue += total;
         }
       }
 
-      // Build last-12 absolute months ending current month
-      const now = new Date();
+      // Build months spanning last scout year's start through current scout
+      // year's end (24 months), including future months in-progress with
+      // zero revenue so H1/H2/current-year pills always have full data.
+      const lastBounds = getScoutYearBounds(1);
+      const currentBounds = getScoutYearBounds(0);
       const series = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        series.push({ key, label: MONTHS[d.getMonth()], value: byMonth.get(key) || 0 });
+      let cursor = new Date(lastBounds.startYear, 8, 1); // Sept of last scout year
+      const end = new Date(currentBounds.endYear, 7, 1); // Aug of current scout year
+      while (cursor <= end) {
+        const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        series.push({ key, label: MONTHS[cursor.getMonth()], value: byMonth.get(key) || 0 });
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
       }
-      // Prepend any earlier months present in data (for 'all' range)
+      // Prepend any earlier months present in data (for 'custom' ranges reaching further back)
       const earlierKeys = Array.from(byMonth.keys())
         .filter(k => !series.some(s => s.key === k))
         .sort();
@@ -159,21 +187,6 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         pendingQuotes: quoteCount[0]?.cnt || 0,
         totalClients: clientCount[0]?.cnt || 0,
       });
-      // Build daily series for current month (days 1 → today only)
-      const todayDate = new Date();
-      const todayDay = todayDate.getDate();
-      const curYear = todayDate.getFullYear();
-      const curMonth = todayDate.getMonth();
-      const dailySeries = [];
-      for (let d = 1; d <= todayDay; d++) {
-        const key = `${curYear}-${String(curMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        dailySeries.push({
-          key,
-          label: d === 1 || d % 5 === 0 ? String(d) : '',
-          value: byDay.get(key) || 0,
-        });
-      }
-      setDailyRevenue(dailySeries);
       setMonthlyRevenue(fullSeries);
       setRecentDocs(recent);
     } catch (_err) {
@@ -210,23 +223,21 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
     setShowHero(false);
   };
 
-  // Slice monthlyRevenue based on selected range; 1m uses daily granularity.
+  // Slice monthlyRevenue based on selected range (scout-year pills or custom).
   // monthlyRevenue's own .label was baked in once by the mount-time fetch
   // effect (using whatever MONTHS resolved to before translations had
   // loaded) — relabel from .key here so it stays reactive to language
   // changes without needing to refetch.
   const relabelMonth = (m) => ({ ...m, label: MONTHS[parseInt(m.key.slice(5, 7), 10) - 1] });
   const visibleMonths = useMemo(() => {
-    if (chartRange === '1m') return dailyRevenue;
-    if (chartRange === 'all') return monthlyRevenue.map(relabelMonth);
-    if (chartRange === 'custom') {
-      const fromKey = customFrom.slice(0, 7);
-      const toKey = customTo.slice(0, 7);
-      return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey).map(relabelMonth);
-    }
-    const months = RANGES.find(r => r.id === chartRange)?.months || 12;
-    return monthlyRevenue.slice(-months).map(relabelMonth);
-  }, [monthlyRevenue, dailyRevenue, chartRange, customFrom, customTo, MONTHS]);
+    const bounds = chartRange === 'custom'
+      ? { from: customFrom, to: customTo }
+      : getRangeDates(chartRange);
+    if (!bounds) return monthlyRevenue.map(relabelMonth);
+    const fromKey = bounds.from.slice(0, 7);
+    const toKey = bounds.to.slice(0, 7);
+    return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey).map(relabelMonth);
+  }, [monthlyRevenue, chartRange, customFrom, customTo, MONTHS]);
 
   const filteredRevenue = useMemo(
     () => visibleMonths.reduce((sum, m) => sum + m.value, 0),
@@ -366,9 +377,12 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
           <div>
             <h3 className="chart-title">{t('chart_title', 'Revenue overview')}</h3>
             <p className="chart-sub">
-              {chartRange === '1m'
-                ? `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} · ${t('chart_mode_daily', 'daily')}`
-                : `${new Date().getFullYear()} · ${t('chart_mode_paid', 'paid invoices')}`}
+              {chartRange === 'custom'
+                ? `${customFrom} – ${customTo} · ${t('chart_mode_paid', 'paid invoices')}`
+                : (() => {
+                    const b = getScoutYearBounds(chartRange === 'scout-year-last' ? 1 : 0);
+                    return `${b.startYear}/${String(b.endYear).slice(2)} · ${t('chart_mode_paid', 'paid invoices')}`;
+                  })()}
             </p>
           </div>
           <div className="chart-controls">
@@ -379,9 +393,11 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                   className={`time-pill ${chartRange === r.id ? 'active' : ''}`}
                   onClick={() => setChartRange(r.id)}
                 >
-                  {r.id === 'all' ? t('dashboard_range_all', r.label)
-                    : r.id === 'custom' ? t('dashboard_range_custom', r.label)
-                    : r.label}
+                  {r.id === 'scout-h1' ? t('dashboard_range_h1', r.label)
+                    : r.id === 'scout-h2' ? t('dashboard_range_h2', r.label)
+                    : r.id === 'scout-year' ? t('dashboard_range_current', r.label)
+                    : r.id === 'scout-year-last' ? t('dashboard_range_last', r.label)
+                    : t('dashboard_range_custom', r.label)}
                 </button>
               ))}
             </div>

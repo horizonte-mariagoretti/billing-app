@@ -380,7 +380,7 @@ const Products = () => {
                 const cat = categoryById(product.category_id);
                 const displayName = getLocalizedName(product);
                 return (
-                  <tr key={product.id}>
+                  <tr key={product.id} className="product-row-clickable" onClick={() => handleEdit(product)}>
                     <td>
                       <div className="product-name-cell">
                         {cat && <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />}
@@ -402,8 +402,8 @@ const Products = () => {
                     <td className="product-unit-cell">{product.unit}</td>
                     <td className="product-actions-cell">
                       <div className="action-btns">
-                        <button aria-label={`${t('btn_edit', 'Edit')} ${product.name}`} title={t('btn_edit', 'Edit')} onClick={() => handleEdit(product)}><Edit2 size={16} /></button>
-                        <button aria-label={`${t('btn_delete', 'Delete')} ${product.name}`} title={t('btn_delete', 'Delete')} onClick={() => handleDelete(product.id, product.name)}><Trash2 size={16} /></button>
+                        <button aria-label={`${t('btn_edit', 'Edit')} ${product.name}`} title={t('btn_edit', 'Edit')} onClick={(e) => { e.stopPropagation(); handleEdit(product); }}><Edit2 size={16} /></button>
+                        <button aria-label={`${t('btn_delete', 'Delete')} ${product.name}`} title={t('btn_delete', 'Delete')} onClick={(e) => { e.stopPropagation(); handleDelete(product.id, product.name); }}><Trash2 size={16} /></button>
                       </div>
                     </td>
                   </tr>

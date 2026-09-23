@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.0] - 2026-09-23
+
+### Added
+- **Row-click navigation**: Invoices, quotes, clients, and products tables now open the editor/modal on clicking anywhere in the row, not just the Edit icon. Delete and Edit buttons stop propagation so they still work independently.
+- **Unlock from any locked state**: Cancelled invoices and converted quotes can now be unlocked back to draft via the existing "Unlock for Edit" button — previously only `sent`/`paid`/`accepted`/`declined` states allowed this.
+- **Scout-year dashboard ranges**: Revenue chart time-span pills replaced with First Half (Sep 1–Dec 31), Second Half (Jan 1–Aug 31), Current Scout Year (Sep 1–Aug 31), Last Scout Year, and Custom.
+- **DB migration 14**: Seeds `dashboard_range_h1`, `dashboard_range_h2`, `dashboard_range_current`, `dashboard_range_last` translation keys.
+
+### Changed
+- `documentLifecycle.js`: `cancelled` and `converted` now transition to `draft` (unlock for edit).
+
 ## [1.6.0] - 2026-08-13
 
 ### Added
