@@ -460,7 +460,7 @@
   padding-top: 4px;
 }
 
-.drag-handle {
+.item-row .drag-handle {
   color: var(--color-text-dark-tertiary);
   cursor: grab;
   opacity: 0;

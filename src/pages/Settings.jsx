@@ -125,9 +125,9 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
                 format: e.target.value === 'date' ? 'YYYYMMDD' : (e.target.value === 'sequence' ? 'Four Digits' : undefined)
               })}
             >
-              <option value="text">{t ? t('settings_seg_static', 'Static Text') : 'Static Text'}</option>
-              <option value="date">{t ? t('settings_seg_date', 'Date Component') : 'Date Component'}</option>
-              <option value="sequence">{t ? t('settings_seg_counter', 'Counter') : 'Counter'}</option>
+              <option value="text">{t ? t('settings_seg_static', 'Text') : 'Text'}</option>
+              <option value="date">{t ? t('settings_seg_date', 'Date') : 'Date'}</option>
+              <option value="sequence">{t ? t('settings_seg_counter', 'Number') : 'Number'}</option>
             </select>
 
             {row.type === 'text' && (
@@ -167,10 +167,10 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
                   placeholder="1"
                 />
                 <select className="format-select" value={row.format} onChange={(e) => updateRow(row.id, { format: e.target.value })}>
-                  <option value="Four Digits">{t ? t('settings_seg_four_digits', 'Four Digits (0001)') : 'Four Digits (0001)'}</option>
-                  <option value="Three Digits">{t ? t('settings_seg_three_digits', 'Three Digits (001)') : 'Three Digits (001)'}</option>
-                  <option value="Two Digits">{t ? t('settings_seg_two_digits', 'Two Digits (01)') : 'Two Digits (01)'}</option>
-                  <option value="No Padding">{t ? t('settings_seg_no_padding', 'No Padding (1)') : 'No Padding (1)'}</option>
+                  <option value="Four Digits">{t ? t('settings_seg_four_digits', '0001') : '0001'}</option>
+                  <option value="Three Digits">{t ? t('settings_seg_three_digits', '001') : '001'}</option>
+                  <option value="Two Digits">{t ? t('settings_seg_two_digits', '01') : '01'}</option>
+                  <option value="No Padding">{t ? t('settings_seg_no_padding', '1') : '1'}</option>
                 </select>
               </>
             )}

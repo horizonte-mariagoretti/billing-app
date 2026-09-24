@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.7] - 2026-09-24
+
+### Fixed
+- **NumberingEditor drag handle was actually invisible, not just faint**: root cause was a global, unscoped `.drag-handle { opacity: 0; }` rule in `DocumentEditor.css` (meant only for the item-row reorder handle, revealed on `.item-row:hover`) — since all page CSS bundles together, it silently applied to *any* element named `.drag-handle` app-wide, permanently hiding the Settings numbering-row handle (no hover target existed to reveal it there). Scoped that rule to `.item-row .drag-handle`. With the leak fixed, the bare grip-dots icon (colored `--color-text-dark-tertiary`, darkening on hover) is visible on its own — no background chip needed.
+- **Numbering segment labels simplified**: type dropdown now reads "Text"/"Datum"/"Zahl" (was "Statischer Text"/"Datumskomponente"/"Zähler"); counter format options dropped their descriptive text entirely, now just "0001"/"001"/"01"/"1". Type-select column shrunk from 172px to 110px to match the much shorter labels. Migration 17 updates the DE/FR translation values (no `value_en` — app is DE/FR only).
+
 ## [1.7.6] - 2026-09-24
 
 ### Fixed

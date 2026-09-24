@@ -946,6 +946,26 @@ if (getVersion() < 16) {
   setVersion(16);
 }
 
+// Migration 17: numbering-pattern segment type dropdown shortened to plain
+// Text/Datum/Zahl, and the counter format options dropped their descriptive
+// text entirely — just the raw digit pattern (0001/001/01/1).
+if (getVersion() < 17) {
+  try {
+    db.exec(`
+      UPDATE ui_translations SET value_de = 'Text', value_fr = 'Texte' WHERE key = 'settings_seg_static';
+      UPDATE ui_translations SET value_de = 'Datum', value_fr = 'Date' WHERE key = 'settings_seg_date';
+      UPDATE ui_translations SET value_de = 'Zahl', value_fr = 'Numéro' WHERE key = 'settings_seg_counter';
+      UPDATE ui_translations SET value_de = '0001', value_fr = '0001' WHERE key = 'settings_seg_four_digits';
+      UPDATE ui_translations SET value_de = '001', value_fr = '001' WHERE key = 'settings_seg_three_digits';
+      UPDATE ui_translations SET value_de = '01', value_fr = '01' WHERE key = 'settings_seg_two_digits';
+      UPDATE ui_translations SET value_de = '1', value_fr = '1' WHERE key = 'settings_seg_no_padding';
+    `);
+  } catch (e) {
+    console.error('Migration 17 failed:', e.message);
+  }
+  setVersion(17);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

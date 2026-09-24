@@ -279,7 +279,7 @@
 
 .settings-page .pattern-row {
   display: grid;
-  grid-template-columns: 16px 172px minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: 18px 110px minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   background: #FFFFFF;
@@ -296,9 +296,8 @@
   color: var(--color-text-dark-tertiary);
   cursor: grab;
   user-select: none;
-  border-radius: 4px;
-  padding: 0;
 }
+.settings-page .drag-handle:hover { color: var(--color-text-dark-primary); }
 .settings-page .drag-handle:active { cursor: grabbing; }
 
 .settings-page .value-span {
