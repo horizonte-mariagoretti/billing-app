@@ -9,9 +9,24 @@
 }
 
 .cat-editor-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-sm);
+}
+
+.cat-editor-row .cat-input {
+  flex: 2 1 140px;
+  min-width: 0;
+}
+
+.cat-editor-row .cat-input:last-child {
+  flex: 1 1 80px;
+}
+
+/* Embedded in the (narrower) product modal — wrap onto its own line instead
+   of squeezing/overflowing the modal's fixed width. */
+.category-editor.compact .cat-editor-row .cat-input {
+  flex-basis: 100%;
 }
 
 .cat-editor-row.cat-editor-bottom {

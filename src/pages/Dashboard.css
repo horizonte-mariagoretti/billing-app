@@ -292,12 +292,6 @@
   letter-spacing: -0.015em;
 }
 
-.chart-sub {
-  font-size: 0.82rem;
-  color: var(--color-text-dark-tertiary);
-  margin-top: 2px;
-}
-
 .chart-controls {
   display: flex;
   flex-direction: column;
@@ -330,22 +324,32 @@
   color: var(--color-primary);
 }
 
+/* Segmented control — one connected strip instead of separate floating
+   pills; segments share the outer border and are only divided by a
+   hairline, so it reads as a single control. */
 .time-pills {
   display: inline-flex;
-  gap: 4px;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #FFFFFF;
 }
 
 .time-pill {
-  padding: 5px 12px;
-  border: 1px solid var(--color-border-light-theme);
+  padding: 4px 9px;
+  border: none;
+  border-right: 1px solid var(--color-border-light-theme);
   background: #FFFFFF;
   color: var(--color-text-dark-tertiary);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
   cursor: pointer;
   transition: all var(--transition-fast);
+}
+.time-pill:last-child {
+  border-right: none;
 }
 .time-pill:hover {
   background: var(--color-surface-muted);
@@ -354,7 +358,6 @@
 .time-pill.active {
   background: #0F172A;
   color: #FFFFFF;
-  border-color: #0F172A;
 }
 
 .chart-area {
@@ -629,7 +632,9 @@
   color: #ffffff;
 }
 
-/* Custom date range picker */
+/* Custom date range picker — the shared DatePicker's input is flex:1 (fills
+   whatever width its parent gives it), sized/text for a full form field.
+   Scope it down here to sit compactly next to the range pills instead. */
 .custom-range {
   display: flex;
   align-items: center;
@@ -637,14 +642,25 @@
   margin-top: 6px;
 }
 
-.date-range-input {
-  padding: 5px 10px;
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: 8px;
+.custom-range .datepicker-wrap {
+  flex: 0 0 auto;
+}
+
+.custom-range .datepicker-input {
+  flex: 0 0 auto;
+  width: 11ch;
+  padding: 5px 6px;
   font-size: 0.82rem;
-  background: #FFFFFF;
-  color: var(--color-text-dark-primary);
-  cursor: pointer;
+}
+
+.custom-range .datepicker-icon-btn {
+  padding: 0 6px;
+  min-height: 28px;
+}
+
+.custom-range .datepicker-icon {
+  width: 13px;
+  height: 13px;
 }
 
 .date-range-sep {

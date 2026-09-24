@@ -914,6 +914,58 @@ if (getVersion() < 14) {
   setVersion(14);
 }
 
+// Migration 15: category editor dropped its leftover English name field
+// (app is DE/FR only) — the remaining primary field needed a non-English label.
+if (getVersion() < 15) {
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+        ('cat_field_name','Kategoriename','Nom de catégorie','Category name');
+    `);
+  } catch (e) {
+    console.error('Migration 15 failed:', e.message);
+  }
+  setVersion(15);
+}
+
+// Migration 16: dashboard scout-year pills shortened to plain H1/H2/
+// Dieses Jahr/Letztes Jahr/Eigene Dauer — the original wording ("1. Halbjahr",
+// "Aktuelles Pfadfinderjahr", "Benutzerdefiniert") was too long for the pill row.
+if (getVersion() < 16) {
+  try {
+    db.exec(`
+      UPDATE ui_translations SET value_de = 'H1' WHERE key = 'dashboard_range_h1';
+      UPDATE ui_translations SET value_de = 'H2' WHERE key = 'dashboard_range_h2';
+      UPDATE ui_translations SET value_de = 'Dieses Jahr' WHERE key = 'dashboard_range_current';
+      UPDATE ui_translations SET value_de = 'Letztes Jahr' WHERE key = 'dashboard_range_last';
+      UPDATE ui_translations SET value_de = 'Eigene Dauer' WHERE key = 'dashboard_range_custom';
+    `);
+  } catch (e) {
+    console.error('Migration 16 failed:', e.message);
+  }
+  setVersion(16);
+}
+
+// Migration 17: numbering-pattern segment type dropdown shortened to plain
+// Text/Datum/Zahl, and the counter format options dropped their descriptive
+// text entirely — just the raw digit pattern (0001/001/01/1).
+if (getVersion() < 17) {
+  try {
+    db.exec(`
+      UPDATE ui_translations SET value_de = 'Text', value_fr = 'Texte' WHERE key = 'settings_seg_static';
+      UPDATE ui_translations SET value_de = 'Datum', value_fr = 'Date' WHERE key = 'settings_seg_date';
+      UPDATE ui_translations SET value_de = 'Zahl', value_fr = 'Numéro' WHERE key = 'settings_seg_counter';
+      UPDATE ui_translations SET value_de = '0001', value_fr = '0001' WHERE key = 'settings_seg_four_digits';
+      UPDATE ui_translations SET value_de = '001', value_fr = '001' WHERE key = 'settings_seg_three_digits';
+      UPDATE ui_translations SET value_de = '01', value_fr = '01' WHERE key = 'settings_seg_two_digits';
+      UPDATE ui_translations SET value_de = '1', value_fr = '1' WHERE key = 'settings_seg_no_padding';
+    `);
+  } catch (e) {
+    console.error('Migration 17 failed:', e.message);
+  }
+  setVersion(17);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

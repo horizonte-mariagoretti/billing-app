@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.7.7] - 2026-09-24
+
+### Fixed
+- **NumberingEditor drag handle was actually invisible, not just faint**: root cause was a global, unscoped `.drag-handle { opacity: 0; }` rule in `DocumentEditor.css` (meant only for the item-row reorder handle, revealed on `.item-row:hover`) — since all page CSS bundles together, it silently applied to *any* element named `.drag-handle` app-wide, permanently hiding the Settings numbering-row handle (no hover target existed to reveal it there). Scoped that rule to `.item-row .drag-handle`. With the leak fixed, the bare grip-dots icon (colored `--color-text-dark-tertiary`, darkening on hover) is visible on its own — no background chip needed.
+- **Numbering segment labels simplified**: type dropdown now reads "Text"/"Datum"/"Zahl" (was "Statischer Text"/"Datumskomponente"/"Zähler"); counter format options dropped their descriptive text entirely, now just "0001"/"001"/"01"/"1". Type-select column shrunk from 172px to 110px to match the much shorter labels. Migration 17 updates the DE/FR translation values (no `value_en` — app is DE/FR only).
+
+## [1.7.6] - 2026-09-24
+
+### Fixed
+- **NumberingEditor: too much space before the first dropdown**: the drag-handle column was 24px with 2px of its own padding for a 16px icon, plus 10px row padding — ~42px of empty space before "Statischer Text" started. Drag column tightened to 16px (icon-exact), its padding removed, and row padding evened to 8px all around, so the leading gap drops to ~33px. (The previous v1.7.6 attempt widened `.pattern-rows` min-width instead — reverted, that solved a different, unrelated problem.)
+
+## [1.7.5] - 2026-09-24
+
+### Changed
+- **Umsatzübersicht (revenue chart) toolbar redesign**: separate outlined pills merged into one connected segmented control (single shared border, hairline dividers, no gaps). Removed the subtitle line under the title entirely (it duplicated info already visible on the pills / the custom-range date pickers). Custom range values now persist to `localStorage` (`dashboard_custom_from`/`_to`), so the last manually-picked date range survives a reload instead of resetting to the current fiscal year every time.
+
+## [1.7.4] - 2026-09-23
+
+### Fixed
+- **Dashboard custom-range date fields too wide**: the shared `DatePicker`'s input is `flex:1` (built to fill a full form field), leaving a large empty gap before the calendar icon in the compact pill-row context. Scoped down under `.custom-range` in `Dashboard.css` only: fixed `11ch` width, smaller padding, and font-size matched to the panel's subtitle text (`0.82rem`). `DatePicker.jsx`/`.css` themselves are untouched, so every other usage (document editor dates) is unaffected.
+
+## [1.7.3] - 2026-09-23
+
+### Added
+- **Custom arrow-key stepping**: Qty/Duration/Rate/Discount/Tax number fields now step by 0.5 on plain ArrowUp/Down, 1.0 with Shift, 0.1 with Ctrl, and 10.0 with Shift+Ctrl — overriding the browser's single fixed `step`.
+- **Select-on-focus for number fields**: fields prefilled with `0` (or any value) now select their full contents on focus, so typing overrides instead of appending after the existing digit (e.g. typing "5" into "0" gives "5", not "05"). Applied across the item Qty/Duration/Rate/Discount/Tax fields, the Products rate field, and the Settings numbering counter/tax-rate fields.
+
+### Fixed
+- **Menge column narrower than Dauer/Preis**: widened to match (92px each) so all three line-item numeric columns are equal width.
+- **NumberingEditor row alignment**: the type-select column (e.g. "Datumskomponente") was a fixed 140px, truncating the longer German labels; widened to 172px. Also gave every `select`/`input` in a numbering row an explicit `width: 100%` — the "Counter" value field and the "Format" dropdown weren't reliably filling their grid column, so they visually misaligned row to row.
+- **Settings "Translations" tab removed**: the PDF-label override table (EN/DE/FR per document label) is dropped along with its dead CSS; the legacy `trans_*` fields stay in the settings object for backward compatibility but are no longer editable from the UI.
+- **Discount type UI clarity**: replaced the plain "%"/"Fixed" native `<select>` with the app's `StyledSelect` (custom dropdown, no OS-native popup), matching the Kategorie/Einheit dropdowns; widened the discount amount input from 40px to 64px.
+- **Dashboard scout-year pill labels**: shortened to "H1"/"H2"/"Dieses Jahr"/"Letztes Jahr"/"Eigene Dauer" (DE) and made the pills hug their own text instead of using generous fixed padding.
+- **Dashboard custom-range date inputs**: replaced native `<input type="date">` with the app's own `DatePicker` component for visual consistency with the rest of the app.
+- **DB migration 16**: updates `dashboard_range_h1/h2/current/last/custom` DE translation values to the new shorter labels.
+
+## [1.7.2] - 2026-09-23
+
+### Fixed
+- **Line-item name/description seam**: Each got independent `border-radius` on all four corners, so when the row's hover backdrop and the name field's own focus highlight were both visible at once, a rounded notch showed at the seam between them. Name is now rounded top-only, description bottom-only, so they always read as one seamless block; each still gets its own distinct rounding when highlighted alone.
+- **Menge/Dauer/Preis column alignment**: Duration had a stray `padding-top: 2px` + flex wrapper the other two columns didn't, sitting visibly lower. Removed; all three now align to the same top edge as Qty/Rate.
+- **"Dauer (h)" header wrap + narrow columns**: Widened Qty/Duration/Rate/Total columns (52→64px, 60→92px, 72→88px, 96→104px) so the header no longer breaks onto two lines. Added a `.col-desc` min-width floor so the description column can no longer get squeezed into 1-character-per-line wrapping at narrow widths (`.items-list` scrolls horizontally instead).
+- **Product picker showed no name**: "Aus Produkten hinzufügen" search list and `addProductItem` read the now-always-empty legacy `name` (English) field instead of falling back to `name_de`/`name_fr`. Added `getProductLabel`/`getProductDesc` helpers (doc-language-aware, DE/FR fallback chain) used by both the search filter and the inserted line item.
+- **Category dropdown used native `<select>`**: its open list is unstylable OS chrome and looked out of place next to the app's custom-styled controls. Extracted the ad-hoc `StyledSelect` from `DocumentEditor.jsx` into a shared `src/components/StyledSelect.jsx` (+ `.css`) and used it for the product modal's Kategorie and Einheit dropdowns.
+- **Category editor still had an EN field**: same leftover-English issue as the product modal — removed the "(EN)" name input; the remaining primary field now writes into both `name_de` and the legacy `name` column (kept for backward-compatible display code) and is labeled "Kategoriename". New migration seeds the `cat_field_name` translation key.
+- **Inline category editor overflowed the product modal**: `CategoryEditor`'s 3-column grid layout was built for the wide "manage categories" panel and didn't fit the narrower modal. Switched to a `flex-wrap` layout that reflows naturally, and added a `compact` prop (used only in the modal) that stacks the fields onto their own lines instead of squeezing.
+- **DB migration 15**: seeds `cat_field_name` translation keys (DE/FR/EN).
+
 ## [1.7.1] - 2026-09-23
 
 ### Fixed

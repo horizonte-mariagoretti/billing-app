@@ -422,7 +422,7 @@
   color: var(--color-text-dark-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  min-width: 300px;
+  min-width: 650px;
 }
 
 .items-grid-header .col-qty,
@@ -436,10 +436,10 @@
   text-align: right;
 }
 
-.item-row .col-duration {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 2px;
+/* Floor so the description column can't get squeezed into 1-char-per-line
+   wrapping at narrow widths — .items-list scrolls horizontally instead. */
+.col-desc {
+  min-width: 200px;
 }
 
 .item-row {
@@ -460,7 +460,7 @@
   padding-top: 4px;
 }
 
-.drag-handle {
+.item-row .drag-handle {
   color: var(--color-text-dark-tertiary);
   cursor: grab;
   opacity: 0;
@@ -476,7 +476,10 @@
   border-bottom-color: transparent;
 }
 
-/* Item name — bold, borderless */
+/* Item name — bold, borderless. Rounded only on the top corners: it sits
+   directly above the description field, and rounding the touching bottom
+   corners too would show a notch of the row's hover background poking
+   through right at the seam when both are highlighted at once. */
 .item-name-input {
   width: 100%;
   background: transparent;
@@ -487,7 +490,7 @@
   font-family: var(--font-sans);
   padding: 4px 4px;
   box-sizing: border-box;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   transition: background-color var(--transition-fast);
 }
 
@@ -498,7 +501,9 @@
 
 .item-name-input::placeholder { color: var(--color-text-dark-tertiary); }
 
-/* Item description — collapses when empty, auto-grows with content */
+/* Item description — collapses when empty, auto-grows with content.
+   Rounded only on the bottom corners (mirrors .item-name-input above it),
+   so the two never show a rounded notch at the seam where they touch. */
 .item-row .item-desc-textarea {
   width: 100%;
   background: transparent;
@@ -512,7 +517,7 @@
   min-height: 0;
   overflow: hidden;
   line-height: 1.4;
-  border-radius: var(--radius-sm);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   transition: background-color var(--transition-fast), height 100ms ease, padding 100ms ease;
 }
 
@@ -537,6 +542,7 @@
 
 /* Align numeric cells to name input top */
 .item-row .col-qty,
+.item-row .col-duration,
 .item-row .col-rate {
   padding-top: 0;
 }
@@ -864,20 +870,12 @@
 }
 
 .discount-inputs input {
-  width: 40px;
+  width: 64px;
   background: transparent;
   border: none;
   text-align: right;
   font-size: 0.85rem;
   color: var(--color-text-dark-primary);
-}
-
-.discount-inputs select {
-  background: transparent;
-  border: none;
-  font-size: 0.8rem;
-  color: var(--color-text-dark-secondary);
-  padding: 0;
 }
 
 .tax-config input {
@@ -992,18 +990,34 @@
   font-weight: 500;
 }
 
-/* discount type select */
-.discount-inputs select {
-  appearance: none;
-  -webkit-appearance: none;
+/* Discount type — bordered + chevron (via StyledSelect) so it reads as a
+   percent/fixed-amount toggle instead of plain text sitting next to the input. */
+.discount-type-select.ss-root {
+  width: auto;
+}
+
+.discount-type-select .ss-trigger {
   background: transparent;
   border: none;
-  padding: 0 4px;
-  box-shadow: none;
-  width: auto;
-  cursor: pointer;
+  border-radius: 0;
+  min-height: auto;
+  padding: 4px 8px 4px 8px;
   color: var(--color-text-dark-secondary);
   font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.discount-type-select .ss-trigger:hover,
+.discount-type-select.ss-open .ss-trigger {
+  background: transparent;
+  border-color: var(--color-border-light-theme);
+  box-shadow: none;
+  color: var(--color-text-dark-primary);
+}
+
+.discount-type-select .ss-chevron {
+  width: 12px;
+  height: 12px;
 }
 
 /* ── Doc meta row (doc number + issue date — secondary) ── */
@@ -1013,104 +1027,7 @@
   border-top: 1px dashed var(--color-border-light-theme);
 }
 
-/* ── StyledSelect ── */
-.ss-root { position: relative; width: 100%; }
-
-.ss-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-dark-primary);
-  font-size: 0.9rem;
-  font-family: var(--font-sans);
-  padding: 8px 10px;
-  cursor: pointer;
-  text-align: left;
-  min-height: 38px;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
-}
-
-.ss-trigger:hover {
-  border-color: #CBD5E1;
-  background-color: var(--color-light-surface);
-}
-
-.ss-root.ss-open .ss-trigger {
-  background-color: var(--color-light-surface);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-alpha);
-}
-
-.ss-trigger > span {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ss-placeholder { color: var(--color-text-dark-tertiary); }
-
-.ss-chevron {
-  flex-shrink: 0;
-  color: var(--color-text-dark-tertiary);
-  transition: transform var(--transition-fast);
-}
-
-.ss-root.ss-open .ss-chevron { transform: rotate(180deg); }
-
-.ss-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--color-light-surface);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
-  z-index: 200;
-  list-style: none;
-  padding: 4px;
-  margin: 0;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.ss-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: calc(var(--radius-md) - 2px);
-  font-size: 0.88rem;
-  color: var(--color-text-dark-primary);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color var(--transition-fast);
-}
-
-.ss-option:hover {
-  background-color: var(--color-primary-alpha);
-  color: var(--color-primary);
-}
-
-.ss-option--selected {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.ss-check { color: var(--color-primary); flex-shrink: 0; }
-
-.ss-option--focused {
-  background-color: var(--color-primary-alpha);
-  color: var(--color-primary);
-}
-
-.ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }
+/* StyledSelect base rules moved to src/components/StyledSelect.css */
 
 /* ── Lang switcher ── */
 .lang-switcher {
@@ -1320,7 +1237,7 @@
   }
 
   .col-drag     { display: none; }
-  .col-desc     { grid-area: desc; }
+  .col-desc     { grid-area: desc; min-width: 0; }
   .col-qty      { grid-area: qty; }
   .col-duration { grid-area: dur; }
   .col-rate     { grid-area: rate; }
