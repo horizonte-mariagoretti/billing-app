@@ -1,0 +1,412 @@
+.arbeiten-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ── Segmented tabs (Kommend / Vergangen) ── */
+.arbeiten-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+}
+
+.arbeiten-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px var(--space-sm);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.arbeiten-tab:hover {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-primary);
+}
+
+.arbeiten-tab.active {
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.arbeiten-tab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.arbeiten-tab.active .arbeiten-tab-count {
+  background-color: var(--color-light-surface);
+  border-color: var(--color-primary-border-light);
+  color: var(--color-primary);
+}
+
+/* ── Table ── */
+.arbeiten-table-container {
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow-card);
+}
+
+.arbeiten-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  table-layout: auto;
+}
+
+.arbeiten-table th {
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-light-theme);
+  white-space: nowrap;
+}
+
+.arbeiten-table td {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light-theme);
+  font-size: 0.95rem;
+  color: var(--color-text-dark-secondary);
+  vertical-align: middle;
+}
+
+.arbeiten-table tr:last-child td { border-bottom: none; }
+.arbeiten-table tr:hover td { background-color: var(--color-surface-muted); }
+
+/* col order: 1=date 2=details 3=time 4=client 5=people 6=hours 7=docs 8=status 9=actions */
+.arbeiten-table th:nth-child(1), .arbeiten-table td:nth-child(1) { min-width: 120px; white-space: nowrap; }
+.arbeiten-table th:nth-child(2), .arbeiten-table td:nth-child(2) { min-width: 180px; }
+.arbeiten-table th:nth-child(3), .arbeiten-table td:nth-child(3) { min-width: 110px; white-space: nowrap; }
+.arbeiten-table th:nth-child(4), .arbeiten-table td:nth-child(4) { min-width: 130px; }
+.arbeiten-table th:nth-child(5), .arbeiten-table td:nth-child(5) { width: 90px; text-align: right; }
+.arbeiten-table th:nth-child(6), .arbeiten-table td:nth-child(6) { width: 90px; text-align: right; }
+.arbeiten-table th:nth-child(7), .arbeiten-table td:nth-child(7) { min-width: 140px; }
+.arbeiten-table th:nth-child(8), .arbeiten-table td:nth-child(8) { width: 110px; }
+.arbeiten-table th:nth-child(9), .arbeiten-table td:nth-child(9) { width: 90px; text-align: right; }
+
+.arbeiten-row { cursor: pointer; }
+
+.arbeiten-row--cancelled td { color: var(--color-text-dark-tertiary); }
+.arbeiten-row--cancelled .arbeiten-title,
+.arbeiten-row--cancelled .arbeiten-date {
+  color: var(--color-text-dark-tertiary);
+  text-decoration: line-through;
+}
+
+.arbeiten-date-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+.arbeiten-weekday {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-dark-tertiary);
+}
+
+.arbeiten-date {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.arbeiten-title-cell {
+  max-width: 280px;
+}
+
+.arbeiten-title,
+.arbeiten-notes {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arbeiten-title {
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.arbeiten-notes {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.arbeiten-time-cell {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.arbeiten-muted { color: var(--color-text-dark-tertiary); }
+
+.arbeiten-people {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-dark-primary);
+}
+
+.arbeiten-people svg { color: var(--color-text-dark-tertiary); }
+
+.arbeiten-hours {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.arbeiten-hours-main {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.arbeiten-hours-forecast {
+  color: var(--color-text-dark-secondary);
+  font-weight: 500;
+}
+
+.arbeiten-hours-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-dark-tertiary);
+  white-space: nowrap;
+}
+
+.arbeiten-doc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+.arbeiten-doc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light-theme);
+  background-color: var(--color-surface-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+  white-space: nowrap;
+}
+
+.arbeiten-doc-chip--invoice {
+  border-color: var(--color-primary-border-faint);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+/* Job status pill — mirrors .status-badge sizing */
+.arbeiten-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.arbeiten-status--planned {
+  background-color: var(--stat-amber-bg);
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.arbeiten-status--done {
+  background-color: var(--stat-green-bg);
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+
+.arbeiten-status--cancelled {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  border-color: var(--color-border-light-theme);
+  text-decoration: line-through;
+}
+
+/* Action buttons (scoped copy of the Clients pattern) */
+.arbeiten-table .action-btns {
+  display: inline-flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+}
+
+.arbeiten-table .action-btns button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-dark-tertiary);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.arbeiten-table .action-btns button:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+/* ── Empty state ── */
+.arbeiten-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-text-dark-tertiary);
+  text-align: center;
+}
+
+.arbeiten-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+
+.arbeiten-empty-desc {
+  font-size: 0.875rem;
+  max-width: 340px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .arbeiten-table th:nth-child(7),
+  .arbeiten-table td:nth-child(7) { min-width: 110px; }
+}
+
+@media (max-width: 600px) {
+  .arbeiten-page .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .arbeiten-page .search-bar { max-width: 100%; }
+
+  .arbeiten-tabs {
+    align-self: stretch;
+  }
+
+  .arbeiten-tab {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Mobile card view: reflow rows as compact cards */
+@media (max-width: 640px) {
+  .arbeiten-table-container {
+    overflow-x: visible;
+    border-radius: var(--radius-md);
+  }
+
+  .arbeiten-table,
+  .arbeiten-table tbody { display: block; }
+
+  .arbeiten-table thead { display: none; }
+
+  .arbeiten-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto 52px;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "date   status act"
+      "title  hours  act"
+      "time   people act";
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-light-theme);
+    column-gap: 10px;
+    row-gap: 3px;
+    align-items: center;
+  }
+
+  .arbeiten-table tr:last-child { border-bottom: none; }
+  .arbeiten-table tr:hover td { background: transparent; }
+  .arbeiten-table tr:hover { background: var(--color-surface-muted); }
+
+  .arbeiten-table td {
+    padding: 0;
+    border: none;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  .arbeiten-table td:nth-child(1) { grid-area: date; }
+  .arbeiten-table td:nth-child(2) { grid-area: title; max-width: none; overflow: hidden; }
+  .arbeiten-table td:nth-child(3) { grid-area: time; font-size: 0.8rem; color: var(--color-text-dark-tertiary); }
+  .arbeiten-table td:nth-child(4) { display: none; }
+  .arbeiten-table td:nth-child(5) { grid-area: people; justify-self: end; font-size: 0.85rem; }
+  .arbeiten-table td:nth-child(6) { grid-area: hours; justify-self: end; }
+  .arbeiten-table td:nth-child(7) { display: none; }
+  .arbeiten-table td:nth-child(8) { grid-area: status; justify-self: end; }
+  .arbeiten-table td:nth-child(9) {
+    grid-area: act;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--color-border-light-theme);
+    padding-left: 10px;
+  }
+
+  .arbeiten-notes { display: none; }
+
+  .arbeiten-table .action-btns {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .arbeiten-table .action-btns button {
+    width: 36px;
+    height: 36px;
+  }
+}

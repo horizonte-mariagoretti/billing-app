@@ -23,6 +23,8 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
     quotes: ['nav_quotes', 'Quotes'],
     clients: ['nav_clients', 'Clients'],
     products: ['nav_products', 'Products'],
+    arbeiten: ['nav_arbeiten', 'Arbeiten'],
+    horis: ['nav_horis', 'Horis'],
     settings: ['nav_settings', 'Settings'],
   };
   const [fallbackKey, fallbackText] = VIEW_TITLE_KEYS[currentView] || [null, currentView];

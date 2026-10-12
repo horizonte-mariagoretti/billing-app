@@ -4,6 +4,8 @@ import Clients from './pages/Clients';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Settings from './pages/Settings';
+import Arbeiten from './pages/Arbeiten';
+import Horis from './pages/Horis';
 import DocumentList from './pages/DocumentList';
 import DocumentEditor from './pages/DocumentEditor';
 import useDocuments from './hooks/useDocuments';
@@ -102,6 +104,10 @@ function AppInner() {
         return <Clients />;
       case 'products':
         return <Products />;
+      case 'arbeiten':
+        return <Arbeiten />;
+      case 'horis':
+        return <Horis />;
       case 'settings':
         return <Settings />;
       default:

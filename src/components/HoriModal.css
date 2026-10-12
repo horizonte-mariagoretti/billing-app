@@ -1,0 +1,53 @@
+.horis-modal {
+  max-width: 520px;
+}
+
+.horis-modal-date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.horis-modal-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+  padding-left: 2px;
+}
+
+.horis-modal-hint.warn {
+  color: var(--stat-amber-icon);
+  font-weight: 600;
+}
+
+.horis-modal-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.horis-modal-check input {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.horis-modal-check span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.horis-modal-check strong {
+  font-size: 0.9rem;
+  color: var(--color-text-dark-primary);
+}
+
+.horis-modal-check small {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+}

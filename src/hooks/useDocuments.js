@@ -200,6 +200,9 @@ const useDocuments = () => {
     await transaction([
       // Unlink any invoice that was converted from this document (FK source_quote_id).
       { sql: 'UPDATE documents SET source_quote_id = NULL WHERE source_quote_id = ?', params: [id] },
+      // Unlink jobs (Arbeiten) referencing this document as quote or invoice.
+      { sql: 'UPDATE jobs SET quote_id = NULL WHERE quote_id = ?', params: [id] },
+      { sql: 'UPDATE jobs SET invoice_id = NULL WHERE invoice_id = ?', params: [id] },
       { sql: 'DELETE FROM payments WHERE document_id = ?', params: [id] },
       { sql: 'DELETE FROM document_events WHERE document_id = ?', params: [id] },
       { sql: 'DELETE FROM document_items WHERE document_id = ?', params: [id] },
