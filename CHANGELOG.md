@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0] - 2026-10-12
+
+### Added
+- **Arbeiten page**: manage work dates with start/end times (or open end), assigned Horis, planned vs actual hours, and links to the client, quote and invoice.
+- **Horis page**: helpers overview with hours worked, share %, camp contribution reduced by work share, plus a matrix view.
+- **Lagerbeitrag settings** (Settings > Billing): `camp_base_contribution` (maximum per Hori), `camp_min_contribution` (floor), `camp_reduction_per_percent` (fixed euros deducted per 1% work share; empty/0 = proportional: base × share). Contribution = max(minimum, base − reduction), see `utils/campContribution.js`.
+- Schema migration 18: new `horis`, `jobs`, `job_assignments` tables. Migration 19: DE/FR UI translations for both pages.
+
 ## [1.7.7] - 2026-09-24
 
 ### Fixed

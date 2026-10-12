@@ -74,6 +74,7 @@ const Clients = () => {
     if (!confirm) return;
     // Unlink documents before deleting — FK enforcement would block otherwise.
     await run('UPDATE documents SET client_id = NULL WHERE client_id = ?', [confirm.id]);
+    await run('UPDATE jobs SET client_id = NULL WHERE client_id = ?', [confirm.id]);
     await run('DELETE FROM clients WHERE id = ?', [confirm.id]);
     setConfirm(null);
     fetchClients();

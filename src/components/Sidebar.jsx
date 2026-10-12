@@ -5,6 +5,8 @@ import {
   Users,
   Settings,
   Package,
+  Briefcase,
+  UsersRound,
   ReceiptEuro,
   PanelLeftClose,
   PanelLeftOpen,
@@ -22,6 +24,8 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
     { id: 'quotes',    label: t('nav_quotes', 'Quotes'),       icon: FileText },
     { id: 'clients',   label: t('nav_clients', 'Clients'),     icon: Users },
     { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
+    { id: 'arbeiten',  label: t('nav_arbeiten', 'Arbeiten'),  icon: Briefcase },
+    { id: 'horis',     label: t('nav_horis', 'Horis'),         icon: UsersRound },
   ];
 
   const generalNav = [

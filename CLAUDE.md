@@ -1,6 +1,6 @@
 # InvoiceForge — Project Reference
 
-**Version:** 1.0.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.8.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -70,16 +70,20 @@ Billing_App/
 │   │   ├── DocumentPreview.jsx / .css# Print/PDF HTML render (language-aware)
 │   │   ├── Clients.jsx / .css        # Client CRUD table + modal (live validation)
 │   │   ├── Products.jsx / .css       # Product cards + category chips + modal
+│   │   ├── Arbeiten.jsx / .css       # Work dates (times/open end), assigned Horis, planned vs actual hours, links to client/quote/invoice
+│   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share, matrix view
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])
 │   │   ├── useDocuments.js     # fetchDocuments, saveDocument, deleteDocument, transitionDocument, fetchPayments
 │   │   ├── useSettings.js      # loadSettings, saveSettings, getNextDocumentNumber, incrementDocumentNumber
+│   │   ├── useJobs.js          # CRUD for jobs (Arbeiten) + job_assignments
+│   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–5 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–19 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -92,6 +96,8 @@ Billing_App/
 │   │   └── GitHubAuth.css
 │   └── utils/
 │       ├── documentLifecycle.js  # Status FSM (pure functions, no DB)
+│       ├── jobHours.js           # Pure helpers: planned/actual hours, work share, camp contribution reduction
+│       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
 ├── CLAUDE.md            # ← this file
 ├── CHANGELOG.md         # Version history
@@ -173,6 +179,23 @@ id, document_id(FK), description, quantity, unit_price, total, sort_order
 id, document_id(FK), amount, currency, method, paid_at, reference, notes, created_at
 ```
 
+**`horis`** (migration 18) — helpers
+```
+id, name, (contact/notes fields), created_at
+```
+
+**`jobs`** (migration 18) — Arbeiten work dates
+```
+id, title, date, start_time, end_time (nullable = open end), planned_hours, actual_hours,
+client_id(FK), quote_id(FK), invoice_id(FK), notes, created_at
+```
+
+**`job_assignments`** (migration 18)
+```
+id, job_id(FK), hori_id(FK), hours
+```
+Settings (Settings > Billing): `camp_base_contribution` (max per Hori), `camp_min_contribution` (floor), `camp_reduction_per_percent` (€ per 1% work share; empty = proportional). Formula in `utils/campContribution.js`: max(min, base − reduction).
+
 **`document_events`** — append-only audit log
 ```
 id, document_id(FK), event_type, payload_json, created_at
@@ -213,7 +236,7 @@ draft → sent → accepted → converted
 No external store. `App.jsx` holds:
 
 ```js
-view          // 'dashboard' | 'invoices' | 'quotes' | 'clients' | 'products' | 'settings'
+view          // 'dashboard' | 'invoices' | 'quotes' | 'clients' | 'products' | 'arbeiten' | 'horis' | 'settings'
 isEditing     // bool
 editingData   // null | { doc, type }
 appSettings   // loaded once from DB on mount

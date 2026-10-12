@@ -1,0 +1,322 @@
+[
+  {
+    "key": "nav_arbeiten",
+    "de": "Arbeiten",
+    "fr": "Travaux"
+  },
+  {
+    "key": "arbeiten_actual_hint",
+    "de": "Erst bei Status „Gearbeitet“ ausfüllbar",
+    "fr": "Modifiable uniquement avec le statut « Effectué »"
+  },
+  {
+    "key": "arbeiten_actual_hours",
+    "de": "Std. gearbeitet",
+    "fr": "H. effectuées"
+  },
+  {
+    "key": "arbeiten_add",
+    "de": "Auftrag/Arbeit hinzufügen",
+    "fr": "Ajouter une mission/un travail"
+  },
+  {
+    "key": "arbeiten_add_title",
+    "de": "Neue Arbeit",
+    "fr": "Nouveau travail"
+  },
+  {
+    "key": "arbeiten_col_client",
+    "de": "Kunde",
+    "fr": "Client"
+  },
+  {
+    "key": "arbeiten_col_date",
+    "de": "Datum",
+    "fr": "Date"
+  },
+  {
+    "key": "arbeiten_col_details",
+    "de": "Details",
+    "fr": "Détails"
+  },
+  {
+    "key": "arbeiten_col_documents",
+    "de": "Dokumente",
+    "fr": "Documents"
+  },
+  {
+    "key": "arbeiten_col_hours",
+    "de": "Std.",
+    "fr": "H."
+  },
+  {
+    "key": "arbeiten_col_people",
+    "de": "Personen",
+    "fr": "Personnes"
+  },
+  {
+    "key": "arbeiten_col_status",
+    "de": "Status",
+    "fr": "Statut"
+  },
+  {
+    "key": "arbeiten_col_time",
+    "de": "Zeit",
+    "fr": "Horaire"
+  },
+  {
+    "key": "arbeiten_delete_body",
+    "de": "wird dauerhaft gelöscht, inklusive aller Helfer-Zuordnungen und Stunden.",
+    "fr": "sera définitivement supprimé, y compris toutes les affectations et heures des aides."
+  },
+  {
+    "key": "arbeiten_delete_error",
+    "de": "Löschen fehlgeschlagen.",
+    "fr": "La suppression a échoué."
+  },
+  {
+    "key": "arbeiten_delete_title",
+    "de": "Arbeit löschen?",
+    "fr": "Supprimer le travail ?"
+  },
+  {
+    "key": "arbeiten_duration",
+    "de": "Dauer",
+    "fr": "Durée"
+  },
+  {
+    "key": "arbeiten_duration_open",
+    "de": "Dauer offen – Stunden manuell eintragen",
+    "fr": "Durée ouverte – saisir les heures manuellement"
+  },
+  {
+    "key": "arbeiten_edit_title",
+    "de": "Arbeit bearbeiten",
+    "fr": "Modifier le travail"
+  },
+  {
+    "key": "arbeiten_empty_hint",
+    "de": "Lege den nächsten Arbeitstermin an, um Helfer und Stunden zu planen.",
+    "fr": "Créez la prochaine date de travail pour planifier les aides et les heures."
+  },
+  {
+    "key": "arbeiten_empty_past",
+    "de": "Keine vergangenen Arbeiten",
+    "fr": "Aucun travail passé"
+  },
+  {
+    "key": "arbeiten_empty_upcoming",
+    "de": "Keine kommenden Arbeiten",
+    "fr": "Aucun travail à venir"
+  },
+  {
+    "key": "arbeiten_err_date",
+    "de": "Datum ist erforderlich",
+    "fr": "La date est obligatoire"
+  },
+  {
+    "key": "arbeiten_err_hours",
+    "de": "Stunden müssen positive Zahlen sein",
+    "fr": "Les heures doivent être des nombres positifs"
+  },
+  {
+    "key": "arbeiten_err_start",
+    "de": "Startzeit angeben, wenn Ende oder offenes Ende gesetzt ist",
+    "fr": "Indiquez l’heure de début si une fin ou une fin ouverte est définie"
+  },
+  {
+    "key": "arbeiten_err_title",
+    "de": "Details sind erforderlich",
+    "fr": "Les détails sont obligatoires"
+  },
+  {
+    "key": "arbeiten_field_client",
+    "de": "Kunde",
+    "fr": "Client"
+  },
+  {
+    "key": "arbeiten_field_date",
+    "de": "Datum",
+    "fr": "Date"
+  },
+  {
+    "key": "arbeiten_field_end",
+    "de": "Ende",
+    "fr": "Fin"
+  },
+  {
+    "key": "arbeiten_field_horis",
+    "de": "Horis",
+    "fr": "Horis"
+  },
+  {
+    "key": "arbeiten_field_invoice",
+    "de": "Rechnung",
+    "fr": "Facture"
+  },
+  {
+    "key": "arbeiten_field_notes",
+    "de": "Notizen",
+    "fr": "Notes"
+  },
+  {
+    "key": "arbeiten_field_notes_placeholder",
+    "de": "Ort, Ansprechpartner, Kleiderordnung …",
+    "fr": "Lieu, personne de contact, tenue …"
+  },
+  {
+    "key": "arbeiten_field_open_end",
+    "de": "Offenes Ende",
+    "fr": "Fin ouverte"
+  },
+  {
+    "key": "arbeiten_field_quote",
+    "de": "Angebot",
+    "fr": "Devis"
+  },
+  {
+    "key": "arbeiten_field_start",
+    "de": "Beginn",
+    "fr": "Début"
+  },
+  {
+    "key": "arbeiten_field_status",
+    "de": "Status",
+    "fr": "Statut"
+  },
+  {
+    "key": "arbeiten_field_title",
+    "de": "Details",
+    "fr": "Détails"
+  },
+  {
+    "key": "arbeiten_field_title_placeholder",
+    "de": "z. B. Hochzeit Müller – Service & Bar",
+    "fr": "p. ex. Mariage Dupont – service & bar"
+  },
+  {
+    "key": "arbeiten_forecast_hint",
+    "de": "Geplante Stunden sind eine Prognose. Die tatsächlichen Stunden werden nach der Arbeit (Status „Gearbeitet“) eingetragen.",
+    "fr": "Les heures planifiées sont une prévision. Les heures réelles sont saisies après le travail (statut « Effectué »)."
+  },
+  {
+    "key": "arbeiten_hours_plan_prefix",
+    "de": "Plan",
+    "fr": "Prévu"
+  },
+  {
+    "key": "arbeiten_hours_planned_hint",
+    "de": "Prognose",
+    "fr": "Prévision"
+  },
+  {
+    "key": "arbeiten_hours_unit",
+    "de": "Std.",
+    "fr": "h"
+  },
+  {
+    "key": "arbeiten_invoice",
+    "de": "Rechnung",
+    "fr": "Facture"
+  },
+  {
+    "key": "arbeiten_load_error",
+    "de": "Arbeiten konnten nicht geladen werden. Bitte die App neu starten.",
+    "fr": "Impossible de charger les travaux. Veuillez redémarrer l’application."
+  },
+  {
+    "key": "arbeiten_modal_load_error",
+    "de": "Daten konnten nicht geladen werden.",
+    "fr": "Impossible de charger les données."
+  },
+  {
+    "key": "arbeiten_no_horis",
+    "de": "Noch keine aktiven Horis angelegt.",
+    "fr": "Aucun Hori actif pour l’instant."
+  },
+  {
+    "key": "arbeiten_no_match",
+    "de": "Keine Treffer für",
+    "fr": "Aucun résultat pour"
+  },
+  {
+    "key": "arbeiten_planned_hours",
+    "de": "Std. geplant",
+    "fr": "H. prévues"
+  },
+  {
+    "key": "arbeiten_quote",
+    "de": "Angebot",
+    "fr": "Devis"
+  },
+  {
+    "key": "arbeiten_save",
+    "de": "Arbeit speichern",
+    "fr": "Enregistrer le travail"
+  },
+  {
+    "key": "arbeiten_save_error",
+    "de": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    "fr": "L’enregistrement a échoué. Veuillez réessayer."
+  },
+  {
+    "key": "arbeiten_saving",
+    "de": "Speichern…",
+    "fr": "Enregistrement…"
+  },
+  {
+    "key": "arbeiten_search",
+    "de": "Arbeiten suchen...",
+    "fr": "Rechercher des travaux..."
+  },
+  {
+    "key": "arbeiten_select_all",
+    "de": "Alle auswählen",
+    "fr": "Tout sélectionner"
+  },
+  {
+    "key": "arbeiten_select_none",
+    "de": "keine",
+    "fr": "aucun"
+  },
+  {
+    "key": "arbeiten_status_cancelled",
+    "de": "Abgesagt",
+    "fr": "Annulé"
+  },
+  {
+    "key": "arbeiten_status_done",
+    "de": "Gearbeitet",
+    "fr": "Effectué"
+  },
+  {
+    "key": "arbeiten_status_planned",
+    "de": "Geplant",
+    "fr": "Planifié"
+  },
+  {
+    "key": "arbeiten_tab_past",
+    "de": "Vergangen",
+    "fr": "Passés"
+  },
+  {
+    "key": "arbeiten_tab_upcoming",
+    "de": "Kommend",
+    "fr": "À venir"
+  },
+  {
+    "key": "arbeiten_tabs_label",
+    "de": "Zeitraum",
+    "fr": "Période"
+  },
+  {
+    "key": "arbeiten_total",
+    "de": "Summe",
+    "fr": "Total"
+  },
+  {
+    "key": "arbeiten_weekdays_short",
+    "de": "So,Mo,Di,Mi,Do,Fr,Sa",
+    "fr": "Di,Lu,Ma,Me,Je,Ve,Sa"
+  }
+]
