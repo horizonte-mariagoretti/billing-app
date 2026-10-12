@@ -1,0 +1,53 @@
+.bulk-hori-modal { max-width: 680px; }
+
+.bulk-hori-help {
+  margin: 0 0 var(--space-md);
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}
+
+.bulk-hori-textarea {
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.bulk-hori-preview {
+  margin-top: var(--space-md);
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+}
+
+.bulk-hori-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.bulk-hori-table th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  padding: var(--space-xs) var(--space-md);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bulk-hori-table td {
+  padding: var(--space-xs) var(--space-md);
+  border-top: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-primary);
+}
+.bulk-hori-row-bad td { background-color: var(--color-surface-muted); color: var(--color-text-dark-tertiary); }
+
+.bulk-hori-status { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.bulk-hori-status.ok { color: #15803d; }
+.bulk-hori-status:not(.ok) { color: var(--color-danger); }
+
+.bulk-hori-summary {
+  margin-right: auto;
+  align-self: center;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}

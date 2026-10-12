@@ -552,3 +552,9 @@
 
   .horis-detail-header { margin-bottom: var(--space-md); }
 }
+
+.horis-header-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
