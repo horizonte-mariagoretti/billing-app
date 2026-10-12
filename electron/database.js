@@ -1160,6 +1160,31 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
   setVersion(19);
 }
 
+// Migration 20: Bulk Hori import UI strings (DE/FR).
+if (getVersion() < 20) {
+  try {
+    db.exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('horis_bulk_add','Mehrere hinzufügen','Ajouter plusieurs','Mehrere hinzufügen'),
+('horis_bulk_title','Mehrere Horis hinzufügen','Ajouter plusieurs Horis','Mehrere Horis hinzufügen'),
+('horis_bulk_help','Pro Zeile ein Hori: Vorname Nachname und Geburtsdatum, z. B. Anna Muster 14.03.2011. Kann direkt aus einer Tabelle eingefügt werden.','Un Hori par ligne : prénom nom et date de naissance, p. ex. Anna Muster 14.03.2011. Peut être collé directement depuis un tableur.','Pro Zeile ein Hori: Vorname Nachname und Geburtsdatum, z. B. Anna Muster 14.03.2011. Kann direkt aus einer Tabelle eingefügt werden.'),
+('horis_bulk_col_status','Status','Statut','Status'),
+('horis_bulk_status_ok','Wird importiert','Sera importé','Wird importiert'),
+('horis_bulk_status_duplicate','Bereits vorhanden','Déjà existant','Bereits vorhanden'),
+('horis_bulk_status_no_date','Geburtsdatum fehlt','Date de naissance manquante','Geburtsdatum fehlt'),
+('horis_bulk_status_bad_date','Ungültiges Datum','Date invalide','Ungültiges Datum'),
+('horis_bulk_status_no_last_name','Nachname fehlt','Nom manquant','Nachname fehlt'),
+('horis_bulk_summary_import','werden importiert','seront importés','werden importiert'),
+('horis_bulk_summary_skipped','übersprungen','ignorés','übersprungen'),
+('horis_bulk_import','Horis importieren','importer des Horis','Horis importieren'),
+('horis_bulk_error','Import fehlgeschlagen. Es wurde nichts gespeichert.','Échec de l''import. Rien n''a été enregistré.','Import fehlgeschlagen. Es wurde nichts gespeichert.');
+    `);
+  } catch (e) {
+    console.error('Migration 20 failed:', e.message);
+  }
+  setVersion(20);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
