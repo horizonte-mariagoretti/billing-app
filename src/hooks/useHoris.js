@@ -5,7 +5,7 @@ const newId = () => crypto.randomUUID();
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 const useHoris = () => {
-  const { query, run } = useDatabase();
+  const { query, run, transaction } = useDatabase();
 
   const fetchHoris = useCallback(async () => {
     return await query(
@@ -30,6 +30,16 @@ const useHoris = () => {
     );
     return id;
   }, [run]);
+
+  // Insert many Horis atomically (all or nothing). Returns the number inserted.
+  const saveHorisBulk = useCallback(async (list) => {
+    if (!list?.length) return 0;
+    await transaction(list.map((x) => ({
+      sql: 'INSERT INTO horis (id, first_name, last_name, birth_date, active) VALUES (?, ?, ?, ?, 1)',
+      params: [newId(), x.first_name, x.last_name, x.birth_date || null],
+    })));
+    return list.length;
+  }, [transaction]);
 
   const deleteHori = useCallback(async (id) => {
     const rows = await query('SELECT COUNT(*) AS n FROM job_assignments WHERE hori_id = ?', [id]);
@@ -84,6 +94,7 @@ const useHoris = () => {
   return {
     fetchHoris,
     saveHori,
+    saveHorisBulk,
     deleteHori,
     fetchHoriStats,
     fetchHoriJobs,

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.0] - 2026-10-12
+
+### Added
+- **Bulk Hori creation** (Horis > "Mehrere hinzufügen"): paste one Hori per line (first name, last name, birth date; tab/comma/semicolon/space separated, so spreadsheet paste works). Live preview flags duplicates, missing last name and missing/invalid dates; only valid rows are imported, in one transaction. Migration 20: DE/FR strings.
+
 ## [1.8.0] - 2026-10-12
 
 ### Added

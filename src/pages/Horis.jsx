@@ -8,9 +8,10 @@ import { calcAge, formatTimeRange } from '../utils/jobHours';
 import { calcContribution, campRulesFromSettings } from '../utils/campContribution';
 import Button from '../components/Button';
 import HoriModal from '../components/HoriModal';
+import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
-  Plus, Search, Edit2, Trash2, AlertCircle, Baby, Clock, PiggyBank,
+  Plus, ListPlus, Search, Edit2, Trash2, AlertCircle, Baby, Clock, PiggyBank,
   LayoutList, Grid3x3, X, CalendarDays,
 } from 'lucide-react';
 import './Horis.css';
@@ -179,6 +180,8 @@ const Horis = () => {
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const bulkBtnRef = useRef(null);
   const [editingHori, setEditingHori] = useState(null);
   const [confirm, setConfirm] = useState(null);   // { id, name }
   const [detailHori, setDetailHori] = useState(null);
@@ -245,6 +248,8 @@ const Horis = () => {
   const handleNew = () => { setEditingHori(null); setShowModal(true); };
   const handleEdit = (h) => { setDetailHori(null); setEditingHori(h); setShowModal(true); };
   const closeModal = useCallback(() => { setShowModal(false); setEditingHori(null); }, []);
+  const closeBulk = useCallback(() => setShowBulk(false), []);
+  const handleBulkSave = () => { setShowBulk(false); load(); };
   const handleModalSave = () => { setShowModal(false); setEditingHori(null); load(); };
   const closeDetail = useCallback(() => setDetailHori(null), []);
 
@@ -516,9 +521,14 @@ const Horis = () => {
             aria-label={t('horis_search', 'Horis suchen…')}
           />
         </div>
-        <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
-          {t('horis_add', 'Hori hinzufügen')}
-        </Button>
+        <div className="horis-header-actions">
+          <Button ref={bulkBtnRef} variant="outline" icon={ListPlus} onClick={() => setShowBulk(true)}>
+            {t('horis_bulk_add', 'Mehrere hinzufügen')}
+          </Button>
+          <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
+            {t('horis_add', 'Hori hinzufügen')}
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -602,7 +612,16 @@ const Horis = () => {
         />
       )}
 
-      {detailHori && !showModal && (
+      {showBulk && (
+        <BulkHoriModal
+          existing={stats}
+          onSave={handleBulkSave}
+          onCancel={closeBulk}
+          triggerRef={bulkBtnRef}
+        />
+      )}
+
+      {detailHori && !showModal && !showBulk && (
         <HoriDetail hori={detailHori} fmtHours={fmtHours} onClose={closeDetail} onEdit={handleEdit} />
       )}
 
