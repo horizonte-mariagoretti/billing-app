@@ -26,6 +26,9 @@ const ClientPicker = ({ clients = [], value, onChange, onClientCreated, label, i
 
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
+  // ClientModal hands focus back to the input when it closes; without this the
+  // input's onFocus would re-open the dropdown right after a client was created.
+  const skipFocusOpenRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [focusIdx, setFocusIdx] = useState(-1);
@@ -119,7 +122,10 @@ const ClientPicker = ({ clients = [], value, onChange, onClientCreated, label, i
             setFocusIdx(-1);
             if (!open) setOpen(true);
           }}
-          onFocus={() => { setSearch(''); setFocusIdx(-1); setOpen(true); }}
+          onFocus={() => {
+            if (skipFocusOpenRef.current) { skipFocusOpenRef.current = false; return; }
+            setSearch(''); setFocusIdx(-1); setOpen(true);
+          }}
           onClick={() => { if (!open) { setSearch(''); setFocusIdx(-1); setOpen(true); } }}
           onKeyDown={handleKeyDown}
         />
@@ -203,11 +209,18 @@ const ClientPicker = ({ clients = [], value, onChange, onClientCreated, label, i
           editingClient={null}
           triggerRef={inputRef}
           onSave={(newClient) => {
+            skipFocusOpenRef.current = true;
+            setTimeout(() => { skipFocusOpenRef.current = false; }, 400);
             setShowModal(false);
             onClientCreated?.(newClient);
             onChange?.(newClient.id);
+            closeList(); // otherwise the field keeps showing the (empty) search text instead of the new name
           }}
-          onCancel={() => setShowModal(false)}
+          onCancel={() => {
+            skipFocusOpenRef.current = true;
+            setTimeout(() => { skipFocusOpenRef.current = false; }, 400);
+            setShowModal(false);
+          }}
         />
         </div>,
         document.body
