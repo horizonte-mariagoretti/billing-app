@@ -45,7 +45,8 @@ const jobServiceLine = (job, openPrefix = 'ab') => {
  * Small confirm dialog shown before creating an offer/invoice from a job.
  * Collects one service line and hands it to onConfirm({ description, product, rate, hours }).
  * Name and hourly rate always come from the product "Hori Arbeitsstunden"
- * (Produkte); only the description and hours can be adjusted here.
+ * (Produkte); only the description and hours can be adjusted here. Without
+ * that product the line is still created (rate 0) and the rate is set in the editor.
  * Only job title/date/time end up on the document — never Hori names.
  */
 const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
@@ -113,14 +114,14 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
     e.stopPropagation(); // dialog is portalled: don't submit a parent form
     if (busy) return;
     if (!description.trim()) { setError(t('jobdoc_err_description', 'Beschreibung ist erforderlich')); return; }
-    if (!product) return;
     if (!Number.isFinite(hoursNum) || hours === '' || hoursNum <= 0) { setError(t('jobdoc_err_hours', 'Stunden müssen größer als 0 sein')); return; }
     setError(null);
     setBusy(true);
     try {
       await onConfirm({
         description: description.trim(),
-        product: { id: product.id, name: productLabel(product) },
+        // No product yet: still name the line after it; the rate (0) is filled in the editor.
+        product: { id: product?.id ?? null, name: product ? productLabel(product) : HORI_HOURS_PRODUCT },
         rate: round2(rateNum),
         hours: round2(hoursNum),
       });
@@ -171,12 +172,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
                   <small>{t('jobdoc_rate_from_product', 'aus dem Produkt')}</small>
                 </div>
               </div>
-            ) : (
-              <div className="page-error" role="alert">
-                <AlertCircle size={16} />
-                <span>{t('jobdoc_product_missing', 'Das Produkt „Hori Arbeitsstunden“ wurde nicht gefunden. Lege es unter Produkte an, damit der Stundensatz automatisch übernommen wird.')}</span>
-              </div>
-            )}
+            ) : null}
 
             <div className="job-doc-field">
               <label className="input-label" htmlFor="job-doc-hours">{t('jobdoc_field_hours', 'Stunden')}</label>
@@ -203,7 +199,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
 
             <div className="job-doc-actions">
               <Button variant="ghost" type="button" onClick={onCancel}>{t('btn_cancel', 'Abbrechen')}</Button>
-              <Button variant="primary" type="submit" disabled={busy || !product}>{confirmLabel}</Button>
+              <Button variant="primary" type="submit" disabled={busy}>{confirmLabel}</Button>
             </div>
           </form>
         )}
