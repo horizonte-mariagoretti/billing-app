@@ -1233,7 +1233,9 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
 ('jobdoc_err_rate','Stundensatz muss eine positive Zahl sein','Le taux horaire doit être un nombre positif','Stundensatz muss eine positive Zahl sein'),
 ('jobdoc_err_hours','Stunden müssen größer als 0 sein','Les heures doivent être supérieures à 0','Stunden müssen größer als 0 sein'),
 ('jobdoc_err_failed','Dokument konnte nicht vorbereitet werden.','Le document n''a pas pu être préparé.','Dokument konnte nicht vorbereitet werden.'),
-('jobdoc_saves_first','Änderungen werden vorher gespeichert','Les modifications seront enregistrées d''abord','Änderungen werden vorher gespeichert');
+('jobdoc_saves_first','Änderungen werden vorher gespeichert','Les modifications seront enregistrées d''abord','Änderungen werden vorher gespeichert'),
+('jobdoc_rate_from_product','aus dem Produkt','selon le produit','aus dem Produkt'),
+('jobdoc_product_missing','Das Produkt „Hori Arbeitsstunden“ wurde nicht gefunden. Lege es unter Produkte an, damit der Stundensatz automatisch übernommen wird.','Le produit « Hori Arbeitsstunden » est introuvable. Crée-le dans Produits pour que le taux horaire soit repris automatiquement.','Das Produkt „Hori Arbeitsstunden“ wurde nicht gefunden. Lege es unter Produkte an, damit der Stundensatz automatisch übernommen wird.');
     `);
   } catch (e) {
     console.error('Migration 22 failed:', e.message);

@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle } from 'lucide-react';
 import DecimalInput from './DecimalInput';
-import StyledSelect from './StyledSelect';
 import Button from './Button';
 import useDatabase from '../hooks/useDatabase';
 import useSettings from '../hooks/useSettings';
+import { HORI_HOURS_PRODUCT } from '../constants';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
 import { formatTimeRange } from '../utils/jobHours';
@@ -21,6 +21,9 @@ const fmtDate = (iso) => {
 };
 
 const productLabel = (p) => p.name_de || p.name_fr || p.name || '';
+
+const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const isHoriProduct = (p) => [p.name, p.name_de, p.name_fr].some((n) => norm(n) === norm(HORI_HOURS_PRODUCT));
 
 /** Hours to prefill: offer = planned; invoice = actual if > 0, else planned; fallback 1. */
 const jobDocumentHours = (job, type) => {
@@ -40,8 +43,9 @@ const jobServiceLine = (job, openPrefix = 'ab') => {
 
 /**
  * Small confirm dialog shown before creating an offer/invoice from a job.
- * Collects one service line (description, optional product, rate, hours)
- * and hands it to onConfirm({ description, product, rate, hours }).
+ * Collects one service line and hands it to onConfirm({ description, product, rate, hours }).
+ * Name and hourly rate always come from the product "Hori Arbeitsstunden"
+ * (Produkte); only the description and hours can be adjusted here.
  * Only job title/date/time end up on the document — never Hori names.
  */
 const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
@@ -50,11 +54,9 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
   const t = useT();
   const isQuote = type === 'quote';
 
-  const [products, setProducts] = useState([]);
+  const [product, setProduct] = useState(null);
   const [currency, setCurrency] = useState('EUR');
-  const [productId, setProductId] = useState('');
   const [description, setDescription] = useState(() => jobServiceLine(job, t('jobs_open_prefix', 'ab')));
-  const [rate, setRate] = useState('');
   const [hours, setHours] = useState(() => String(jobDocumentHours(job, type)));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -82,19 +84,10 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
           loadSettings().catch(() => ({})),
         ]);
         if (cancelled) return;
-        const list = rows || [];
-        setProducts(list);
+        setProduct((rows || []).find(isHoriProduct) || null);
         setCurrency(s?.default_currency || 'EUR');
-        const hourly = list.find((p) => p.unit === 'hour');
-        if (hourly) {
-          setProductId(hourly.id);
-          setRate(String(Number(hourly.rate) || 0));
-        } else {
-          const fallback = parseFloat(String(s?.default_hourly_rate ?? '').replace(',', '.'));
-          setRate(String(Number.isFinite(fallback) ? fallback : 0));
-        }
       } catch (_e) {
-        if (!cancelled) setRate('0');
+        if (!cancelled) setError(t('jobdoc_err_failed', 'Dokument konnte nicht vorbereitet werden.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -103,19 +96,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const product = useMemo(
-    () => products.find((p) => String(p.id) === String(productId)) || null,
-    [products, productId]
-  );
-
-  const pickProduct = (e) => {
-    const id = e.target.value;
-    setProductId(id);
-    const p = products.find((x) => String(x.id) === String(id));
-    if (p) setRate(String(Number(p.rate) || 0));
-  };
-
-  const rateNum = Number(rate);
+  const rateNum = Number(product?.rate) || 0;
   const hoursNum = Number(hours);
   const total = (Number.isFinite(rateNum) ? rateNum : 0) * (Number.isFinite(hoursNum) ? hoursNum : 0);
   const fmtMoney = (v) => v.toLocaleString('de-DE', { style: 'currency', currency });
@@ -132,14 +113,14 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
     e.stopPropagation(); // dialog is portalled: don't submit a parent form
     if (busy) return;
     if (!description.trim()) { setError(t('jobdoc_err_description', 'Beschreibung ist erforderlich')); return; }
-    if (!Number.isFinite(rateNum) || rate === '' || rateNum < 0) { setError(t('jobdoc_err_rate', 'Stundensatz muss eine positive Zahl sein')); return; }
+    if (!product) return;
     if (!Number.isFinite(hoursNum) || hours === '' || hoursNum <= 0) { setError(t('jobdoc_err_hours', 'Stunden müssen größer als 0 sein')); return; }
     setError(null);
     setBusy(true);
     try {
       await onConfirm({
         description: description.trim(),
-        product: product ? { id: product.id, name: productLabel(product) } : null,
+        product: { id: product.id, name: productLabel(product) },
         rate: round2(rateNum),
         hours: round2(hoursNum),
       });
@@ -178,35 +159,34 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
               />
             </div>
 
-            <div className="job-doc-field">
-              <span className="input-label">{t('jobdoc_field_product', 'Leistung / Produkt')}</span>
-              <StyledSelect value={productId} onChange={pickProduct}>
-                <option value="">{t('jobdoc_product_manual', '— manuell —')}</option>
-                {products.map((p) => <option key={p.id} value={p.id}>{productLabel(p)}</option>)}
-              </StyledSelect>
-            </div>
+            {product ? (
+              <div className="job-doc-product" aria-label={t('jobdoc_field_product', 'Leistung / Produkt')}>
+                <div>
+                  <span className="input-label">{t('jobdoc_field_product', 'Leistung / Produkt')}</span>
+                  <strong>{productLabel(product)}</strong>
+                </div>
+                <div className="job-doc-product-rate">
+                  <span className="input-label">{t('jobdoc_field_rate', 'Stundensatz')}</span>
+                  <strong>{fmtMoney(rateNum)}</strong>
+                  <small>{t('jobdoc_rate_from_product', 'aus dem Produkt')}</small>
+                </div>
+              </div>
+            ) : (
+              <div className="page-error" role="alert">
+                <AlertCircle size={16} />
+                <span>{t('jobdoc_product_missing', 'Das Produkt „Hori Arbeitsstunden“ wurde nicht gefunden. Lege es unter Produkte an, damit der Stundensatz automatisch übernommen wird.')}</span>
+              </div>
+            )}
 
-            <div className="job-doc-row">
-              <div className="job-doc-field">
-                <label className="input-label" htmlFor="job-doc-rate">{t('jobdoc_field_rate', 'Stundensatz')}</label>
-                <DecimalInput
-                  id="job-doc-rate"
-                  className="input-field"
-                  min="0"
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                />
-              </div>
-              <div className="job-doc-field">
-                <label className="input-label" htmlFor="job-doc-hours">{t('jobdoc_field_hours', 'Stunden')}</label>
-                <DecimalInput
-                  id="job-doc-hours"
-                  className="input-field"
-                  min="0"
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                />
-              </div>
+            <div className="job-doc-field">
+              <label className="input-label" htmlFor="job-doc-hours">{t('jobdoc_field_hours', 'Stunden')}</label>
+              <DecimalInput
+                id="job-doc-hours"
+                className="input-field"
+                min="0"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+              />
             </div>
 
             <div className="job-doc-total" aria-live="polite">
@@ -223,7 +203,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
 
             <div className="job-doc-actions">
               <Button variant="ghost" type="button" onClick={onCancel}>{t('btn_cancel', 'Abbrechen')}</Button>
-              <Button variant="primary" type="submit" disabled={busy}>{confirmLabel}</Button>
+              <Button variant="primary" type="submit" disabled={busy || !product}>{confirmLabel}</Button>
             </div>
           </form>
         )}
