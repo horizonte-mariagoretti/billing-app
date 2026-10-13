@@ -12,7 +12,7 @@ import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
   Plus, ListPlus, Search, Edit2, Trash2, AlertCircle, Baby, Clock, PiggyBank,
-  LayoutList, Grid3x3, X, CalendarDays,
+  LayoutList, Grid3x3, X, CalendarDays, ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react';
 import './Horis.css';
 
@@ -179,6 +179,7 @@ const Horis = () => {
   const [view, setView] = useState('overview'); // 'overview' | 'matrix'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|jobs|actual|share|planned|contribution
   const [showModal, setShowModal] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const bulkBtnRef = useRef(null);
@@ -234,6 +235,47 @@ const Horis = () => {
     () => stats.filter(h => (showInactive || isActive(h)) && matchesSearch(h)),
     [stats, showInactive, matchesSearch]
   );
+
+  const sortValue = (h, key) => {
+    switch (key) {
+      case 'name': return fullName(h).toLowerCase();
+      case 'age': return h.birth_date ? calcAge(h.birth_date) : null;
+      case 'jobs': return num(h.job_count);
+      case 'actual': return num(h.total_actual_hours);
+      case 'share': return num(h.share_pct);
+      case 'planned': return num(h.planned_hours_upcoming);
+      case 'contribution': return contributionFor(h);
+      default: return 0;
+    }
+  };
+  // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
+  const sortedStats = [...visibleStats].sort((a, b) => {
+    const va = sortValue(a, sort.key);
+    const vb = sortValue(b, sort.key);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = typeof va === 'string' ? va.localeCompare(vb, locale) : va - vb;
+    const dirCmp = sort.dir === 'asc' ? cmp : -cmp;
+    return dirCmp || fullName(a).localeCompare(fullName(b), locale);
+  });
+  const toggleSort = (key) => setSort((p) => (p.key === key ? { key, dir: p.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
+  const sortTh = (key, label, { className = '', title } = {}) => {
+    const active = sort.key === key;
+    const Icon = !active ? ChevronsUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+    return (
+      <th
+        className={className}
+        title={title}
+        aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      >
+        <button type="button" className={`horis-sort-btn${active ? ' active' : ''}`} onClick={() => toggleSort(key)}>
+          <span>{label}</span>
+          <Icon size={13} aria-hidden="true" />
+        </button>
+      </th>
+    );
+  };
 
   const activeStats = stats.filter(isActive);
   const totalActualHours = stats.reduce((s, h) => s + num(h.total_actual_hours), 0);
@@ -331,20 +373,18 @@ const Horis = () => {
         <table className="horis-table">
           <thead>
             <tr>
-              <th>{t('horis_col_name', 'Name')}</th>
-              <th className="num">{t('horis_col_age', 'Alter')}</th>
-              <th className="num">{t('horis_col_jobs', 'Jobs')}</th>
-              <th className="num">{t('horis_col_actual', 'Gearbeitete Std.')}</th>
-              <th>{t('horis_col_share', 'Anteil %')}</th>
-              <th className="num" title={t('horis_col_planned_tooltip', 'Geplante Stunden für kommende Arbeiten')}>
-                {t('horis_col_planned', 'Geplant')}
-              </th>
-              <th className="num">{t('horis_col_contribution', 'Lagerbeitrag')}</th>
+              {sortTh('name', t('horis_col_name', 'Name'))}
+              {sortTh('age', t('horis_col_age', 'Alter'), { className: 'num' })}
+              {sortTh('jobs', t('horis_col_jobs', 'Jobs'), { className: 'num' })}
+              {sortTh('actual', t('horis_col_actual', 'Gearbeitete Std.'), { className: 'num' })}
+              {sortTh('share', t('horis_col_share', 'Anteil %'))}
+              {sortTh('planned', t('horis_col_planned', 'Geplant'), { className: 'num', title: t('horis_col_planned_tooltip', 'Geplante Stunden für kommende Arbeiten') })}
+              {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
               <th className="num">{t('col_actions', 'Aktionen')}</th>
             </tr>
           </thead>
           <tbody>
-            {visibleStats.map(h => {
+            {sortedStats.map(h => {
               const active = isActive(h);
               const age = h.birth_date ? calcAge(h.birth_date) : null;
               const share = Math.max(0, Math.min(100, num(h.share_pct)));

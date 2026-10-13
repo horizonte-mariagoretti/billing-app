@@ -558,3 +558,25 @@
   gap: var(--space-sm);
   flex-wrap: wrap;
 }
+
+/* Sortable column headers (Übersicht table) */
+.horis-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.horis-sort-btn svg { opacity: 0.45; flex-shrink: 0; }
+.horis-sort-btn:hover svg { opacity: 0.8; }
+.horis-sort-btn.active { color: var(--color-text-dark-primary); }
+.horis-sort-btn.active svg { opacity: 1; color: var(--color-primary); }
+.horis-sort-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+.horis-table th.num .horis-sort-btn { justify-content: flex-end; }

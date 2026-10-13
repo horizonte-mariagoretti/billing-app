@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.2] - 2026-10-13
+
+### Added
+- **Sortable Horis overview**: click any column header (Name, Alter, Jobs, Gearbeitete Std., Anteil %, Geplant, Lagerbeitrag) to sort ascending, click again for descending. Default is Name A–Z. Horis without a value (e.g. no birth date) always stay at the bottom; ties fall back to name. Headers expose `aria-sort` and are keyboard-operable.
+
 ## [1.9.1] - 2026-10-13
 
 ### Changed
