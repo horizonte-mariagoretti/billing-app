@@ -367,3 +367,53 @@
     border-radius: var(--radius-lg);
   }
 }
+
+/* ── Dokumente: create / open offer + invoice from this job ── */
+.job-modal-docs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+}
+
+.job-modal-docs-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.job-modal-docs-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.job-modal-docs-note {
+  font-size: 0.75rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.job-modal-docs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.job-modal-docs-number {
+  margin-left: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-dark-secondary);
+}
+
+@media (max-width: 700px) {
+  .job-modal-docs-actions > .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}

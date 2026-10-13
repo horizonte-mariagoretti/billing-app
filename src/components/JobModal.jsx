@@ -9,8 +9,9 @@ import Button from './Button';
 import Input from './Input';
 import StyledSelect from './StyledSelect';
 import DatePicker from './DatePicker';
+import ClientPicker from './ClientPicker';
 import { computeHours } from '../utils/jobHours';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle, Check, FileText, Receipt, FilePlus, ReceiptText } from 'lucide-react';
 import './JobModal.css';
 
 const todayISO = () => {
@@ -37,7 +38,7 @@ const EMPTY_FORM = {
  * Create/edit a job (Arbeit). `jobId` null → new job.
  * Assignments state: { [hori_id]: { planned, actual, plannedEdited } }.
  */
-const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) => {
+const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onRequestDoc }) => {
   const { query } = useDatabase();
   const { fetchJob, saveJob, fetchDocumentOptions } = useJobs();
   const { fetchHoris } = useHoris();
@@ -53,12 +54,22 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
   const [loadError, setLoadError] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [errors, setErrors] = useState({});
+  const [docBusy, setDocBusy] = useState(false);
+  const [baseline, setBaseline] = useState(null); // JSON snapshot of the loaded/saved form -> dirty check
 
   const modalRef = useRef(null);
+  const overlayRef = useRef(null);
   useFocusTrap(modalRef, { active: !loading, triggerRef });
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    const handleKey = (e) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      // Only close when this modal is the topmost dialog: a nested
+      // ClientModal / JobDocumentDialog handles its own Escape.
+      const dialogs = document.querySelectorAll('[aria-modal="true"]');
+      if (dialogs.length && dialogs[dialogs.length - 1] !== overlayRef.current) return;
+      onCancel();
+    };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onCancel]);
@@ -78,7 +89,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
         setClients(clientRows || []);
         setDocOptions(docs || { quotes: [], invoices: [] });
         if (job) {
-          setForm({
+          const loadedForm = {
             title: job.title || '',
             date: job.date || todayISO(),
             start_time: job.start_time || '',
@@ -89,7 +100,8 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
             invoice_id: job.invoice_id || '',
             notes: job.notes || '',
             status: job.status || 'planned',
-          });
+          };
+          setForm(loadedForm);
           const computed = computeHours(job.start_time, job.end_time, !!job.open_end);
           const next = {};
           (job.assignments || []).forEach((a) => {
@@ -102,6 +114,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
             };
           });
           setAssign(next);
+          setBaseline(JSON.stringify({ form: loadedForm, assign: next }));
         }
       } catch (_err) {
         if (!cancelled) setLoadError(t('arbeiten_modal_load_error', 'Daten konnten nicht geladen werden.'));
@@ -112,6 +125,9 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
+
+  // The "Dokumente" actions save the job first when it has unsaved edits.
+  const isDirty = baseline !== null && JSON.stringify({ form, assign }) !== baseline;
 
   const computedHours = computeHours(form.start_time, form.end_time, form.open_end);
 
@@ -155,8 +171,8 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
     }
   };
 
-  const setClient = (e) => {
-    const client_id = e.target.value;
+  const setClient = (id) => {
+    const client_id = id || '';
     setForm((f) => {
       const keep = (list, id) => {
         if (!id || !client_id) return id;
@@ -236,13 +252,13 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (saving || !validate()) return;
+  // Validate + write the job. Returns the job id, or null on failure.
+  const persist = async () => {
+    if (saving || !validate()) return null;
     setSaving(true);
     setSaveError(null);
     try {
-      await saveJob({
+      const id = await saveJob({
         ...(jobId ? { id: jobId } : {}),
         title: form.title.trim(),
         date: form.date,
@@ -260,10 +276,39 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
           actual_hours: isDone && a.actual !== '' ? Number(a.actual) : null,
         })),
       });
-      onSave();
+      setBaseline(JSON.stringify({ form, assign }));
+      setSaving(false);
+      return id;
     } catch (_err) {
       setSaveError(t('arbeiten_save_error', 'Speichern fehlgeschlagen. Bitte erneut versuchen.'));
       setSaving(false);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const id = await persist();
+    if (id) onSave();
+  };
+
+  /* ── Create / open offer + invoice for this (saved) job ── */
+  const findDoc = (list, id) => (id ? list.find((d) => String(d.id) === String(id)) : null);
+  const linkedQuote = findDoc(docOptions.quotes, form.quote_id);
+  const linkedInvoice = findDoc(docOptions.invoices, form.invoice_id);
+
+  const handleDocAction = async (type) => {
+    if (!jobId || !onRequestDoc || docBusy) return;
+    setDocBusy(true);
+    try {
+      // Unsaved edits (incl. a changed quote/invoice select) are saved first.
+      if (isDirty) {
+        const id = await persist();
+        if (!id) return;
+      }
+      await onRequestDoc(jobId, type);
+    } finally {
+      setDocBusy(false);
     }
   };
 
@@ -276,7 +321,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
   const fmt = (n) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
 
   return (
-    <div className="job-modal-overlay" role="dialog" aria-modal="true" aria-label={heading}
+    <div className="job-modal-overlay" ref={overlayRef} role="dialog" aria-modal="true" aria-label={heading}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="job-modal-content" ref={modalRef}>
         <h2>{heading}</h2>
@@ -349,13 +394,18 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
             </div>
 
             <div className="job-modal-row">
-              <div className="job-modal-field">
-                <label className="input-label">{t('arbeiten_field_client', 'Kunde')}</label>
-                <StyledSelect value={form.client_id} onChange={setClient} placeholder="—">
-                  <option value="">—</option>
-                  {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </StyledSelect>
-              </div>
+              <ClientPicker
+                label={t('arbeiten_field_client', 'Kunde')}
+                clients={clients}
+                value={form.client_id}
+                onChange={setClient}
+                onClientCreated={(c) => setClients((list) => (
+                  list.some((x) => String(x.id) === String(c.id))
+                    ? list
+                    : [...list, { id: c.id, name: c.name }]
+                        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de', { sensitivity: 'base' }))
+                ))}
+              />
               <div className="job-modal-field">
                 <label className="input-label">{t('arbeiten_field_status', 'Status')}</label>
                 <StyledSelect value={form.status} onChange={setStatus}>
@@ -382,6 +432,47 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) =
                 </StyledSelect>
               </div>
             </div>
+
+            {jobId && onRequestDoc && (
+              <div className="job-modal-docs" role="group" aria-labelledby="job-modal-docs-title">
+                <div className="job-modal-docs-header">
+                  <span className="job-modal-docs-title" id="job-modal-docs-title">{t('arbeiten_col_documents', 'Dokumente')}</span>
+                  {isDirty && (
+                    <span className="job-modal-docs-note">{t('jobdoc_saves_first', 'Änderungen werden vorher gespeichert')}</span>
+                  )}
+                </div>
+                <div className="job-modal-docs-actions">
+                  {form.quote_id ? (
+                    <Button type="button" variant="outline" size="sm" icon={FileText}
+                      disabled={docBusy || saving} onClick={() => handleDocAction('quote')}
+                      aria-label={`${t('jobdoc_open_quote', 'Angebot öffnen')} ${linkedQuote?.number || ''}`.trim()}>
+                      {t('jobdoc_open_quote', 'Angebot öffnen')}
+                      {linkedQuote?.number && <span className="job-modal-docs-number">{linkedQuote.number}</span>}
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="secondary" size="sm" icon={FilePlus}
+                      disabled={docBusy || saving} onClick={() => handleDocAction('quote')}>
+                      {t('jobdoc_create_quote', 'Angebot erstellen')}
+                    </Button>
+                  )}
+                  {form.invoice_id ? (
+                    <Button type="button" variant="outline" size="sm" icon={Receipt}
+                      disabled={docBusy || saving} onClick={() => handleDocAction('invoice')}
+                      aria-label={`${t('jobdoc_open_invoice', 'Rechnung öffnen')} ${linkedInvoice?.number || ''}`.trim()}>
+                      {t('jobdoc_open_invoice', 'Rechnung öffnen')}
+                      {linkedInvoice?.number && <span className="job-modal-docs-number">{linkedInvoice.number}</span>}
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="secondary" size="sm" icon={ReceiptText}
+                      disabled={docBusy || saving} onClick={() => handleDocAction('invoice')}>
+                      {form.quote_id
+                        ? t('jobdoc_invoice_from_quote', 'Rechnung aus Angebot erstellen')
+                        : t('jobdoc_create_invoice', 'Rechnung erstellen')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── Helpers ── */}
             <div className="job-modal-horis">

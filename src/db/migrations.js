@@ -1209,6 +1209,41 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
       }
     },
   },
+  {
+    version: 22,
+    up: (exec) => {
+      // Create offer/invoice from a job + ClientPicker strings (DE/FR).
+      try {
+        exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('client_picker_clear','Kunde entfernen','Retirer le client','Kunde entfernen'),
+('client_picker_none','— Kein Kunde —','— Aucun client —','— Kein Kunde —'),
+('client_picker_no_match','Kein Kunde gefunden','Aucun client trouvé','Kein Kunde gefunden'),
+('jobdoc_title_quote','Angebot aus Arbeit erstellen','Créer un devis à partir du travail','Angebot aus Arbeit erstellen'),
+('jobdoc_title_invoice','Rechnung aus Arbeit erstellen','Créer une facture à partir du travail','Rechnung aus Arbeit erstellen'),
+('jobdoc_create_quote','Angebot erstellen','Créer un devis','Angebot erstellen'),
+('jobdoc_create_invoice','Rechnung erstellen','Créer une facture','Rechnung erstellen'),
+('jobdoc_invoice_from_quote','Rechnung aus Angebot erstellen','Créer la facture à partir du devis','Rechnung aus Angebot erstellen'),
+('jobdoc_open_quote','Angebot öffnen','Ouvrir le devis','Angebot öffnen'),
+('jobdoc_open_invoice','Rechnung öffnen','Ouvrir la facture','Rechnung öffnen'),
+('jobdoc_hint','Eine Leistungsposition wird aus der Arbeit übernommen. Alles Weitere kannst du danach im Dokument anpassen.','Une ligne de prestation est reprise du travail. Tout le reste peut être ajusté ensuite dans le document.','Eine Leistungsposition wird aus der Arbeit übernommen. Alles Weitere kannst du danach im Dokument anpassen.'),
+('jobdoc_field_description','Leistungsbeschreibung','Description de la prestation','Leistungsbeschreibung'),
+('jobdoc_field_product','Leistung / Produkt','Prestation / produit','Leistung / Produkt'),
+('jobdoc_product_manual','— manuell —','— manuel —','— manuell —'),
+('jobdoc_field_rate','Stundensatz','Taux horaire','Stundensatz'),
+('jobdoc_field_hours','Stunden','Heures','Stunden'),
+('jobdoc_total','Summe (netto)','Total (HT)','Summe (netto)'),
+('jobdoc_err_description','Beschreibung ist erforderlich','La description est obligatoire','Beschreibung ist erforderlich'),
+('jobdoc_err_rate','Stundensatz muss eine positive Zahl sein','Le taux horaire doit être un nombre positif','Stundensatz muss eine positive Zahl sein'),
+('jobdoc_err_hours','Stunden müssen größer als 0 sein','Les heures doivent être supérieures à 0','Stunden müssen größer als 0 sein'),
+('jobdoc_err_failed','Dokument konnte nicht vorbereitet werden.','Le document n''a pas pu être préparé.','Dokument konnte nicht vorbereitet werden.'),
+('jobdoc_saves_first','Änderungen werden vorher gespeichert','Les modifications seront enregistrées d''abord','Änderungen werden vorher gespeichert');
+        `);
+      } catch (e) {
+        console.error('Migration 22 failed:', e.message);
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

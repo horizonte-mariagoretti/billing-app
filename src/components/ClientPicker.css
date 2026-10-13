@@ -1,0 +1,139 @@
+/* Searchable client combobox (ClientPicker.jsx). Scoped to .client-picker. */
+.client-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.client-picker-control {
+  position: relative;
+}
+
+.client-picker-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 32px 8px 10px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.client-picker-input::placeholder {
+  color: var(--color-text-dark-tertiary);
+}
+
+.client-picker-input:hover {
+  border-color: var(--color-text-dark-tertiary);
+  background-color: var(--color-light-surface);
+}
+
+.client-picker-input:focus {
+  outline: none;
+  background-color: var(--color-light-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.client-picker-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.client-picker-clear:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+.client-picker-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.client-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 0.88rem;
+  color: var(--color-text-dark-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.client-picker-option:hover,
+.client-picker-option.is-focused {
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.client-picker-option.is-selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.client-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-picker-check {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.client-picker-option--muted {
+  color: var(--color-text-dark-tertiary);
+}
+
+.client-picker-option--create {
+  justify-content: flex-start;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.client-picker-empty {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.client-picker-portal {
+  display: contents;
+}

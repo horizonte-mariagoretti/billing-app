@@ -5,10 +5,11 @@ import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import JobModal from '../components/JobModal';
 import JobCalendar from '../components/JobCalendar';
+import JobDocumentDialog from '../components/JobDocumentDialog';
 import { formatTimeRange } from '../utils/jobHours';
 import {
   Plus, Search, Edit2, Trash2, AlertCircle, CalendarClock,
-  FileText, Receipt, Users, LayoutList, CalendarDays,
+  FileText, Receipt, Users, LayoutList, CalendarDays, FilePlus, ReceiptText,
 } from 'lucide-react';
 import './Arbeiten.css';
 
@@ -22,8 +23,8 @@ const formatHours = (h) => {
   return Number(h).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 };
 
-const Arbeiten = () => {
-  const { fetchJobs, deleteJob } = useJobs();
+const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
+  const { fetchJobs, fetchJob, deleteJob } = useJobs();
   const t = useT();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
@@ -36,6 +37,7 @@ const Arbeiten = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirm, setConfirm] = useState(null); // { id, title }
+  const [docDialog, setDocDialog] = useState(null); // { job, type } — create offer/invoice from a job
 
   const openBtnRef = useRef(null);
 
@@ -76,6 +78,33 @@ const Arbeiten = () => {
   const handleEdit = (job) => { setEditingId(job.id); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditingId(null); setNewDate(null); };
   const handleModalSave = () => { closeModal(); loadJobs(); };
+
+  /**
+   * Offer/invoice for a job: open it when linked; an invoice for a job that
+   * already has a quote goes through the quote->invoice conversion in App;
+   * otherwise ask for the service line first (JobDocumentDialog).
+   */
+  const requestDoc = async (jobId, type) => {
+    if (!jobId) return;
+    try {
+      const job = await fetchJob(jobId);
+      if (!job) return;
+      const existingId = type === 'quote' ? job.quote_id : job.invoice_id;
+      if (existingId) { await onOpenDoc?.(existingId); return; }
+      if (type === 'invoice' && job.quote_id) { await onCreateDocFromJob?.(job.id, 'invoice'); return; }
+      setDocDialog({ job, type });
+    } catch (_err) {
+      setError(t('jobdoc_err_failed', 'Dokument konnte nicht vorbereitet werden.'));
+    }
+  };
+
+  const confirmDocDialog = async (params) => {
+    const { job, type } = docDialog;
+    await onCreateDocFromJob?.(job.id, type, params);
+    setDocDialog(null);
+  };
+
+  const openDoc = (e, docId) => { e.stopPropagation(); onOpenDoc?.(docId); };
 
   const handleDeleteConfirmed = async () => {
     if (!confirm) return;
@@ -268,14 +297,26 @@ const Arbeiten = () => {
                       {job.quote_number || job.invoice_number ? (
                         <div className="arbeiten-doc-chips">
                           {job.quote_number && (
-                            <span className="arbeiten-doc-chip arbeiten-doc-chip--quote" title={t('arbeiten_quote', 'Angebot')}>
-                              <FileText size={12} />{job.quote_number}
-                            </span>
+                            <button
+                              type="button"
+                              className="arbeiten-doc-chip arbeiten-doc-chip--quote"
+                              title={t('jobdoc_open_quote', 'Angebot öffnen')}
+                              aria-label={`${t('jobdoc_open_quote', 'Angebot öffnen')} ${job.quote_number}`}
+                              onClick={(e) => openDoc(e, job.quote_id)}
+                            >
+                              <FileText size={12} aria-hidden="true" />{job.quote_number}
+                            </button>
                           )}
                           {job.invoice_number && (
-                            <span className="arbeiten-doc-chip arbeiten-doc-chip--invoice" title={t('arbeiten_invoice', 'Rechnung')}>
-                              <Receipt size={12} />{job.invoice_number}
-                            </span>
+                            <button
+                              type="button"
+                              className="arbeiten-doc-chip arbeiten-doc-chip--invoice"
+                              title={t('jobdoc_open_invoice', 'Rechnung öffnen')}
+                              aria-label={`${t('jobdoc_open_invoice', 'Rechnung öffnen')} ${job.invoice_number}`}
+                              onClick={(e) => openDoc(e, job.invoice_id)}
+                            >
+                              <Receipt size={12} aria-hidden="true" />{job.invoice_number}
+                            </button>
                           )}
                         </div>
                       ) : <span className="arbeiten-muted">—</span>}
@@ -287,6 +328,38 @@ const Arbeiten = () => {
                     </td>
                     <td className="actions-cell">
                       <div className="action-btns">
+                        {(() => {
+                          const hasQuote = !!job.quote_id;
+                          const hasInvoice = !!job.invoice_id;
+                          const qLabel = hasQuote
+                            ? `${t('jobdoc_open_quote', 'Angebot öffnen')} ${job.quote_number || ''}`.trim()
+                            : t('jobdoc_create_quote', 'Angebot erstellen');
+                          const iLabel = hasInvoice
+                            ? `${t('jobdoc_open_invoice', 'Rechnung öffnen')} ${job.invoice_number || ''}`.trim()
+                            : t('jobdoc_create_invoice', 'Rechnung erstellen');
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                className={`arbeiten-doc-action${hasQuote ? ' is-linked' : ''}`}
+                                title={qLabel}
+                                aria-label={`${qLabel} – ${job.title || date}`}
+                                onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'quote'); }}
+                              >
+                                {hasQuote ? <FileText size={16} /> : <FilePlus size={16} />}
+                              </button>
+                              <button
+                                type="button"
+                                className={`arbeiten-doc-action${hasInvoice ? ' is-linked' : ''}`}
+                                title={iLabel}
+                                aria-label={`${iLabel} – ${job.title || date}`}
+                                onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'invoice'); }}
+                              >
+                                {hasInvoice ? <Receipt size={16} /> : <ReceiptText size={16} />}
+                              </button>
+                            </>
+                          );
+                        })()}
                         <button
                           type="button"
                           title={t('btn_edit', 'Bearbeiten')}
@@ -322,6 +395,16 @@ const Arbeiten = () => {
           onSave={handleModalSave}
           onCancel={closeModal}
           triggerRef={openBtnRef}
+          onRequestDoc={(id, type) => { loadJobs(); return requestDoc(id, type); }}
+        />
+      )}
+
+      {docDialog && (
+        <JobDocumentDialog
+          job={docDialog.job}
+          type={docDialog.type}
+          onConfirm={confirmDocDialog}
+          onCancel={() => setDocDialog(null)}
         />
       )}
 
