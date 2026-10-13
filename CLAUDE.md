@@ -1,6 +1,6 @@
 # InvoiceForge — Project Reference
 
-**Version:** 1.11.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.12.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -58,7 +58,9 @@ Billing_App/
 │   │   ├── DecimalInput.jsx    # German decimal field (comma); onChange gives dot-number. Use instead of type="number".
 │   │   ├── JobCalendar.jsx     # Month calendar of jobs (Arbeiten calendar view)
 │   │   ├── ClientPicker.jsx / .css      # Searchable client combobox + "Neuen Kunden anlegen" (ClientModal). Props: clients, value, onChange(id), onClientCreated(client)
-│   │   ├── JobDocumentDialog.jsx / .css # Confirm the service line (product, rate, hours) before creating an offer/invoice from a job
+│   │   ├── JobDocumentDialog.jsx / .css # Wage source + preview before creating an offer/invoice from a job (one line per distinct Hori-hours value)
+│   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
+│   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
 │   │   ├── Input.css
 │   │   ├── StatusBadge.jsx     # draft|sent|paid|overdue|cancelled|accepted|declined|converted
 │   │   ├── StatusBadge.css
@@ -82,12 +84,13 @@ Billing_App/
 │   │   ├── useDocuments.js     # fetchDocuments, saveDocument, deleteDocument, transitionDocument, fetchPayments
 │   │   ├── useSettings.js      # loadSettings, saveSettings, getNextDocumentNumber, incrementDocumentNumber
 │   │   ├── useJobs.js          # CRUD for jobs (Arbeiten) + job_assignments
+│   │   ├── useJobRateSource.js # Products + "Aus Produkt | Manuell" wage state for JobRateSource (resolved name/rate/productId)
 │   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–22 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–23 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -101,6 +104,7 @@ Billing_App/
 │   └── utils/
 │       ├── documentLifecycle.js  # Status FSM (pure functions, no DB)
 │       ├── jobHours.js           # Pure helpers: planned/actual hours, work share, camp contribution reduction
+│       ├── jobDocumentLines.js   # Pure: groupHoriHours, formatClockRange, buildJobItems (job → offer/invoice lines)
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
 ├── CLAUDE.md            # ← this file

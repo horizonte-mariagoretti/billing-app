@@ -13,7 +13,7 @@
 
 .job-doc-box {
   width: 100%;
-  max-width: 480px;
+  max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
   padding: var(--space-xl);
@@ -25,6 +25,13 @@
 .job-doc-box h3 {
   margin-bottom: var(--space-xs);
   font-family: var(--font-heading);
+  color: var(--color-text-dark-primary);
+}
+
+.job-doc-job {
+  margin-bottom: var(--space-xs);
+  font-size: 0.88rem;
+  font-weight: 500;
   color: var(--color-text-dark-primary);
 }
 
@@ -53,51 +60,6 @@
   min-width: 0;
 }
 
-.job-doc-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-md);
-}
-
-.job-doc-textarea {
-  width: 100%;
-  resize: vertical;
-  padding: 8px 10px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-dark-primary);
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.job-doc-textarea:focus {
-  outline: none;
-  background-color: var(--color-light-surface);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-alpha);
-}
-
-.job-doc-total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface-muted);
-  border: 1px solid var(--color-border-light-theme);
-  color: var(--color-text-dark-secondary);
-  font-size: 0.88rem;
-}
-
-.job-doc-total strong {
-  font-family: var(--font-mono);
-  font-size: 1.05rem;
-  color: var(--color-text-dark-primary);
-}
-
 .job-doc-actions {
   display: flex;
   justify-content: flex-end;
@@ -110,23 +72,6 @@
 }
 
 @media (max-width: 480px) {
-  .job-doc-row { grid-template-columns: minmax(0, 1fr); }
   .job-doc-actions { flex-direction: column-reverse; }
   .job-doc-actions > * { width: 100%; }
 }
-
-/* Product + rate are read-only: they come from the "Hori Arbeitsstunden" product. */
-.job-doc-product {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  background-color: var(--color-surface-muted);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-md);
-}
-.job-doc-product > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.job-doc-product-rate { text-align: right; align-items: flex-end; }
-.job-doc-product strong { color: var(--color-text-dark-primary); font-size: 0.95rem; }
-.job-doc-product small { color: var(--color-text-dark-tertiary); font-size: 0.72rem; }

@@ -1242,6 +1242,40 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
   setVersion(22);
 }
 
+// Migration 23: grouped Hori-hours lines (offer/invoice from a job, "Aus Arbeit laden…") — DE/FR.
+if (getVersion() < 23) {
+  try {
+    db.exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('jobdoc_clock_suffix','Uhr','h','Uhr'),
+('jobdoc_hint_grouped','Je Stundenanzahl der Horis entsteht eine Position (Menge = Anzahl Horis, Dauer = Stunden). Alles Weitere kannst du danach im Dokument anpassen.','Une ligne est créée par nombre d''heures des Horis (quantité = nombre de Horis, durée = heures). Tout le reste peut être ajusté ensuite dans le document.','Je Stundenanzahl der Horis entsteht eine Position (Menge = Anzahl Horis, Dauer = Stunden). Alles Weitere kannst du danach im Dokument anpassen.'),
+('jobdoc_rate_source','Stundenlohn aus','Taux horaire depuis','Stundenlohn aus'),
+('jobdoc_rate_source_product','Aus Produkt','Depuis un produit','Aus Produkt'),
+('jobdoc_rate_source_manual','Manuell','Manuel','Manuell'),
+('jobdoc_product_none','— Produkt wählen —','— Choisir un produit —','— Produkt wählen —'),
+('jobdoc_no_products','Keine Produkte vorhanden – Stundenlohn manuell eingeben.','Aucun produit – saisir le taux horaire manuellement.','Keine Produkte vorhanden – Stundenlohn manuell eingeben.'),
+('jobdoc_field_line_name','Positionsname','Nom de la ligne','Positionsname'),
+('jobdoc_field_wage','Stundenlohn','Taux horaire','Stundenlohn'),
+('jobdoc_preview','Vorschau der Positionen','Aperçu des lignes','Vorschau der Positionen'),
+('jobdoc_basis_planned','Geplante Stunden je Hori','Heures prévues par Hori','Geplante Stunden je Hori'),
+('jobdoc_basis_actual','Gearbeitete Stunden je Hori (sonst geplante)','Heures travaillées par Hori (sinon prévues)','Gearbeitete Stunden je Hori (sonst geplante)'),
+('jobdoc_preview_fallback','Keine Hori-Stunden erfasst – es wird eine Position mit der Dauer der Arbeit angelegt.','Aucune heure de Hori saisie – une ligne avec la durée du travail sera créée.','Keine Hori-Stunden erfasst – es wird eine Position mit der Dauer der Arbeit angelegt.'),
+('editor_add_from_job','Aus Arbeit laden…','Charger depuis un travail…','Aus Arbeit laden…'),
+('joblines_title','Positionen aus Arbeit laden','Charger les lignes d''un travail','Positionen aus Arbeit laden'),
+('joblines_hint','Wähle eine Arbeit: je Stundenanzahl der Horis wird eine Position angehängt (Menge = Anzahl Horis, Dauer = Stunden).','Choisis un travail : une ligne est ajoutée par nombre d''heures des Horis (quantité = nombre de Horis, durée = heures).','Wähle eine Arbeit: je Stundenanzahl der Horis wird eine Position angehängt (Menge = Anzahl Horis, Dauer = Stunden).'),
+('joblines_pick_job','Arbeit','Travail','Arbeit'),
+('joblines_search','Arbeit suchen…','Rechercher un travail…','Arbeit suchen…'),
+('joblines_empty','Keine Arbeiten gefunden','Aucun travail trouvé','Keine Arbeiten gefunden'),
+('joblines_people','Personen','personnes','Personen'),
+('joblines_add','Hinzufügen','Ajouter','Hinzufügen'),
+('joblines_err_load','Arbeiten konnten nicht geladen werden.','Les travaux n''ont pas pu être chargés.','Arbeiten konnten nicht geladen werden.');
+    `);
+  } catch (e) {
+    console.error('Migration 23 failed:', e.message);
+  }
+  setVersion(23);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
