@@ -3,7 +3,7 @@ import DecimalInput from '../components/DecimalInput';
 import {
   ChevronLeft, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
-  Download, GripVertical, Edit3, Eye, PanelRightClose, PanelRightOpen, Maximize2, X
+  Download, GripVertical, Edit3, Eye, PanelRightClose, PanelRightOpen, Maximize2, X, CalendarClock
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -20,6 +20,7 @@ import DocumentPreview from './DocumentPreview';
 import DocumentPdfTemplate from './DocumentPdfTemplate';
 import { pdf } from '@react-pdf/renderer';
 import ClientModal from '../components/ClientModal';
+import JobLinesDialog from '../components/JobLinesDialog';
 import DatePicker from '../components/DatePicker';
 import './DocumentEditor.css';
 
@@ -62,6 +63,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   const [showClientModal, setShowClientModal] = useState(false);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  const [showJobLines, setShowJobLines] = useState(false);
   const [draggingIdx, setDraggingIdx] = useState(null);
   const [armedDragIdx, setArmedDragIdx] = useState(null);
   const dragItemIdx = useRef(null);
@@ -273,6 +275,26 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       ...d,
       items: [...d.items, { id: crypto.randomUUID(), name, description: desc, qty: 1, rate: prod.rate || 0, duration: 1 }],
     }));
+  };
+
+  // "Aus Arbeit laden…": append the job's grouped Hori-hours lines. Fills the
+  // client/title only when still empty; a NEW document also remembers the job
+  // (source_job_id) so App.handleSaveDoc links it on first save — unless that
+  // job already has a document of this type.
+  const isBlankItem = (it) => !String(it.name || '').trim() && !String(it.description || '').trim() && !Number(it.rate);
+  const addJobLines = ({ job, items }) => {
+    if (!job || !items?.length) return;
+    const jobHasDoc = !!(doc.type === 'quote' ? job.quote_id : job.invoice_id);
+    updateDoc((d) => ({
+      ...d,
+      client_id: d.client_id || job.client_id || '',
+      title: String(d.title || '').trim() ? d.title : (job.title || ''),
+      ...(!d.id && !d.source_job_id && !jobHasDoc ? { source_job_id: job.id } : {}),
+      visible_columns: { ...(d.visible_columns || {}), qty: true, duration: true, rate: true, total: true },
+      // Drop the untouched placeholder line of a fresh document.
+      items: [...d.items.filter((it) => !isBlankItem(it)), ...items],
+    }));
+    setShowJobLines(false);
   };
 
   const updateItem = (id, field, value) => {
@@ -827,6 +849,14 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     </div>
                   )}
                 </div>
+                <button
+                  type="button"
+                  className="add-product-btn"
+                  onClick={() => { setShowProductDropdown(false); setShowJobLines(true); }}
+                >
+                  <CalendarClock size={14} />
+                  {t('editor_add_from_job', 'Aus Arbeit laden…')}
+                </button>
               </div>
             </section>
               );
@@ -1066,6 +1096,14 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
             />
           </div>
         </div>
+      )}
+
+      {showJobLines && (
+        <JobLinesDialog
+          type={doc.type || type}
+          onConfirm={addJobLines}
+          onCancel={() => setShowJobLines(false)}
+        />
       )}
 
       {showClientModal && (

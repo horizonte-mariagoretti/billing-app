@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.12.0] - 2026-10-14
+
+### Changed
+- **Offer/invoice from a job: one line per distinct Hori-hours value.** The Horis of a job are grouped by their hours: Menge = number of Horis in the group, Dauer = hours, Stundensatz = hourly wage, Bemerkung = job start + those hours ("HH:MM - HH:MM Uhr", wraps past midnight, e.g. 18:00 + 8 h = "18:00 - 02:00 Uhr"; empty without a start time). Example: 4 Horis, 2 × 10 h and 2 × 7 h on a job starting at 10:00 → two lines "Arbeitsstunden Horizonte", 2 × 10 h ("10:00 - 20:00 Uhr") and 2 × 7 h ("10:00 - 17:00 Uhr"), sorted by hours descending. Offers use each Hori's planned hours; invoices use the worked hours, falling back to that Hori's planned hours when none are entered. Horis without hours are left out; a job without any Hori hours gets one line (Menge 1, Dauer = job duration or 1, Bemerkung = the job's time range). The Dauer column is now shown on these documents. This supersedes the single-line dialog of 1.11.0 (the "Leistungsbeschreibung" and "Stunden" fields are gone).
+- **Hourly wage: from a product or manual.** The dialog has a switch "Aus Produkt" (product select, "Hori Arbeitsstunden" preselected if present, else the first product billed per hour — name and rate come from the product) / "Manuell" (line name, default "Arbeitsstunden Horizonte", and hourly wage). A live preview lists every line (Menge × Dauer × Stundenlohn = Betrag), its Bemerkung and the net sum. Without a product/rate the wage is 0 and can be set in the editor.
+
+### Added
+- **"Aus Arbeit laden…" in the document editor** (next to "Aus Produkten…"): pick a job (searchable, closest to today first, with date, title, client and number of people), choose the wage source and append the grouped lines to the current document (quote → planned hours, invoice → worked hours). Empty client/title are taken from the job, an untouched blank placeholder line is replaced, and a new, unsaved document is linked to the job on first save (unless the job already has a document of that type).
+- Shared pure helpers `src/utils/jobDocumentLines.js` (`groupHoriHours`, `formatClockRange`, `buildJobItems`, …) and the shared `JobRateSource` component used by both dialogs.
+- Migration 23: DE/FR strings (incl. `jobdoc_clock_suffix` "Uhr" / "h").
+
 ## [1.11.0] - 2026-10-13
 
 ### Added

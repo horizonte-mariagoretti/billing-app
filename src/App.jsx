@@ -12,6 +12,7 @@ import useDocuments from './hooks/useDocuments';
 import useSettings from './hooks/useSettings';
 import useDatabase from './hooks/useDatabase';
 import useJobs from './hooks/useJobs';
+import { buildJobItems } from './utils/jobDocumentLines';
 import { UiTranslationsProvider, useT } from './hooks/useUiTranslations';
 import './index.css';
 
@@ -148,8 +149,10 @@ function AppInner() {
    * - The job already has a document of that type → open it instead.
    * - Invoice requested and the job has a quote → reuse the quote->invoice
    *   conversion (source_quote_id) instead of the job dialog's line.
-   * - Otherwise `params` ({ description, product, rate, hours } from
-   *   JobDocumentDialog) become the single line item.
+   * - Otherwise `params` ({ name, rate, productId? } from JobDocumentDialog)
+   *   name the lines and set the hourly wage; the lines themselves come from
+   *   the freshly fetched job via buildJobItems (one per distinct Hori-hours
+   *   value: Menge = Horis, Dauer = hours, Bemerkung = start time + hours).
    * The link back to the job is written in handleSaveDoc via source_job_id.
    */
   const handleCreateDocFromJob = async (jobId, type, params = null) => {
@@ -177,7 +180,7 @@ function AppInner() {
       }
     }
 
-    if (!params) return; // a fresh document needs the dialog's service line
+    if (!params) return; // a fresh document needs the dialog's name + wage
 
     const s = appSettings || await loadSettings().catch(() => ({}));
     const today = new Date();
@@ -185,12 +188,14 @@ function AppInner() {
     due.setMonth(due.getMonth() + (type === 'invoice' ? 1 : 2));
     const taxN = parseFloat(s?.default_tax_rate);
     const nextNum = await getNextDocumentNumber(type);
-    // One line: qty = hours, duration = 1 (duration column hidden), so the
-    // printed line reads "<hours> × <rate> = total". With a product picked
-    // its name is the item name and the job line goes into the description.
-    const item = params.product
-      ? { name: params.product.name, description: params.description }
-      : { name: params.description, description: '' };
+    const items = buildJobItems({
+      job,
+      type,
+      name: params.name,
+      rate: params.rate,
+      clockSuffix: t('jobdoc_clock_suffix', 'Uhr'),
+      openPrefix: t('jobs_open_prefix', 'ab'),
+    });
     setEditingData({
       // intentionally no id -> save creates a new document
       type,
@@ -208,15 +213,9 @@ function AppInner() {
       payment_mode: 'cash',
       status: 'draft',
       locked: 0,
-      visible_columns: { qty: true, duration: false, rate: true, total: true },
+      visible_columns: { qty: true, duration: true, rate: true, total: true },
       source_job_id: job.id,
-      items: [{
-        id: crypto.randomUUID(),
-        ...item,
-        qty: params.hours,
-        rate: params.rate,
-        duration: 1,
-      }],
+      items,
     });
     setIsEditing(true);
     // Counter is incremented by DocumentEditor on first save (no id).

@@ -1,0 +1,122 @@
+/* "Aus Arbeit laden…" dialog — shares the overlay/box/actions of
+   JobDocumentDialog.css; only the job picker lives here. */
+.job-lines-box {
+  max-width: 600px;
+}
+
+.job-lines-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark-tertiary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.job-lines-search:focus-within {
+  background-color: var(--color-light-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.job-lines-search input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-xs) 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--color-text-dark-primary);
+  font-size: 0.9rem;
+}
+
+.job-lines-list {
+  list-style: none;
+  margin: var(--space-2xs) 0 0;
+  padding: var(--space-2xs);
+  max-height: 232px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+}
+
+.job-lines-empty {
+  padding: var(--space-md);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.job-lines-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.job-lines-item:hover { background-color: var(--color-surface-muted); }
+
+.job-lines-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.job-lines-item.selected {
+  background-color: var(--color-primary-faint);
+  border-color: var(--color-primary-border);
+}
+
+.job-lines-item-date {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+}
+
+.job-lines-item-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.job-lines-item-title,
+.job-lines-item-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-lines-item-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-text-dark-primary);
+}
+
+.job-lines-item-sub {
+  font-size: 0.76rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.job-lines-item-people {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+}
+
+@media (max-width: 700px) {
+  .job-lines-list { max-height: 180px; }
+  .job-lines-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .job-lines-item-date { grid-column: 1 / -1; }
+}
