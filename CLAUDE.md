@@ -1,6 +1,6 @@
 # InvoiceForge — Project Reference
 
-**Version:** 1.9.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.11.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -55,6 +55,10 @@ Billing_App/
 │   │   ├── Button.jsx          # variant=primary|secondary|outline|ghost|danger, size=sm|md|lg
 │   │   ├── Button.css
 │   │   ├── Input.jsx           # Labeled input wrapper with error state
+│   │   ├── DecimalInput.jsx    # German decimal field (comma); onChange gives dot-number. Use instead of type="number".
+│   │   ├── JobCalendar.jsx     # Month calendar of jobs (Arbeiten calendar view)
+│   │   ├── ClientPicker.jsx / .css      # Searchable client combobox + "Neuen Kunden anlegen" (ClientModal). Props: clients, value, onChange(id), onClientCreated(client)
+│   │   ├── JobDocumentDialog.jsx / .css # Confirm the service line (product, rate, hours) before creating an offer/invoice from a job
 │   │   ├── Input.css
 │   │   ├── StatusBadge.jsx     # draft|sent|paid|overdue|cancelled|accepted|declined|converted
 │   │   ├── StatusBadge.css
@@ -83,7 +87,7 @@ Billing_App/
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–20 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–22 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -194,6 +198,7 @@ client_id(FK), quote_id(FK), invoice_id(FK), notes, created_at
 ```
 id, job_id(FK), hori_id(FK), hours
 ```
+**Offer/invoice from a job**: Arbeiten (list row icons / JobModal "Dokumente") → `App.handleCreateDocFromJob(jobId, type, params)` builds editor `initialData` with `source_job_id` (not a DB column; lives only in editor state). `App.handleSaveDoc` on the first save sets `jobs.quote_id` / `jobs.invoice_id`; a new invoice with `source_quote_id` also links to the job whose `quote_id` matches. Invoice for a job with a quote → reuses `handleConvertToInvoice`. Already linked → `App.handleOpenDoc(docId)`.
 Settings (Settings > Billing): `camp_base_contribution` (max per Hori), `camp_min_contribution` (floor), `camp_reduction_per_percent` (€ per 1% work share; empty = proportional). Formula in `utils/campContribution.js`: max(min, base − reduction).
 
 **`document_events`** — append-only audit log

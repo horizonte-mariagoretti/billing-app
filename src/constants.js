@@ -20,3 +20,6 @@ export const DUE_DATE_MONTHS = {
   [DOC_TYPES.INVOICE]: 1,
   [DOC_TYPES.QUOTE]: 2,
 };
+
+// Product whose name and hourly rate are used for offers/invoices created from a job (Arbeiten).
+export const HORI_HOURS_PRODUCT = 'Hori Arbeitsstunden';

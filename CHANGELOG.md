@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.11.0] - 2026-10-13
+
+### Added
+- **Create an offer or invoice from a job (Arbeit).** In the job modal (saved jobs) a new "Dokumente" section offers "Angebot erstellen" / "Rechnung erstellen"; the Arbeiten list gets matching icon actions per row. If the job already has that document, the button opens it instead (one offer + one invoice per job). Unsaved job changes are saved first.
+- **JobDocumentDialog**: before the editor opens, confirm one service line — description (prefilled "<Titel> – <Datum>, <Zeit>") and hours (offer: planned; invoice: worked if any, else planned). Item name and hourly rate always come from the product **"Hori Arbeitsstunden"** (Produkte; matched by name, ignoring case/spacing) and are shown read-only. If that product does not exist yet the document is still created (line named "Hori Arbeitsstunden", rate 0) and the rate is entered in the editor. Only title/date/time go on the document, never Hori names.
+- **Job ↔ document linking**: on the first save of a document created from a job, the job's `quote_id` / `invoice_id` is set. An invoice requested for a job that already has a quote reuses the quote→invoice conversion (`source_quote_id`, quote marked converted); any new invoice converted from a quote (also from the Angebote page) is linked to the job that references that quote, so quote and invoice stay interlinked.
+- Quote/invoice chips in the Arbeiten list are now clickable and open the document.
+- **Client quick-add in the job modal**: new reusable `ClientPicker` (search, keyboard navigation, clear, "Neuen Kunden anlegen" → ClientModal → new client is selected).
+- Migration 22: DE/FR strings.
+
+### Fixed
+- Quote→invoice conversion now keeps each line's item name, duration and the quote's visible columns (previously only description, qty and rate were copied, so lines with a duration lost it).
+
+## [1.10.0] - 2026-10-13
+
+### Changed
+- **Arbeiten: one merged list.** The Kommend/Vergangen tabs are gone. All jobs sit in one table: upcoming first (soonest first), then past (latest first), separated by "Kommend"/"Vergangen" divider rows with counts.
+
+### Added
+- **Arbeiten calendar view** (toggle "Liste | Kalender", choice is remembered): month grid, Monday first, 6 weeks, today highlighted, prev/next/Heute navigation. Jobs show as chips (time + title) colored by status (geplant/gearbeitet/abgesagt); more than 3 per day collapse into "+N weitere". Click a chip to edit the job, click the "+" on a day to create a job on that date. Respects the search box. Migration 21: DE/FR strings.
+
+## [1.9.2] - 2026-10-13
+
+### Added
+- **Sortable Horis overview**: click any column header (Name, Alter, Jobs, Gearbeitete Std., Anteil %, Geplant, Lagerbeitrag) to sort ascending, click again for descending. Default is Name A–Z. Horis without a value (e.g. no birth date) always stay at the bottom; ties fall back to name. Headers expose `aria-sort` and are keyboard-operable.
+
+## [1.9.1] - 2026-10-13
+
+### Changed
+- **German decimal input everywhere**: all decimal fields (invoice/quote quantity, duration, rate, discount and tax; product rate; Lagerbeitrag settings; Arbeiten planned/actual hours) now show and accept a comma (12,5). Typing a dot is converted to a comma, other characters are ignored, and pasted "1.234,56" becomes 1234,56. New shared `DecimalInput` component (text input with decimal keyboard) replaces `type="number"`, which followed the browser language; callers still receive plain dot numbers, so stored data is unchanged. Integer fields (numbering counter) are unaffected.
+
 ## [1.9.0] - 2026-10-12
 
 ### Added

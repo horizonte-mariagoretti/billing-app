@@ -4,10 +4,12 @@ import { useT } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import JobModal from '../components/JobModal';
+import JobCalendar from '../components/JobCalendar';
+import JobDocumentDialog from '../components/JobDocumentDialog';
 import { formatTimeRange } from '../utils/jobHours';
 import {
   Plus, Search, Edit2, Trash2, AlertCircle, CalendarClock,
-  FileText, Receipt, Users,
+  FileText, Receipt, Users, LayoutList, CalendarDays, FilePlus, ReceiptText,
 } from 'lucide-react';
 import './Arbeiten.css';
 
@@ -21,17 +23,21 @@ const formatHours = (h) => {
   return Number(h).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 };
 
-const Arbeiten = () => {
-  const { fetchJobs, deleteJob } = useJobs();
+const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
+  const { fetchJobs, fetchJob, deleteJob } = useJobs();
   const t = useT();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('upcoming'); // 'upcoming' | 'past'
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('arbeiten_view') === 'calendar' ? 'calendar' : 'list'; } catch (_e) { return 'list'; }
+  }); // 'list' | 'calendar'
+  const [newDate, setNewDate] = useState(null); // preset date for a new job (calendar day click)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirm, setConfirm] = useState(null); // { id, title }
+  const [docDialog, setDocDialog] = useState(null); // { job, type } — create offer/invoice from a job
 
   const openBtnRef = useRef(null);
 
@@ -63,10 +69,42 @@ const Arbeiten = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadJobs(); }, []);
 
-  const handleNew = () => { setEditingId(null); setShowModal(true); };
+  const changeView = (v) => {
+    setView(v);
+    try { localStorage.setItem('arbeiten_view', v); } catch (_e) { /* storage unavailable: view just won't persist */ }
+  };
+  const handleNew = () => { setEditingId(null); setNewDate(null); setShowModal(true); };
+  const handleNewOnDate = (iso) => { setEditingId(null); setNewDate(iso); setShowModal(true); };
   const handleEdit = (job) => { setEditingId(job.id); setShowModal(true); };
-  const closeModal = () => { setShowModal(false); setEditingId(null); };
+  const closeModal = () => { setShowModal(false); setEditingId(null); setNewDate(null); };
   const handleModalSave = () => { closeModal(); loadJobs(); };
+
+  /**
+   * Offer/invoice for a job: open it when linked; an invoice for a job that
+   * already has a quote goes through the quote->invoice conversion in App;
+   * otherwise ask for the service line first (JobDocumentDialog).
+   */
+  const requestDoc = async (jobId, type) => {
+    if (!jobId) return;
+    try {
+      const job = await fetchJob(jobId);
+      if (!job) return;
+      const existingId = type === 'quote' ? job.quote_id : job.invoice_id;
+      if (existingId) { await onOpenDoc?.(existingId); return; }
+      if (type === 'invoice' && job.quote_id) { await onCreateDocFromJob?.(job.id, 'invoice'); return; }
+      setDocDialog({ job, type });
+    } catch (_err) {
+      setError(t('jobdoc_err_failed', 'Dokument konnte nicht vorbereitet werden.'));
+    }
+  };
+
+  const confirmDocDialog = async (params) => {
+    const { job, type } = docDialog;
+    await onCreateDocFromJob?.(job.id, type, params);
+    setDocDialog(null);
+  };
+
+  const openDoc = (e, docId) => { e.stopPropagation(); onOpenDoc?.(docId); };
 
   const handleDeleteConfirmed = async () => {
     if (!confirm) return;
@@ -79,7 +117,7 @@ const Arbeiten = () => {
     loadJobs();
   };
 
-  const { upcoming, past } = useMemo(() => {
+  const { upcoming, past, filtered, today } = useMemo(() => {
     const q = search.trim().toLowerCase();
     const today = todayISO();
     const match = (j) => !q || [j.title, j.client_name, j.notes, j.quote_number, j.invoice_number]
@@ -88,12 +126,15 @@ const Arbeiten = () => {
     const byDateTime = (a, b) =>
       (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || '');
     return {
+      filtered,
+      today,
       upcoming: filtered.filter((j) => (j.date || '') >= today).sort(byDateTime),
       past: filtered.filter((j) => (j.date || '') < today).sort((a, b) => byDateTime(b, a)),
     };
   }, [jobs, search]);
 
-  const rows = tab === 'upcoming' ? upcoming : past;
+  // One merged list: what's coming up first (soonest first), then what's behind us (latest first).
+  const rows = [...upcoming, ...past];
 
   const statusLabel = (s) => {
     if (s === 'done') return t('arbeiten_status_done', 'Gearbeitet');
@@ -130,9 +171,7 @@ const Arbeiten = () => {
     ? t('loading', 'Laden…')
     : search
       ? `${t('arbeiten_no_match', 'Keine Treffer für')} "${search}"`
-      : tab === 'upcoming'
-        ? t('arbeiten_empty_upcoming', 'Keine kommenden Arbeiten')
-        : t('arbeiten_empty_past', 'Keine vergangenen Arbeiten');
+      : t('arbeiten_empty_all', 'Noch keine Arbeiten');
 
   return (
     <div className="arbeiten-page">
@@ -152,29 +191,29 @@ const Arbeiten = () => {
         </Button>
       </div>
 
-      <div className="arbeiten-tabs" role="tablist" aria-label={t('arbeiten_tabs_label', 'Zeitraum')}>
+      <div className="arbeiten-tabs" role="tablist" aria-label={t('arbeiten_view_label', 'Ansicht')}>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === 'upcoming'}
-          className={`arbeiten-tab${tab === 'upcoming' ? ' active' : ''}`}
-          onClick={() => setTab('upcoming')}
+          aria-selected={view === 'list'}
+          className={`arbeiten-tab${view === 'list' ? ' active' : ''}`}
+          onClick={() => changeView('list')}
         >
-          {t('arbeiten_tab_upcoming', 'Kommend')}
-          <span className="arbeiten-tab-count">{upcoming.length}</span>
+          <LayoutList size={15} aria-hidden="true" />
+          {t('arbeiten_view_list', 'Liste')}
+          <span className="arbeiten-tab-count">{filtered.length}</span>
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === 'past'}
-          className={`arbeiten-tab${tab === 'past' ? ' active' : ''}`}
-          onClick={() => setTab('past')}
+          aria-selected={view === 'calendar'}
+          className={`arbeiten-tab${view === 'calendar' ? ' active' : ''}`}
+          onClick={() => changeView('calendar')}
         >
-          {t('arbeiten_tab_past', 'Vergangen')}
-          <span className="arbeiten-tab-count">{past.length}</span>
+          <CalendarDays size={15} aria-hidden="true" />
+          {t('arbeiten_view_calendar', 'Kalender')}
         </button>
       </div>
-
       {error && (
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
@@ -182,13 +221,18 @@ const Arbeiten = () => {
         </div>
       )}
 
+      {view === 'calendar' && !error && (
+        <JobCalendar jobs={filtered} onOpenJob={handleEdit} onNewOnDate={handleNewOnDate} />
+      )}
+
+      {view === 'list' && (
       <div className="arbeiten-table-container">
         {!error && rows.length === 0 ? (
           <div className="arbeiten-empty">
             <CalendarClock size={36} strokeWidth={1.4} />
             <div className="arbeiten-empty-title">{emptyTitle}</div>
             <div className="arbeiten-empty-desc">
-              {!loading && !search && tab === 'upcoming' && t('arbeiten_empty_hint', 'Lege den nächsten Arbeitstermin an, um Helfer und Stunden zu planen.')}
+              {!loading && !search && t('arbeiten_empty_hint', 'Lege den nächsten Arbeitstermin an, um Helfer und Stunden zu planen.')}
               {!loading && search && t('try_different_search', 'Versuche einen anderen Suchbegriff.')}
             </div>
           </div>
@@ -208,12 +252,22 @@ const Arbeiten = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((job) => {
+              {rows.map((job, idx) => {
                 const { weekday, date } = formatDate(job.date);
                 const cancelled = job.status === 'cancelled';
+                const group = (job.date || '') >= today ? 'upcoming' : 'past';
+                const prevGroup = idx > 0 ? ((rows[idx - 1].date || '') >= today ? 'upcoming' : 'past') : null;
                 return (
+                  <React.Fragment key={job.id}>
+                  {group !== prevGroup && (
+                    <tr className="arbeiten-group-row">
+                      <td colSpan={9}>
+                        {group === 'upcoming' ? t('arbeiten_tab_upcoming', 'Kommend') : t('arbeiten_tab_past', 'Vergangen')}
+                        <span className="arbeiten-tab-count">{group === 'upcoming' ? upcoming.length : past.length}</span>
+                      </td>
+                    </tr>
+                  )}
                   <tr
-                    key={job.id}
                     className={`arbeiten-row${cancelled ? ' arbeiten-row--cancelled' : ''}`}
                     onClick={() => handleEdit(job)}
                   >
@@ -243,14 +297,26 @@ const Arbeiten = () => {
                       {job.quote_number || job.invoice_number ? (
                         <div className="arbeiten-doc-chips">
                           {job.quote_number && (
-                            <span className="arbeiten-doc-chip arbeiten-doc-chip--quote" title={t('arbeiten_quote', 'Angebot')}>
-                              <FileText size={12} />{job.quote_number}
-                            </span>
+                            <button
+                              type="button"
+                              className="arbeiten-doc-chip arbeiten-doc-chip--quote"
+                              title={t('jobdoc_open_quote', 'Angebot öffnen')}
+                              aria-label={`${t('jobdoc_open_quote', 'Angebot öffnen')} ${job.quote_number}`}
+                              onClick={(e) => openDoc(e, job.quote_id)}
+                            >
+                              <FileText size={12} aria-hidden="true" />{job.quote_number}
+                            </button>
                           )}
                           {job.invoice_number && (
-                            <span className="arbeiten-doc-chip arbeiten-doc-chip--invoice" title={t('arbeiten_invoice', 'Rechnung')}>
-                              <Receipt size={12} />{job.invoice_number}
-                            </span>
+                            <button
+                              type="button"
+                              className="arbeiten-doc-chip arbeiten-doc-chip--invoice"
+                              title={t('jobdoc_open_invoice', 'Rechnung öffnen')}
+                              aria-label={`${t('jobdoc_open_invoice', 'Rechnung öffnen')} ${job.invoice_number}`}
+                              onClick={(e) => openDoc(e, job.invoice_id)}
+                            >
+                              <Receipt size={12} aria-hidden="true" />{job.invoice_number}
+                            </button>
                           )}
                         </div>
                       ) : <span className="arbeiten-muted">—</span>}
@@ -262,6 +328,38 @@ const Arbeiten = () => {
                     </td>
                     <td className="actions-cell">
                       <div className="action-btns">
+                        {(() => {
+                          const hasQuote = !!job.quote_id;
+                          const hasInvoice = !!job.invoice_id;
+                          const qLabel = hasQuote
+                            ? `${t('jobdoc_open_quote', 'Angebot öffnen')} ${job.quote_number || ''}`.trim()
+                            : t('jobdoc_create_quote', 'Angebot erstellen');
+                          const iLabel = hasInvoice
+                            ? `${t('jobdoc_open_invoice', 'Rechnung öffnen')} ${job.invoice_number || ''}`.trim()
+                            : t('jobdoc_create_invoice', 'Rechnung erstellen');
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                className={`arbeiten-doc-action${hasQuote ? ' is-linked' : ''}`}
+                                title={qLabel}
+                                aria-label={`${qLabel} – ${job.title || date}`}
+                                onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'quote'); }}
+                              >
+                                {hasQuote ? <FileText size={16} /> : <FilePlus size={16} />}
+                              </button>
+                              <button
+                                type="button"
+                                className={`arbeiten-doc-action${hasInvoice ? ' is-linked' : ''}`}
+                                title={iLabel}
+                                aria-label={`${iLabel} – ${job.title || date}`}
+                                onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'invoice'); }}
+                              >
+                                {hasInvoice ? <Receipt size={16} /> : <ReceiptText size={16} />}
+                              </button>
+                            </>
+                          );
+                        })()}
                         <button
                           type="button"
                           title={t('btn_edit', 'Bearbeiten')}
@@ -281,19 +379,32 @@ const Arbeiten = () => {
                       </div>
                     </td>
                   </tr>
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         )}
       </div>
+      )}
 
       {showModal && (
         <JobModal
           jobId={editingId}
+          defaultDate={newDate}
           onSave={handleModalSave}
           onCancel={closeModal}
           triggerRef={openBtnRef}
+          onRequestDoc={(id, type) => { loadJobs(); return requestDoc(id, type); }}
+        />
+      )}
+
+      {docDialog && (
+        <JobDocumentDialog
+          job={docDialog.job}
+          type={docDialog.type}
+          onConfirm={confirmDocDialog}
+          onCancel={() => setDocDialog(null)}
         />
       )}
 

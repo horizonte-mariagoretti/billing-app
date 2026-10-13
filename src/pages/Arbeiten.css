@@ -110,7 +110,7 @@
 .arbeiten-table th:nth-child(6), .arbeiten-table td:nth-child(6) { width: 90px; text-align: right; }
 .arbeiten-table th:nth-child(7), .arbeiten-table td:nth-child(7) { min-width: 140px; }
 .arbeiten-table th:nth-child(8), .arbeiten-table td:nth-child(8) { width: 110px; }
-.arbeiten-table th:nth-child(9), .arbeiten-table td:nth-child(9) { width: 90px; text-align: right; }
+.arbeiten-table th:nth-child(9), .arbeiten-table td:nth-child(9) { width: 150px; text-align: right; white-space: nowrap; }
 
 .arbeiten-row { cursor: pointer; }
 
@@ -237,6 +237,28 @@
   color: var(--color-primary);
 }
 
+/* Chips are buttons that open the linked document */
+button.arbeiten-doc-chip {
+  cursor: pointer;
+  line-height: inherit;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+button.arbeiten-doc-chip:hover {
+  border-color: var(--color-primary-border);
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+/* Create/open offer + invoice icon actions: linked docs read as "filled" */
+.arbeiten-table .action-btns button.arbeiten-doc-action.is-linked {
+  color: var(--color-primary);
+}
+
+.arbeiten-table .action-btns button.arbeiten-doc-action.is-linked:hover {
+  background-color: var(--color-primary-alpha);
+}
+
 /* Job status pill — mirrors .status-badge sizing */
 .arbeiten-status {
   display: inline-flex;
@@ -355,7 +377,7 @@
 
   .arbeiten-table tr {
     display: grid;
-    grid-template-columns: 1fr auto 52px;
+    grid-template-columns: 1fr auto 84px;
     grid-template-rows: auto auto auto;
     grid-template-areas:
       "date   status act"
@@ -400,8 +422,10 @@
 
   .arbeiten-notes { display: none; }
 
+  /* 4 actions (offer, invoice, edit, delete) as a 2×2 grid */
   .arbeiten-table .action-btns {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 36px);
     gap: 2px;
   }
 
@@ -410,3 +434,16 @@
     height: 36px;
   }
 }
+
+/* Group divider rows inside the merged list (Kommend / Vergangen) */
+.arbeiten-table .arbeiten-group-row td {
+  padding: var(--space-xs) var(--space-lg);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.arbeiten-table .arbeiten-group-row .arbeiten-tab-count { margin-left: var(--space-xs); }
+.arbeiten-table .arbeiten-group-row:hover td { background-color: var(--color-surface-muted); }
