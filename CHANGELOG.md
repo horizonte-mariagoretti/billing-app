@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.12.1] - 2026-10-14
+
+### Fixed
+- **Dashboard amounts were too low** (Umsatz card, Umsatzübersicht chart, "Diesen Monat"): paid invoices were totalled as quantity × rate and ignored the line duration ("Dauer"), unlike the editor, preview and invoice list (quantity × duration × rate). Invoices with a duration other than 1 were under-counted. The dashboard now sums with the duration and applies discount/tax through the shared `calcTotalsFromSubtotal` helper (`utils/documentCalc.js`), so it always matches the document totals.
+
 ## [1.12.0] - 2026-10-14
 
 ### Changed

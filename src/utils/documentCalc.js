@@ -88,18 +88,24 @@ export const fmtDocDate = (iso) => {
   return `${d}.${m}.${y}`;
 };
 
-export const calcDocTotals = (doc) => {
+// Discount + tax on a known subtotal. Shared by calcDocTotals (items in
+// memory) and the dashboard (subtotal summed in SQL) so both always agree.
+export const calcTotalsFromSubtotal = (doc, subtotal) => {
   const isCash = doc.payment_mode === 'cash';
-  const subtotal = (doc.items || []).reduce(
-    (sum, item) => sum + item.qty * item.rate * (item.duration ?? 1),
-    0
-  );
   const discountAmt = doc.discount_type === '%'
     ? subtotal * ((doc.discount_value || 0) / 100)
     : (doc.discount_value || 0);
   const tax = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
   const total = subtotal - discountAmt + tax;
   return { subtotal, discountAmt, tax, total, isCash };
+};
+
+export const calcDocTotals = (doc) => {
+  const subtotal = (doc.items || []).reduce(
+    (sum, item) => sum + item.qty * item.rate * (item.duration ?? 1),
+    0
+  );
+  return calcTotalsFromSubtotal(doc, subtotal);
 };
 
 export const getDocTypeLabel = (doc, sender, lang) => {
