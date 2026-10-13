@@ -4,6 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import DatePicker from '../components/DatePicker';
 import { effectiveStatus } from '../utils/documentLifecycle';
 import { useT } from '../hooks/useUiTranslations';
+import { calcTotalsFromSubtotal } from '../utils/documentCalc';
 import {
   Euro, FileText, Users, Clock, AlertCircle,
   ArrowUpRight, Plus, Sparkles, ReceiptEuro, X
@@ -130,7 +131,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         query(`
           SELECT
             d.id, d.status, d.date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
-            COALESCE(SUM(di.qty * di.rate), 0) as items_subtotal
+            COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) as items_subtotal
           FROM documents d
           LEFT JOIN document_items di ON di.document_id = d.id
           WHERE d.type = 'invoice'
@@ -149,13 +150,8 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
       const byMonth = new Map();
 
       for (const inv of invoices) {
-        const subtotal = inv.items_subtotal;
-        const discount = inv.discount_type === '%'
-          ? subtotal * (inv.discount_value / 100)
-          : inv.discount_value;
-        const isCash = inv.payment_mode === 'cash';
-        const tax = isCash ? 0 : (subtotal - discount) * (inv.tax_rate / 100);
-        const total = subtotal - discount + tax;
+        // Same line math (qty × rate × duration) and discount/tax rules as the editor.
+        const { total } = calcTotalsFromSubtotal(inv, inv.items_subtotal);
 
         if (inv.status === 'paid' && inv.date) {
           const monthKey = inv.date.slice(0, 7);
