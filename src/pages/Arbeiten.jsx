@@ -4,10 +4,11 @@ import { useT } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import JobModal from '../components/JobModal';
+import JobCalendar from '../components/JobCalendar';
 import { formatTimeRange } from '../utils/jobHours';
 import {
   Plus, Search, Edit2, Trash2, AlertCircle, CalendarClock,
-  FileText, Receipt, Users,
+  FileText, Receipt, Users, LayoutList, CalendarDays,
 } from 'lucide-react';
 import './Arbeiten.css';
 
@@ -26,7 +27,10 @@ const Arbeiten = () => {
   const t = useT();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('upcoming'); // 'upcoming' | 'past'
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('arbeiten_view') === 'calendar' ? 'calendar' : 'list'; } catch (_e) { return 'list'; }
+  }); // 'list' | 'calendar'
+  const [newDate, setNewDate] = useState(null); // preset date for a new job (calendar day click)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -63,9 +67,14 @@ const Arbeiten = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadJobs(); }, []);
 
-  const handleNew = () => { setEditingId(null); setShowModal(true); };
+  const changeView = (v) => {
+    setView(v);
+    try { localStorage.setItem('arbeiten_view', v); } catch (_e) { /* storage unavailable: view just won't persist */ }
+  };
+  const handleNew = () => { setEditingId(null); setNewDate(null); setShowModal(true); };
+  const handleNewOnDate = (iso) => { setEditingId(null); setNewDate(iso); setShowModal(true); };
   const handleEdit = (job) => { setEditingId(job.id); setShowModal(true); };
-  const closeModal = () => { setShowModal(false); setEditingId(null); };
+  const closeModal = () => { setShowModal(false); setEditingId(null); setNewDate(null); };
   const handleModalSave = () => { closeModal(); loadJobs(); };
 
   const handleDeleteConfirmed = async () => {
@@ -79,7 +88,7 @@ const Arbeiten = () => {
     loadJobs();
   };
 
-  const { upcoming, past } = useMemo(() => {
+  const { upcoming, past, filtered, today } = useMemo(() => {
     const q = search.trim().toLowerCase();
     const today = todayISO();
     const match = (j) => !q || [j.title, j.client_name, j.notes, j.quote_number, j.invoice_number]
@@ -88,12 +97,15 @@ const Arbeiten = () => {
     const byDateTime = (a, b) =>
       (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || '');
     return {
+      filtered,
+      today,
       upcoming: filtered.filter((j) => (j.date || '') >= today).sort(byDateTime),
       past: filtered.filter((j) => (j.date || '') < today).sort((a, b) => byDateTime(b, a)),
     };
   }, [jobs, search]);
 
-  const rows = tab === 'upcoming' ? upcoming : past;
+  // One merged list: what's coming up first (soonest first), then what's behind us (latest first).
+  const rows = [...upcoming, ...past];
 
   const statusLabel = (s) => {
     if (s === 'done') return t('arbeiten_status_done', 'Gearbeitet');
@@ -130,9 +142,7 @@ const Arbeiten = () => {
     ? t('loading', 'Laden…')
     : search
       ? `${t('arbeiten_no_match', 'Keine Treffer für')} "${search}"`
-      : tab === 'upcoming'
-        ? t('arbeiten_empty_upcoming', 'Keine kommenden Arbeiten')
-        : t('arbeiten_empty_past', 'Keine vergangenen Arbeiten');
+      : t('arbeiten_empty_all', 'Noch keine Arbeiten');
 
   return (
     <div className="arbeiten-page">
@@ -152,29 +162,29 @@ const Arbeiten = () => {
         </Button>
       </div>
 
-      <div className="arbeiten-tabs" role="tablist" aria-label={t('arbeiten_tabs_label', 'Zeitraum')}>
+      <div className="arbeiten-tabs" role="tablist" aria-label={t('arbeiten_view_label', 'Ansicht')}>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === 'upcoming'}
-          className={`arbeiten-tab${tab === 'upcoming' ? ' active' : ''}`}
-          onClick={() => setTab('upcoming')}
+          aria-selected={view === 'list'}
+          className={`arbeiten-tab${view === 'list' ? ' active' : ''}`}
+          onClick={() => changeView('list')}
         >
-          {t('arbeiten_tab_upcoming', 'Kommend')}
-          <span className="arbeiten-tab-count">{upcoming.length}</span>
+          <LayoutList size={15} aria-hidden="true" />
+          {t('arbeiten_view_list', 'Liste')}
+          <span className="arbeiten-tab-count">{filtered.length}</span>
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === 'past'}
-          className={`arbeiten-tab${tab === 'past' ? ' active' : ''}`}
-          onClick={() => setTab('past')}
+          aria-selected={view === 'calendar'}
+          className={`arbeiten-tab${view === 'calendar' ? ' active' : ''}`}
+          onClick={() => changeView('calendar')}
         >
-          {t('arbeiten_tab_past', 'Vergangen')}
-          <span className="arbeiten-tab-count">{past.length}</span>
+          <CalendarDays size={15} aria-hidden="true" />
+          {t('arbeiten_view_calendar', 'Kalender')}
         </button>
       </div>
-
       {error && (
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
@@ -182,13 +192,18 @@ const Arbeiten = () => {
         </div>
       )}
 
+      {view === 'calendar' && !error && (
+        <JobCalendar jobs={filtered} onOpenJob={handleEdit} onNewOnDate={handleNewOnDate} />
+      )}
+
+      {view === 'list' && (
       <div className="arbeiten-table-container">
         {!error && rows.length === 0 ? (
           <div className="arbeiten-empty">
             <CalendarClock size={36} strokeWidth={1.4} />
             <div className="arbeiten-empty-title">{emptyTitle}</div>
             <div className="arbeiten-empty-desc">
-              {!loading && !search && tab === 'upcoming' && t('arbeiten_empty_hint', 'Lege den nächsten Arbeitstermin an, um Helfer und Stunden zu planen.')}
+              {!loading && !search && t('arbeiten_empty_hint', 'Lege den nächsten Arbeitstermin an, um Helfer und Stunden zu planen.')}
               {!loading && search && t('try_different_search', 'Versuche einen anderen Suchbegriff.')}
             </div>
           </div>
@@ -208,12 +223,22 @@ const Arbeiten = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((job) => {
+              {rows.map((job, idx) => {
                 const { weekday, date } = formatDate(job.date);
                 const cancelled = job.status === 'cancelled';
+                const group = (job.date || '') >= today ? 'upcoming' : 'past';
+                const prevGroup = idx > 0 ? ((rows[idx - 1].date || '') >= today ? 'upcoming' : 'past') : null;
                 return (
+                  <React.Fragment key={job.id}>
+                  {group !== prevGroup && (
+                    <tr className="arbeiten-group-row">
+                      <td colSpan={9}>
+                        {group === 'upcoming' ? t('arbeiten_tab_upcoming', 'Kommend') : t('arbeiten_tab_past', 'Vergangen')}
+                        <span className="arbeiten-tab-count">{group === 'upcoming' ? upcoming.length : past.length}</span>
+                      </td>
+                    </tr>
+                  )}
                   <tr
-                    key={job.id}
                     className={`arbeiten-row${cancelled ? ' arbeiten-row--cancelled' : ''}`}
                     onClick={() => handleEdit(job)}
                   >
@@ -281,16 +306,19 @@ const Arbeiten = () => {
                       </div>
                     </td>
                   </tr>
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         )}
       </div>
+      )}
 
       {showModal && (
         <JobModal
           jobId={editingId}
+          defaultDate={newDate}
           onSave={handleModalSave}
           onCancel={closeModal}
           triggerRef={openBtnRef}

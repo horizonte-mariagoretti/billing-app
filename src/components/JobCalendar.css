@@ -1,0 +1,180 @@
+.job-cal {
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.job-cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.job-cal-nav { display: flex; align-items: center; gap: var(--space-2xs); }
+
+.job-cal-nav-btn,
+.job-cal-today {
+  border: 1px solid var(--color-border-light-theme);
+  background-color: var(--color-light-surface);
+  color: var(--color-text-dark-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.job-cal-nav-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+.job-cal-today { height: 32px; padding: 0 var(--space-sm); font-size: 0.85rem; font-weight: 600; }
+.job-cal-nav-btn:hover,
+.job-cal-today:hover { background-color: var(--color-surface-muted); color: var(--color-text-dark-primary); }
+
+.job-cal-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-text-dark-primary);
+  text-transform: capitalize;
+}
+
+.job-cal-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.job-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--color-border-light-theme);
+  border-left: 1px solid var(--color-border-light-theme);
+}
+
+.job-cal-weekday {
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-right: 1px solid var(--color-border-light-theme);
+  border-bottom: 1px solid var(--color-border-light-theme);
+}
+
+.job-cal-day {
+  min-height: 112px;
+  min-width: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--color-border-light-theme);
+  border-bottom: 1px solid var(--color-border-light-theme);
+  background-color: var(--color-light-surface);
+}
+.job-cal-day.outside { background-color: var(--color-surface-muted); }
+.job-cal-day.outside .job-cal-day-num { color: var(--color-text-dark-tertiary); opacity: 0.7; }
+
+.job-cal-day-head { display: flex; align-items: center; justify-content: space-between; }
+
+.job-cal-day-num {
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-dark-secondary);
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+}
+.job-cal-day.today .job-cal-day-num { background-color: var(--color-primary); color: #fff; }
+
+.job-cal-add {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), background-color var(--transition-fast);
+}
+.job-cal-day:hover .job-cal-add,
+.job-cal-add:focus-visible { opacity: 1; }
+.job-cal-add:hover { background-color: var(--color-primary-alpha); color: var(--color-primary); }
+
+.job-cal-chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.job-cal-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.job-cal-chip:hover { filter: brightness(0.96); }
+.job-cal-chip-time { font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.85; white-space: nowrap; flex-shrink: 0; }
+.job-cal-chip-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+.job-cal-chip--planned { background-color: var(--stat-amber-bg); color: #B45309; border-color: #FDE68A; }
+.job-cal-chip--done { background-color: var(--stat-green-bg); color: #065F46; border-color: #A7F3D0; }
+.job-cal-chip--cancelled { background-color: var(--color-surface-muted); color: var(--color-text-dark-tertiary); border-color: var(--color-border-light-theme); }
+.job-cal-chip--cancelled .job-cal-chip-title { text-decoration: line-through; }
+
+.job-cal-more {
+  border: none;
+  background: none;
+  padding: 0 6px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.job-cal-more:hover { text-decoration: underline; }
+
+.job-cal-legend { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+.job-cal-legend-item {
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .job-cal { padding: var(--space-sm); }
+  .job-cal-day { min-height: 84px; padding: 3px; }
+  .job-cal-weekday { padding: var(--space-xs) 2px; text-align: center; font-size: 0.65rem; }
+  .job-cal-chip { padding: 1px 3px; font-size: 0.66rem; }
+  .job-cal-chip-time { display: none; }
+  .job-cal-add { opacity: 1; }
+  .job-cal-more { padding: 0 3px; font-size: 0.64rem; }
+}

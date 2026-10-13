@@ -1185,6 +1185,28 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
   setVersion(20);
 }
 
+// Migration 21: Arbeiten merged list + calendar view strings (DE/FR).
+if (getVersion() < 21) {
+  try {
+    db.exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('arbeiten_view_label','Ansicht','Affichage','Ansicht'),
+('arbeiten_view_list','Liste','Liste','Liste'),
+('arbeiten_view_calendar','Kalender','Calendrier','Kalender'),
+('arbeiten_empty_all','Noch keine Arbeiten','Aucun travail pour le moment','Noch keine Arbeiten'),
+('arbeiten_cal_today','Heute','Aujourd''hui','Heute'),
+('arbeiten_cal_prev','Voriger Monat','Mois précédent','Voriger Monat'),
+('arbeiten_cal_next','Nächster Monat','Mois suivant','Nächster Monat'),
+('arbeiten_cal_more','weitere','de plus','weitere'),
+('arbeiten_cal_less','weniger','moins','weniger'),
+('arbeiten_cal_add_on','Arbeit hinzufügen am','Ajouter un travail le','Arbeit hinzufügen am');
+    `);
+  } catch (e) {
+    console.error('Migration 21 failed:', e.message);
+  }
+  setVersion(21);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

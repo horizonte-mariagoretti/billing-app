@@ -37,13 +37,13 @@ const EMPTY_FORM = {
  * Create/edit a job (Arbeit). `jobId` null → new job.
  * Assignments state: { [hori_id]: { planned, actual, plannedEdited } }.
  */
-const JobModal = ({ jobId, onSave, onCancel, triggerRef }) => {
+const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef }) => {
   const { query } = useDatabase();
   const { fetchJob, saveJob, fetchDocumentOptions } = useJobs();
   const { fetchHoris } = useHoris();
   const t = useT();
 
-  const [form, setForm] = useState({ ...EMPTY_FORM, date: todayISO() });
+  const [form, setForm] = useState({ ...EMPTY_FORM, date: defaultDate || todayISO() });
   const [assign, setAssign] = useState({});
   const [horis, setHoris] = useState([]);
   const [clients, setClients] = useState([]);

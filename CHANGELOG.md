@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0] - 2026-10-13
+
+### Changed
+- **Arbeiten: one merged list.** The Kommend/Vergangen tabs are gone. All jobs sit in one table: upcoming first (soonest first), then past (latest first), separated by "Kommend"/"Vergangen" divider rows with counts.
+
+### Added
+- **Arbeiten calendar view** (toggle "Liste | Kalender", choice is remembered): month grid, Monday first, 6 weeks, today highlighted, prev/next/Heute navigation. Jobs show as chips (time + title) colored by status (geplant/gearbeitet/abgesagt); more than 3 per day collapse into "+N weitere". Click a chip to edit the job, click the "+" on a day to create a job on that date. Respects the search box. Migration 21: DE/FR strings.
+
 ## [1.9.2] - 2026-10-13
 
 ### Added
