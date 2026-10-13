@@ -82,7 +82,8 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
   /**
    * Offer/invoice for a job: open it when linked; an invoice for a job that
    * already has a quote goes through the quote->invoice conversion in App;
-   * otherwise ask for the service line first (JobDocumentDialog).
+   * otherwise ask for line name + hourly wage first (JobDocumentDialog);
+   * App then builds one line per distinct Hori-hours value.
    */
   const requestDoc = async (jobId, type) => {
     if (!jobId) return;
