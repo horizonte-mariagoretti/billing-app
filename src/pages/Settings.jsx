@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DecimalInput from '../components/DecimalInput';
 import useSettings from '../hooks/useSettings';
 import { useT, getUiLang, setUiLang } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
@@ -368,21 +369,21 @@ const Settings = () => {
               </div>
               <div>
                 <label className="input-label">{t('settings_field_tax_rate', 'Standard Tax Rate (%)')}</label>
-                <input type="number" className="input-field" value={form.default_tax_rate} onChange={set('default_tax_rate')} onFocus={(e) => e.target.select()} />
+                <DecimalInput className="input-field" value={form.default_tax_rate} onChange={set('default_tax_rate')} onFocus={(e) => e.target.select()} />
               </div>
               <div>
                 <label className="input-label">{t('settings_camp_base', 'Basis Lagerbeitrag')}</label>
-                <input type="number" min="0" step="0.01" className="input-field" value={form.camp_base_contribution} onChange={set('camp_base_contribution')} onFocus={(e) => e.target.select()} />
+                <DecimalInput min="0" step="0.01" className="input-field" value={form.camp_base_contribution} onChange={set('camp_base_contribution')} onFocus={(e) => e.target.select()} />
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-dark-tertiary)', margin: '4px 0 0' }}>{t('settings_camp_base_hint', 'Maximaler Beitrag pro Hori; wird anhand des Arbeitsanteils reduziert.')}</p>
               </div>
               <div>
                 <label className="input-label">{t('settings_camp_min', 'Mindestbeitrag')}</label>
-                <input type="number" min="0" step="0.01" className="input-field" value={form.camp_min_contribution} onChange={set('camp_min_contribution')} onFocus={(e) => e.target.select()} />
+                <DecimalInput min="0" step="0.01" className="input-field" value={form.camp_min_contribution} onChange={set('camp_min_contribution')} onFocus={(e) => e.target.select()} />
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-dark-tertiary)', margin: '4px 0 0' }}>{t('settings_camp_min_hint', 'Der Beitrag sinkt nie unter diesen Betrag.')}</p>
               </div>
               <div>
                 <label className="input-label">{t('settings_camp_step', 'Reduktion pro 1 % Arbeitsanteil')}</label>
-                <input type="number" min="0" step="0.01" className="input-field" value={form.camp_reduction_per_percent} placeholder={t('settings_camp_step_placeholder', 'leer = proportional')} onChange={set('camp_reduction_per_percent')} onFocus={(e) => e.target.select()} />
+                <DecimalInput min="0" step="0.01" className="input-field" value={form.camp_reduction_per_percent} placeholder={t('settings_camp_step_placeholder', 'leer = proportional')} onChange={set('camp_reduction_per_percent')} onFocus={(e) => e.target.select()} />
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-dark-tertiary)', margin: '4px 0 0' }}>{t('settings_camp_step_hint', 'Feste Reduktion in Euro pro Prozent. Leer oder 0: Basis × Arbeitsanteil.')}</p>
               </div>
             </div>

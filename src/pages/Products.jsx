@@ -459,7 +459,7 @@ const Products = () => {
               <div className="form-row">
                 <Input
                   label={t('products_field_rate', 'Rate (EUR)')}
-                  type="number"
+                  decimal
                   min="0"
                   step="0.01"
                   value={formData.rate}

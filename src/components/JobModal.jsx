@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import DecimalInput from './DecimalInput';
 import useDatabase from '../hooks/useDatabase';
 import useJobs from '../hooks/useJobs';
 import useHoris from '../hooks/useHoris';
@@ -426,8 +427,7 @@ const JobModal = ({ jobId, onSave, onCancel, triggerRef }) => {
                             </span>
                             <span className="job-modal-hori-label">{name}</span>
                           </label>
-                          <input
-                            type="number"
+                          <DecimalInput
                             min="0"
                             step="0.25"
                             inputMode="decimal"
@@ -438,8 +438,7 @@ const JobModal = ({ jobId, onSave, onCancel, triggerRef }) => {
                             placeholder={a ? '—' : ''}
                             aria-label={`${t('arbeiten_planned_hours', 'Std. geplant')} ${name}`}
                           />
-                          <input
-                            type="number"
+                          <DecimalInput
                             min="0"
                             step="0.25"
                             inputMode="decimal"

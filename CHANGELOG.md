@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.1] - 2026-10-13
+
+### Changed
+- **German decimal input everywhere**: all decimal fields (invoice/quote quantity, duration, rate, discount and tax; product rate; Lagerbeitrag settings; Arbeiten planned/actual hours) now show and accept a comma (12,5). Typing a dot is converted to a comma, other characters are ignored, and pasted "1.234,56" becomes 1234,56. New shared `DecimalInput` component (text input with decimal keyboard) replaces `type="number"`, which followed the browser language; callers still receive plain dot numbers, so stored data is unchanged. Integer fields (numbering counter) are unaffected.
+
 ## [1.9.0] - 2026-10-12
 
 ### Added

@@ -1,6 +1,6 @@
 # InvoiceForge — Project Reference
 
-**Version:** 1.9.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.9.1 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -55,6 +55,7 @@ Billing_App/
 │   │   ├── Button.jsx          # variant=primary|secondary|outline|ghost|danger, size=sm|md|lg
 │   │   ├── Button.css
 │   │   ├── Input.jsx           # Labeled input wrapper with error state
+│   │   ├── DecimalInput.jsx    # German decimal field (comma); onChange gives dot-number. Use instead of type="number".
 │   │   ├── Input.css
 │   │   ├── StatusBadge.jsx     # draft|sent|paid|overdue|cancelled|accepted|declined|converted
 │   │   ├── StatusBadge.css

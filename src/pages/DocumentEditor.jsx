@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import DecimalInput from '../components/DecimalInput';
 import {
   ChevronLeft, Check, Plus, Trash2, Save, FileText, Search,
   Send, CheckCircle2, XCircle, Unlock, ArrowRightCircle, ThumbsUp, ThumbsDown,
@@ -726,8 +727,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     </div>
                     {vc.qty !== false && (
                     <div className="col-qty">
-                      <input
-                        type="number" min="0" step="0.01" value={item.qty}
+                      <DecimalInput
+                        min="0" step="0.01" value={item.qty}
                         onChange={(e) => updateItem(item.id, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
                         onKeyDown={handleNumberArrowKey(item.qty, (n) => updateItem(item.id, 'qty', n))}
                         onFocus={selectOnFocus}
@@ -736,8 +737,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     )}
                     {vc.duration !== false && (
                     <div className="col-duration">
-                      <input
-                        type="number" min="0" step="0.25" value={item.duration ?? 1}
+                      <DecimalInput
+                        min="0" step="0.25" value={item.duration ?? 1}
                         onChange={(e) => updateItem(item.id, 'duration', Math.max(0, parseFloat(e.target.value) || 0))}
                         onKeyDown={handleNumberArrowKey(item.duration ?? 1, (n) => updateItem(item.id, 'duration', n))}
                         onFocus={selectOnFocus}
@@ -746,8 +747,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                     )}
                     {vc.rate !== false && (
                     <div className="col-rate">
-                      <input
-                        type="number" min="0" step="0.01" value={item.rate}
+                      <DecimalInput
+                        min="0" step="0.01" value={item.rate}
                         onChange={(e) => updateItem(item.id, 'rate', Math.max(0, parseFloat(e.target.value) || 0))}
                         onKeyDown={handleNumberArrowKey(item.rate, (n) => updateItem(item.id, 'rate', n))}
                         onFocus={selectOnFocus}
@@ -876,8 +877,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <div className="discount-config">
                     <span>{t('editor_discount', 'Discount')}</span>
                     <div className="discount-inputs">
-                      <input
-                        type="number" min="0" step="0.01"
+                      <DecimalInput
+                        min="0" step="0.01"
                         {...(doc.discount_type === '%' ? { max: '100' } : {})}
                         value={doc.discount_value}
                         onChange={(e) => {
@@ -908,8 +909,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   <div className="total-row">
                     <div className="tax-config">
                       <span>{t('editor_tax', 'Tax')}</span>
-                      <input
-                        type="number" min="0" step="0.01" value={doc.tax_rate}
+                      <DecimalInput
+                        min="0" step="0.01" value={doc.tax_rate}
                         onChange={(e) => updateDoc((d) => ({ ...d, tax_rate: Math.max(0, parseFloat(e.target.value) || 0) }))}
                         onKeyDown={handleNumberArrowKey(doc.tax_rate, (n) => updateDoc((d) => ({ ...d, tax_rate: n })))}
                         onFocus={selectOnFocus}

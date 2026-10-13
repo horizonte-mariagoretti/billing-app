@@ -567,7 +567,7 @@
 }
 
 /* Qty / Rate — minimal inline numbers, no box */
-.item-row input[type="number"] {
+.item-row input[inputmode="decimal"] {
   width: 100%;
   background: transparent;
   border: none;
@@ -581,7 +581,7 @@
   transition: background-color var(--transition-fast);
 }
 
-.item-row input[type="number"]:focus {
+.item-row input[inputmode="decimal"]:focus {
   outline: none;
   box-shadow: none;
   background-color: var(--color-primary-faint);
@@ -1273,7 +1273,7 @@
   }
 
   /* Number inputs: visible box + sufficient width for touch */
-  .item-row input[type='number'] {
+  .item-row input[inputmode='decimal'] {
     border: 1px solid var(--color-border-light-theme) !important;
     border-radius: var(--radius-sm) !important;
     background-color: var(--color-surface-muted) !important;
