@@ -1276,6 +1276,24 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
   setVersion(23);
 }
 
+// Migration 24: Horis table: "Stunden" column label + activate/deactivate action.
+if (getVersion() < 24) {
+  try {
+    db.exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('horis_action_deactivate','Auf inaktiv setzen','Mettre en inactif','Auf inaktiv setzen'),
+('horis_action_activate','Aktivieren','Activer','Aktivieren'),
+('horis_count_inactive','Inaktive mitzählen','Compter les inactifs','Inaktive mitzählen');
+UPDATE ui_translations SET value_de = 'Stunden', value_fr = 'Heures', value_en = 'Stunden' WHERE key = 'horis_col_actual';
+UPDATE ui_translations SET value_de = 'Horis', value_fr = 'Horis', value_en = 'Horis' WHERE key = 'horis_summary_count';
+UPDATE ui_translations SET value_de = 'Stunden gesamt', value_fr = 'Total des heures', value_en = 'Stunden gesamt' WHERE key = 'horis_summary_hours';
+    `);
+  } catch (e) {
+    console.error('Migration 24 failed:', e.message);
+  }
+  setVersion(24);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

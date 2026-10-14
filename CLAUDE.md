@@ -1,6 +1,6 @@
 # InvoiceForge — Project Reference
 
-**Version:** 1.12.1 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.12.2 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -90,7 +90,7 @@ Billing_App/
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–23 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–24 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -288,6 +288,7 @@ All tokens in `src/index.css` under `:root`.
 - `.search-bar` — icon + input, max-width 400px
 - `.page-error` — red alert banner
 - `.clients-table thead th, .doc-table thead th` — sticky headers
+- **Table alignment rule**: everything is left-aligned (names, ages, hours, bars) except money, which is right-aligned. Header and cells always share the same edge (left edge for left-aligned, right edge for right-aligned columns), and the footer totals follow their column. The sort arrow always sits after the label; right-aligned cells get a right gutter as wide as the arrow (17px) so the numbers end exactly where the header label ends (see `.horis-table td.num`).
 
 ### Responsive breakpoints
 - `1100px` — dashboard stats 4→2 col; bottom grid stacks

@@ -11,7 +11,7 @@ import HoriModal from '../components/HoriModal';
 import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
-  Plus, ListPlus, Search, Edit2, Trash2, AlertCircle, Baby, Clock, PiggyBank,
+  Plus, ListPlus, Search, Edit2, Trash2, UserX, UserCheck, AlertCircle, Baby, Clock, PiggyBank,
   LayoutList, Grid3x3, X, CalendarDays, ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react';
 import './Horis.css';
@@ -21,6 +21,16 @@ import './Horis.css';
 const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
+
+// Heat scale for the Anteil bars: soft red (lowest share) -> yellow -> green (highest share).
+const HEAT_STOPS = [[0, [238, 112, 104]], [0.5, [252, 218, 108]], [1, [72, 187, 120]]];
+function heatColor(rel) {
+  const r = Math.max(0, Math.min(1, rel));
+  const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
+  const k = (r - a[0]) / (b[0] - a[0]);
+  const c = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * k));
+  return { bg: `rgb(${c.join(',')})` };
+}
 
 function formatDateShort(iso) {
   if (!iso) return '—';
@@ -167,7 +177,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
 /* ── Page ─────────────────────────────────────────────────── */
 
 const Horis = () => {
-  const { fetchHoriStats, fetchMatrix, deleteHori } = useHoris();
+  const { fetchHoriStats, fetchMatrix, deleteHori, saveHori } = useHoris();
   const { loadSettings } = useSettings();
   const t = useT();
 
@@ -179,7 +189,8 @@ const Horis = () => {
   const [view, setView] = useState('overview'); // 'overview' | 'matrix'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|jobs|actual|share|planned|contribution
+  const [countInactive, setCountInactive] = useState(false); // include inactive Horis in totals + Anteil
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|actual|share|contribution
   const [showModal, setShowModal] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const bulkBtnRef = useRef(null);
@@ -231,24 +242,36 @@ const Horis = () => {
     return fullName(h).toLowerCase().includes(q);
   }, [search]);
 
+  // Shares are computed here (not in the hook) so "Inaktive mitzählen" can switch the basis:
+  // off = inactive Horis are left out of the total and of everyone's Anteil, on = they count like actives.
+  const shareStats = useMemo(() => {
+    const counts = (h) => isActive(h) || countInactive;
+    const sum = stats.reduce((s, h) => (counts(h) ? s + num(h.total_actual_hours) : s), 0);
+    return stats.map((h) => ({
+      ...h,
+      share_pct: counts(h) && sum > 0 ? Math.round((10000 * num(h.total_actual_hours)) / sum) / 100 : 0,
+    }));
+  }, [stats, countInactive]);
+
   const visibleStats = useMemo(
-    () => stats.filter(h => (showInactive || isActive(h)) && matchesSearch(h)),
-    [stats, showInactive, matchesSearch]
+    () => shareStats.filter(h => (showInactive || isActive(h)) && matchesSearch(h)),
+    [shareStats, showInactive, matchesSearch]
   );
 
   const sortValue = (h, key) => {
     switch (key) {
       case 'name': return fullName(h).toLowerCase();
       case 'age': return h.birth_date ? calcAge(h.birth_date) : null;
-      case 'jobs': return num(h.job_count);
       case 'actual': return num(h.total_actual_hours);
       case 'share': return num(h.share_pct);
-      case 'planned': return num(h.planned_hours_upcoming);
       case 'contribution': return contributionFor(h);
       default: return 0;
     }
   };
   // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
+  const countedShares = visibleStats.filter(h => isActive(h) || countInactive).map(h => num(h.share_pct));
+  const maxShare = Math.max(0, ...countedShares);
+  const minShare = countedShares.length ? Math.min(...countedShares) : 0;
   const sortedStats = [...visibleStats].sort((a, b) => {
     const va = sortValue(a, sort.key);
     const vb = sortValue(b, sort.key);
@@ -277,12 +300,12 @@ const Horis = () => {
     );
   };
 
-  const activeStats = stats.filter(isActive);
-  const totalActualHours = stats.reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const visibleActualHours = visibleStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const visiblePlannedHours = visibleStats.reduce((s, h) => s + num(h.planned_hours_upcoming), 0);
-  const avgContribution = activeStats.length
-    ? activeStats.reduce((s, h) => s + contributionFor(h), 0) / activeStats.length
+  const countedStats = shareStats.filter(h => isActive(h) || countInactive);
+  // Inactive Horis are left out of every total unless "Inaktive mitzählen" is on.
+  const totalActualHours = countedStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
+  const visibleActualHours = visibleStats.filter(h => isActive(h) || countInactive).reduce((s, h) => s + num(h.total_actual_hours), 0);
+  const avgContribution = countedStats.length
+    ? countedStats.reduce((s, h) => s + contributionFor(h), 0) / countedStats.length
     : 0;
 
   /* ── handlers ── */
@@ -294,6 +317,21 @@ const Horis = () => {
   const handleBulkSave = () => { setShowBulk(false); load(); };
   const handleModalSave = () => { setShowModal(false); setEditingHori(null); load(); };
   const closeDetail = useCallback(() => setDetailHori(null), []);
+
+  const toggleActive = async (h) => {
+    try {
+      await saveHori({
+        id: h.id,
+        first_name: h.first_name,
+        last_name: h.last_name,
+        birth_date: h.birth_date,
+        active: isActive(h) ? 0 : 1,
+      });
+      await load();
+    } catch (_err) {
+      setError(t('horis_save_error', 'Hori konnte nicht gespeichert werden.'));
+    }
+  };
 
   const handleDeleteConfirmed = async () => {
     if (!confirm) return;
@@ -374,20 +412,21 @@ const Horis = () => {
           <thead>
             <tr>
               {sortTh('name', t('horis_col_name', 'Name'))}
-              {sortTh('age', t('horis_col_age', 'Alter'), { className: 'num' })}
-              {sortTh('jobs', t('horis_col_jobs', 'Jobs'), { className: 'num' })}
-              {sortTh('actual', t('horis_col_actual', 'Gearbeitete Std.'), { className: 'num' })}
+              {sortTh('age', t('horis_col_age', 'Alter'))}
+              {sortTh('actual', t('horis_col_actual', 'Stunden'))}
               {sortTh('share', t('horis_col_share', 'Anteil %'))}
-              {sortTh('planned', t('horis_col_planned', 'Geplant'), { className: 'num', title: t('horis_col_planned_tooltip', 'Geplante Stunden für kommende Arbeiten') })}
               {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
-              <th className="num">{t('col_actions', 'Aktionen')}</th>
+              <th className="num" aria-label={t('col_actions', 'Aktionen')} />
             </tr>
           </thead>
           <tbody>
             {sortedStats.map(h => {
               const active = isActive(h);
               const age = h.birth_date ? calcAge(h.birth_date) : null;
+              const counted = active || countInactive;
               const share = Math.max(0, Math.min(100, num(h.share_pct)));
+              // Colour spans lowest -> highest share of the rows shown; a single row (or all equal) is green.
+              const heat = heatColor(maxShare > minShare ? (share - minShare) / (maxShare - minShare) : 1);
               return (
                 <tr
                   key={h.id}
@@ -399,22 +438,21 @@ const Horis = () => {
                 >
                   <td className="horis-name-cell">
                     <span>{fullName(h)}</span>
-                    {!active && <span className="horis-badge-inactive">{t('horis_inactive', 'Inaktiv')}</span>}
                   </td>
-                  <td className="num">{age ?? '—'}</td>
-                  <td className="num horis-mono">{num(h.job_count)}</td>
-                  <td className="num horis-mono horis-strong">{fmtHours(h.total_actual_hours)}</td>
+                  <td>{age ?? '—'}</td>
+                  <td className={`horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
-                    <div className="horis-share">
-                      <div className="horis-share-track" aria-hidden="true">
-                        <div className="horis-share-fill" style={{ width: `${share}%` }} />
+                    {counted ? (
+                      <div className="horis-heat">
+                        <span className="horis-mono">{fmtPct(share)}</span>
+                        <div className="horis-heat-bar" aria-hidden="true">
+                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: active ? heat.bg : 'var(--color-text-dark-tertiary)' }} />
+                        </div>
                       </div>
-                      <span className="horis-mono">{fmtPct(share)}</span>
-                    </div>
+                    ) : <span className="horis-muted">—</span>}
                   </td>
-                  <td className="num horis-mono horis-muted">{fmtHours(h.planned_hours_upcoming)}</td>
-                  <td className="num horis-mono horis-strong">{formatCurrency(contributionFor(h))}</td>
-                  <td className="num">
+                  <td className="num horis-mono horis-strong">{counted ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
+                  <td className="num horis-actions">
                     <div className="action-btns">
                       <button
                         type="button"
@@ -423,6 +461,14 @@ const Horis = () => {
                         onClick={(e) => { e.stopPropagation(); handleEdit(h); }}
                       >
                         <Edit2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        title={active ? t('horis_action_deactivate', 'Auf inaktiv setzen') : t('horis_action_activate', 'Aktivieren')}
+                        aria-label={`${active ? t('horis_action_deactivate', 'Auf inaktiv setzen') : t('horis_action_activate', 'Aktivieren')}: ${fullName(h)}`}
+                        onClick={(e) => { e.stopPropagation(); toggleActive(h); }}
+                      >
+                        {active ? <UserX size={16} /> : <UserCheck size={16} />}
                       </button>
                       <button
                         type="button"
@@ -440,10 +486,9 @@ const Horis = () => {
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3}>{t('horis_total', 'Gesamt')}</td>
-              <td className="num horis-mono">{fmtHours(visibleActualHours)}</td>
+              <td colSpan={2}>{t('horis_total', 'Gesamt')}</td>
+              <td className="horis-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
               <td />
-              <td className="num horis-mono">{fmtHours(visiblePlannedHours)}</td>
               <td className="num horis-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
                 <span className="horis-foot-label">{t('horis_avg_short', 'Ø')}</span> {formatCurrency(avgContribution)}
               </td>
@@ -600,10 +645,16 @@ const Horis = () => {
           </button>
         </div>
         {view === 'overview' && (
-          <label className="horis-inactive-toggle">
-            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-            <span>{t('horis_show_inactive', 'Inaktive anzeigen')}</span>
-          </label>
+          <div className="horis-toggles">
+            <label className="horis-inactive-toggle">
+              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+              <span>{t('horis_show_inactive', 'Inaktive anzeigen')}</span>
+            </label>
+            <label className="horis-inactive-toggle">
+              <input type="checkbox" checked={countInactive} onChange={(e) => setCountInactive(e.target.checked)} />
+              <span>{t('horis_count_inactive', 'Inaktive mitzählen')}</span>
+            </label>
+          </div>
         )}
       </div>
 
@@ -613,20 +664,17 @@ const Horis = () => {
             <div className="horis-summary-card">
               <div className="horis-summary-icon indigo"><Baby size={20} /></div>
               <div>
-                <div className="horis-summary-label">{t('horis_summary_count', 'Aktive Horis')}</div>
+                <div className="horis-summary-label">{t('horis_summary_count', 'Horis')}</div>
                 <div className="horis-summary-value">
-                  {activeStats.length}
-                  {stats.length > activeStats.length && (
-                    <small> / {stats.length}</small>
-                  )}
+                  {countedStats.length}
                 </div>
               </div>
             </div>
             <div className="horis-summary-card">
               <div className="horis-summary-icon green"><Clock size={20} /></div>
               <div>
-                <div className="horis-summary-label">{t('horis_summary_hours', 'Gearbeitete Stunden gesamt')}</div>
-                <div className="horis-summary-value">{fmtHours(totalActualHours)} <small>{t('horis_matrix_hours', 'Std.')}</small></div>
+                <div className="horis-summary-label">{t('horis_summary_hours', 'Stunden gesamt')}</div>
+                <div className="horis-summary-value">{fmtHours(totalActualHours)} h</div>
               </div>
             </div>
             <div className="horis-summary-card">

@@ -175,7 +175,7 @@
 .horis-detail-table .num { text-align: right; }
 
 .horis-table th:nth-child(1) { min-width: 180px; }
-.horis-table th:nth-child(5) { min-width: 150px; }
+.horis-table th:nth-child(4) { min-width: 150px; }
 
 .horis-row { cursor: pointer; }
 .horis-table tbody tr:hover td { background-color: var(--color-surface-muted); }
@@ -190,7 +190,6 @@
 .horis-row.inactive td { color: var(--color-text-dark-tertiary); }
 .horis-row.inactive .horis-name-cell,
 .horis-row.inactive .horis-strong { color: var(--color-text-dark-tertiary) !important; }
-.horis-row.inactive .horis-share-fill { background: var(--color-text-dark-tertiary); }
 
 .horis-badge-inactive {
   display: inline-block;
@@ -206,31 +205,45 @@
   vertical-align: middle;
 }
 
-.horis-share {
+/* Anteil: number first, then a bar coloured with a heat scale (green = highest) by share relative to the top Hori */
+.horis-heat {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
 }
 
-.horis-share-track {
-  flex: 1;
-  min-width: 60px;
-  height: 6px;
-  background: var(--color-light-bg);
-  border-radius: var(--radius-full);
+.horis-heat-bar {
+  position: relative;
+  flex: none;
+  width: 130px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-light-bg);
   overflow: hidden;
 }
 
-.horis-share-fill {
-  height: 100%;
-  background: var(--stat-indigo-icon);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-normal);
+.horis-heat-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-md);
+  transition: width var(--transition-normal), background-color var(--transition-normal);
 }
 
-.horis-share .horis-mono {
-  min-width: 52px;
-  text-align: right;
+.horis-row.inactive .horis-heat .horis-mono { color: var(--color-text-dark-tertiary); }
+
+.horis-heat .horis-mono {
+  min-width: 44px;
+  text-align: left;
+  color: var(--color-text-dark-primary);
+  font-weight: 600;
+}
+
+.horis-toggles {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .horis-table tfoot td,
@@ -579,4 +592,10 @@
 .horis-sort-btn.active { color: var(--color-text-dark-primary); }
 .horis-sort-btn.active svg { opacity: 1; color: var(--color-primary); }
 .horis-sort-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+/* Column alignment rule: everything is left-aligned (header and cells start at the same edge)
+   except money, which is right-aligned. The sort arrow always sits after the label. In
+   right-aligned columns the cells get a gutter as wide as the arrow (icon 13px + 4px gap),
+   so the amounts end exactly where the header label ends. */
 .horis-table th.num .horis-sort-btn { justify-content: flex-end; }
+.horis-table td.num { padding-right: calc(var(--space-lg) + 17px); }
+.horis-table td.horis-actions { padding-right: var(--space-lg); }
