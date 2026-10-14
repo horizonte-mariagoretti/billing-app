@@ -214,7 +214,7 @@
   min-width: 130px;
   height: 28px;
   padding: 0 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background-color: var(--color-light-bg);
   overflow: hidden;
 }
@@ -222,7 +222,7 @@
 .horis-heat i {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   transition: width var(--transition-normal), background-color var(--transition-normal);
 }
 
