@@ -209,13 +209,13 @@
 .horis-heat {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  min-width: 160px;
+  gap: var(--space-xs);
 }
 
 .horis-heat-bar {
   position: relative;
-  flex: 1;
+  flex: none;
+  width: 130px;
   height: 24px;
   border-radius: var(--radius-md);
   background-color: var(--color-light-bg);
@@ -230,8 +230,8 @@
 }
 
 .horis-heat .horis-mono {
-  min-width: 52px;
-  text-align: right;
+  min-width: 48px;
+  text-align: left;
   color: var(--color-text-dark-primary);
   font-weight: 600;
 }
