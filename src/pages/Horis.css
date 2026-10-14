@@ -175,7 +175,7 @@
 .horis-detail-table .num { text-align: right; }
 
 .horis-table th:nth-child(1) { min-width: 180px; }
-.horis-table th:nth-child(5) { min-width: 150px; }
+.horis-table th:nth-child(4) { min-width: 150px; }
 
 .horis-row { cursor: pointer; }
 .horis-table tbody tr:hover td { background-color: var(--color-surface-muted); }

@@ -11,7 +11,7 @@ import HoriModal from '../components/HoriModal';
 import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
-  Plus, ListPlus, Search, Edit2, Trash2, AlertCircle, Baby, Clock, PiggyBank,
+  Plus, ListPlus, Search, Edit2, Trash2, UserX, UserCheck, AlertCircle, Baby, Clock, PiggyBank,
   LayoutList, Grid3x3, X, CalendarDays, ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react';
 import './Horis.css';
@@ -167,7 +167,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
 /* ── Page ─────────────────────────────────────────────────── */
 
 const Horis = () => {
-  const { fetchHoriStats, fetchMatrix, deleteHori } = useHoris();
+  const { fetchHoriStats, fetchMatrix, deleteHori, saveHori } = useHoris();
   const { loadSettings } = useSettings();
   const t = useT();
 
@@ -179,7 +179,7 @@ const Horis = () => {
   const [view, setView] = useState('overview'); // 'overview' | 'matrix'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|jobs|actual|share|planned|contribution
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|actual|share|contribution
   const [showModal, setShowModal] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const bulkBtnRef = useRef(null);
@@ -240,10 +240,8 @@ const Horis = () => {
     switch (key) {
       case 'name': return fullName(h).toLowerCase();
       case 'age': return h.birth_date ? calcAge(h.birth_date) : null;
-      case 'jobs': return num(h.job_count);
       case 'actual': return num(h.total_actual_hours);
       case 'share': return num(h.share_pct);
-      case 'planned': return num(h.planned_hours_upcoming);
       case 'contribution': return contributionFor(h);
       default: return 0;
     }
@@ -278,9 +276,9 @@ const Horis = () => {
   };
 
   const activeStats = stats.filter(isActive);
-  const totalActualHours = stats.reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const visibleActualHours = visibleStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const visiblePlannedHours = visibleStats.reduce((s, h) => s + num(h.planned_hours_upcoming), 0);
+  // Inactive Horis are left out of every total.
+  const totalActualHours = activeStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
+  const visibleActualHours = visibleStats.filter(isActive).reduce((s, h) => s + num(h.total_actual_hours), 0);
   const avgContribution = activeStats.length
     ? activeStats.reduce((s, h) => s + contributionFor(h), 0) / activeStats.length
     : 0;
@@ -294,6 +292,21 @@ const Horis = () => {
   const handleBulkSave = () => { setShowBulk(false); load(); };
   const handleModalSave = () => { setShowModal(false); setEditingHori(null); load(); };
   const closeDetail = useCallback(() => setDetailHori(null), []);
+
+  const toggleActive = async (h) => {
+    try {
+      await saveHori({
+        id: h.id,
+        first_name: h.first_name,
+        last_name: h.last_name,
+        birth_date: h.birth_date,
+        active: isActive(h) ? 0 : 1,
+      });
+      await load();
+    } catch (_err) {
+      setError(t('horis_save_error', 'Hori konnte nicht gespeichert werden.'));
+    }
+  };
 
   const handleDeleteConfirmed = async () => {
     if (!confirm) return;
@@ -375,10 +388,8 @@ const Horis = () => {
             <tr>
               {sortTh('name', t('horis_col_name', 'Name'))}
               {sortTh('age', t('horis_col_age', 'Alter'), { className: 'num' })}
-              {sortTh('jobs', t('horis_col_jobs', 'Jobs'), { className: 'num' })}
-              {sortTh('actual', t('horis_col_actual', 'Gearbeitete Std.'), { className: 'num' })}
+              {sortTh('actual', t('horis_col_actual', 'Stunden'), { className: 'num' })}
               {sortTh('share', t('horis_col_share', 'Anteil %'))}
-              {sortTh('planned', t('horis_col_planned', 'Geplant'), { className: 'num', title: t('horis_col_planned_tooltip', 'Geplante Stunden für kommende Arbeiten') })}
               {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
               <th className="num">{t('col_actions', 'Aktionen')}</th>
             </tr>
@@ -402,18 +413,18 @@ const Horis = () => {
                     {!active && <span className="horis-badge-inactive">{t('horis_inactive', 'Inaktiv')}</span>}
                   </td>
                   <td className="num">{age ?? '—'}</td>
-                  <td className="num horis-mono">{num(h.job_count)}</td>
-                  <td className="num horis-mono horis-strong">{fmtHours(h.total_actual_hours)}</td>
+                  <td className={`num horis-mono ${active ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
-                    <div className="horis-share">
-                      <div className="horis-share-track" aria-hidden="true">
-                        <div className="horis-share-fill" style={{ width: `${share}%` }} />
+                    {active ? (
+                      <div className="horis-share">
+                        <div className="horis-share-track" aria-hidden="true">
+                          <div className="horis-share-fill" style={{ width: `${share}%` }} />
+                        </div>
+                        <span className="horis-mono">{fmtPct(share)}</span>
                       </div>
-                      <span className="horis-mono">{fmtPct(share)}</span>
-                    </div>
+                    ) : <span className="horis-muted">—</span>}
                   </td>
-                  <td className="num horis-mono horis-muted">{fmtHours(h.planned_hours_upcoming)}</td>
-                  <td className="num horis-mono horis-strong">{formatCurrency(contributionFor(h))}</td>
+                  <td className="num horis-mono horis-strong">{active ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
                   <td className="num">
                     <div className="action-btns">
                       <button
@@ -423,6 +434,14 @@ const Horis = () => {
                         onClick={(e) => { e.stopPropagation(); handleEdit(h); }}
                       >
                         <Edit2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        title={active ? t('horis_action_deactivate', 'Auf inaktiv setzen') : t('horis_action_activate', 'Aktivieren')}
+                        aria-label={`${active ? t('horis_action_deactivate', 'Auf inaktiv setzen') : t('horis_action_activate', 'Aktivieren')}: ${fullName(h)}`}
+                        onClick={(e) => { e.stopPropagation(); toggleActive(h); }}
+                      >
+                        {active ? <UserX size={16} /> : <UserCheck size={16} />}
                       </button>
                       <button
                         type="button"
@@ -440,10 +459,9 @@ const Horis = () => {
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3}>{t('horis_total', 'Gesamt')}</td>
+              <td colSpan={2}>{t('horis_total', 'Gesamt')}</td>
               <td className="num horis-mono">{fmtHours(visibleActualHours)}</td>
               <td />
-              <td className="num horis-mono">{fmtHours(visiblePlannedHours)}</td>
               <td className="num horis-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
                 <span className="horis-foot-label">{t('horis_avg_short', 'Ø')}</span> {formatCurrency(avgContribution)}
               </td>
@@ -613,20 +631,17 @@ const Horis = () => {
             <div className="horis-summary-card">
               <div className="horis-summary-icon indigo"><Baby size={20} /></div>
               <div>
-                <div className="horis-summary-label">{t('horis_summary_count', 'Aktive Horis')}</div>
+                <div className="horis-summary-label">{t('horis_summary_count', 'Horis')}</div>
                 <div className="horis-summary-value">
                   {activeStats.length}
-                  {stats.length > activeStats.length && (
-                    <small> / {stats.length}</small>
-                  )}
                 </div>
               </div>
             </div>
             <div className="horis-summary-card">
               <div className="horis-summary-icon green"><Clock size={20} /></div>
               <div>
-                <div className="horis-summary-label">{t('horis_summary_hours', 'Gearbeitete Stunden gesamt')}</div>
-                <div className="horis-summary-value">{fmtHours(totalActualHours)} <small>{t('horis_matrix_hours', 'Std.')}</small></div>
+                <div className="horis-summary-label">{t('horis_summary_hours', 'Stunden gesamt')}</div>
+                <div className="horis-summary-value">{fmtHours(totalActualHours)} h</div>
               </div>
             </div>
             <div className="horis-summary-card">

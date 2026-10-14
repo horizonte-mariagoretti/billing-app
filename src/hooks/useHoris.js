@@ -61,12 +61,15 @@ const useHoris = () => {
       GROUP BY h.id
       ORDER BY h.last_name COLLATE NOCASE ASC, h.first_name COLLATE NOCASE ASC
     `);
-    const sum = rows.reduce((acc, r) => acc + (Number(r.total_actual_hours) || 0), 0);
+    // Inactive Horis don't count: their hours stay on their row but are left out of
+    // the total, so everyone else's share is computed over active Horis only.
+    const isOn = (r) => r.active === 1 || r.active === true;
+    const sum = rows.reduce((acc, r) => acc + (isOn(r) ? (Number(r.total_actual_hours) || 0) : 0), 0);
     return rows.map((r) => ({
       ...r,
       total_actual_hours: round2(r.total_actual_hours),
       planned_hours_upcoming: round2(r.planned_hours_upcoming),
-      share_pct: sum > 0 ? round2((100 * (Number(r.total_actual_hours) || 0)) / sum) : 0,
+      share_pct: isOn(r) && sum > 0 ? round2((100 * (Number(r.total_actual_hours) || 0)) / sum) : 0,
     }));
   }, [query]);
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.2] - 2026-10-14
+
+### Changed
+- **Horis table cleaned up:** the Jobs and Geplant columns are removed (jobs and planned hours are still in the details popup when you click a Hori); the "Gearbeitete Std." column is now just "Stunden".
+- **Activate/deactivate from the actions column** (new icon next to edit and delete).
+- **Inactive Horis no longer count:** their hours are left out of the total (summary card and table footer) and out of everyone's Anteil %, and an inactive Hori shows "—" for Anteil and Lagerbeitrag. Their own hours stay visible, greyed out. Migration 24: DE/FR labels.
+- **Summary cards:** "Aktive Horis" is now "Horis" and counts only active Horis (no "/ total"); "Gearbeitete Stunden gesamt" is now "Stunden gesamt" with the unit "h" in the same size as the number.
+
 ## [1.12.1] - 2026-10-14
 
 ### Fixed
