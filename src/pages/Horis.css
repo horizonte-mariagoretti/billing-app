@@ -190,7 +190,6 @@
 .horis-row.inactive td { color: var(--color-text-dark-tertiary); }
 .horis-row.inactive .horis-name-cell,
 .horis-row.inactive .horis-strong { color: var(--color-text-dark-tertiary) !important; }
-.horis-row.inactive .horis-share-fill { background: var(--color-text-dark-tertiary); }
 
 .horis-badge-inactive {
   display: inline-block;
@@ -206,31 +205,42 @@
   vertical-align: middle;
 }
 
-.horis-share {
+/* Anteil: in-cell data bar, colour = heat scale by share relative to the top Hori */
+.horis-heat {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-}
-
-.horis-share-track {
-  flex: 1;
-  min-width: 60px;
-  height: 6px;
-  background: var(--color-light-bg);
-  border-radius: var(--radius-full);
+  justify-content: flex-end;
+  min-width: 130px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-light-bg);
   overflow: hidden;
 }
 
-.horis-share-fill {
-  height: 100%;
-  background: var(--stat-indigo-icon);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-normal);
+.horis-heat i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  transition: width var(--transition-normal), background-color var(--transition-normal);
 }
 
-.horis-share .horis-mono {
-  min-width: 52px;
-  text-align: right;
+/* The number sits on a small light chip so it stays readable whatever the bar length or colour underneath. */
+.horis-heat .horis-mono {
+  position: relative;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.88);
+  color: var(--color-text-dark-primary);
+  font-weight: 600;
+}
+
+.horis-toggles {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .horis-table tfoot td,

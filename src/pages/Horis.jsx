@@ -22,6 +22,16 @@ const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
 
+// Heat scale for the Anteil bars: warm yellow -> orange -> brand red, by share relative to the top Hori.
+const HEAT_STOPS = [[0, [247, 215, 116]], [0.5, [239, 138, 61]], [1, [187, 22, 21]]];
+function heatColor(rel) {
+  const r = Math.max(0, Math.min(1, rel));
+  const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
+  const k = (r - a[0]) / (b[0] - a[0]);
+  const c = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * k));
+  return { bg: `rgb(${c.join(',')})` };
+}
+
 function formatDateShort(iso) {
   if (!iso) return '—';
   const [y, m, d] = String(iso).slice(0, 10).split('-');
@@ -179,6 +189,7 @@ const Horis = () => {
   const [view, setView] = useState('overview'); // 'overview' | 'matrix'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [countInactive, setCountInactive] = useState(false); // include inactive Horis in totals + Anteil
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|actual|share|contribution
   const [showModal, setShowModal] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
@@ -231,9 +242,20 @@ const Horis = () => {
     return fullName(h).toLowerCase().includes(q);
   }, [search]);
 
+  // Shares are computed here (not in the hook) so "Inaktive mitzählen" can switch the basis:
+  // off = inactive Horis are left out of the total and of everyone's Anteil, on = they count like actives.
+  const shareStats = useMemo(() => {
+    const counts = (h) => isActive(h) || countInactive;
+    const sum = stats.reduce((s, h) => (counts(h) ? s + num(h.total_actual_hours) : s), 0);
+    return stats.map((h) => ({
+      ...h,
+      share_pct: counts(h) && sum > 0 ? Math.round((10000 * num(h.total_actual_hours)) / sum) / 100 : 0,
+    }));
+  }, [stats, countInactive]);
+
   const visibleStats = useMemo(
-    () => stats.filter(h => (showInactive || isActive(h)) && matchesSearch(h)),
-    [stats, showInactive, matchesSearch]
+    () => shareStats.filter(h => (showInactive || isActive(h)) && matchesSearch(h)),
+    [shareStats, showInactive, matchesSearch]
   );
 
   const sortValue = (h, key) => {
@@ -247,6 +269,7 @@ const Horis = () => {
     }
   };
   // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
+  const maxShare = Math.max(0, ...visibleStats.filter(h => isActive(h) || countInactive).map(h => num(h.share_pct)));
   const sortedStats = [...visibleStats].sort((a, b) => {
     const va = sortValue(a, sort.key);
     const vb = sortValue(b, sort.key);
@@ -275,12 +298,12 @@ const Horis = () => {
     );
   };
 
-  const activeStats = stats.filter(isActive);
-  // Inactive Horis are left out of every total.
-  const totalActualHours = activeStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const visibleActualHours = visibleStats.filter(isActive).reduce((s, h) => s + num(h.total_actual_hours), 0);
-  const avgContribution = activeStats.length
-    ? activeStats.reduce((s, h) => s + contributionFor(h), 0) / activeStats.length
+  const countedStats = shareStats.filter(h => isActive(h) || countInactive);
+  // Inactive Horis are left out of every total unless "Inaktive mitzählen" is on.
+  const totalActualHours = countedStats.reduce((s, h) => s + num(h.total_actual_hours), 0);
+  const visibleActualHours = visibleStats.filter(h => isActive(h) || countInactive).reduce((s, h) => s + num(h.total_actual_hours), 0);
+  const avgContribution = countedStats.length
+    ? countedStats.reduce((s, h) => s + contributionFor(h), 0) / countedStats.length
     : 0;
 
   /* ── handlers ── */
@@ -398,7 +421,9 @@ const Horis = () => {
             {sortedStats.map(h => {
               const active = isActive(h);
               const age = h.birth_date ? calcAge(h.birth_date) : null;
+              const counted = active || countInactive;
               const share = Math.max(0, Math.min(100, num(h.share_pct)));
+              const heat = heatColor(maxShare > 0 ? share / maxShare : 0);
               return (
                 <tr
                   key={h.id}
@@ -412,18 +437,16 @@ const Horis = () => {
                     <span>{fullName(h)}</span>
                   </td>
                   <td className="num">{age ?? '—'}</td>
-                  <td className={`num horis-mono ${active ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
+                  <td className={`num horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
-                    {active ? (
-                      <div className="horis-share">
-                        <div className="horis-share-track" aria-hidden="true">
-                          <div className="horis-share-fill" style={{ width: `${share}%` }} />
-                        </div>
+                    {counted ? (
+                      <div className="horis-heat" title={`${fmtPct(share)}`}>
+                        <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: heat.bg }} aria-hidden="true" />
                         <span className="horis-mono">{fmtPct(share)}</span>
                       </div>
                     ) : <span className="horis-muted">—</span>}
                   </td>
-                  <td className="num horis-mono horis-strong">{active ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
+                  <td className="num horis-mono horis-strong">{counted ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
                   <td className="num">
                     <div className="action-btns">
                       <button
@@ -459,7 +482,7 @@ const Horis = () => {
           <tfoot>
             <tr>
               <td colSpan={2}>{t('horis_total', 'Gesamt')}</td>
-              <td className="num horis-mono">{fmtHours(visibleActualHours)}</td>
+              <td className="num horis-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
               <td />
               <td className="num horis-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
                 <span className="horis-foot-label">{t('horis_avg_short', 'Ø')}</span> {formatCurrency(avgContribution)}
@@ -617,10 +640,16 @@ const Horis = () => {
           </button>
         </div>
         {view === 'overview' && (
-          <label className="horis-inactive-toggle">
-            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-            <span>{t('horis_show_inactive', 'Inaktive anzeigen')}</span>
-          </label>
+          <div className="horis-toggles">
+            <label className="horis-inactive-toggle">
+              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+              <span>{t('horis_show_inactive', 'Inaktive anzeigen')}</span>
+            </label>
+            <label className="horis-inactive-toggle">
+              <input type="checkbox" checked={countInactive} onChange={(e) => setCountInactive(e.target.checked)} />
+              <span>{t('horis_count_inactive', 'Inaktive mitzählen')}</span>
+            </label>
+          </div>
         )}
       </div>
 
@@ -632,7 +661,7 @@ const Horis = () => {
               <div>
                 <div className="horis-summary-label">{t('horis_summary_count', 'Horis')}</div>
                 <div className="horis-summary-value">
-                  {activeStats.length}
+                  {countedStats.length}
                 </div>
               </div>
             </div>
