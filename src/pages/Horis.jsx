@@ -412,8 +412,8 @@ const Horis = () => {
           <thead>
             <tr>
               {sortTh('name', t('horis_col_name', 'Name'))}
-              {sortTh('age', t('horis_col_age', 'Alter'), { className: 'num' })}
-              {sortTh('actual', t('horis_col_actual', 'Stunden'), { className: 'num' })}
+              {sortTh('age', t('horis_col_age', 'Alter'))}
+              {sortTh('actual', t('horis_col_actual', 'Stunden'))}
               {sortTh('share', t('horis_col_share', 'Anteil %'))}
               {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
               <th className="num" aria-label={t('col_actions', 'Aktionen')} />
@@ -439,8 +439,8 @@ const Horis = () => {
                   <td className="horis-name-cell">
                     <span>{fullName(h)}</span>
                   </td>
-                  <td className="num">{age ?? '—'}</td>
-                  <td className={`num horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
+                  <td>{age ?? '—'}</td>
+                  <td className={`horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
                     {counted ? (
                       <div className="horis-heat">
@@ -487,7 +487,7 @@ const Horis = () => {
           <tfoot>
             <tr>
               <td colSpan={2}>{t('horis_total', 'Gesamt')}</td>
-              <td className="num horis-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
+              <td className="horis-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
               <td />
               <td className="num horis-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
                 <span className="horis-foot-label">{t('horis_avg_short', 'Ø')}</span> {formatCurrency(avgContribution)}
