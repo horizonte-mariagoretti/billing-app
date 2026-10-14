@@ -391,7 +391,7 @@ const Horis = () => {
               {sortTh('actual', t('horis_col_actual', 'Stunden'), { className: 'num' })}
               {sortTh('share', t('horis_col_share', 'Anteil %'))}
               {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
-              <th className="num">{t('col_actions', 'Aktionen')}</th>
+              <th className="num" aria-label={t('col_actions', 'Aktionen')} />
             </tr>
           </thead>
           <tbody>
