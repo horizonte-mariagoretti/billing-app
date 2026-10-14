@@ -288,7 +288,7 @@ All tokens in `src/index.css` under `:root`.
 - `.search-bar` — icon + input, max-width 400px
 - `.page-error` — red alert banner
 - `.clients-table thead th, .doc-table thead th` — sticky headers
-- **Table alignment rule**: text and bars are left-aligned; numbers (counts, hours, money) are right-aligned. Header and cells always share the same edge (left edge for left-aligned, right edge for right-aligned columns), and the footer totals follow their column. Sort arrows in right-aligned headers go in front of the label so the label's right edge lines up with the numbers (see `.horis-table th.num .horis-sort-btn`).
+- **Table alignment rule**: text and bars are left-aligned; numbers (counts, hours, money) are right-aligned. Header and cells always share the same edge (left edge for left-aligned, right edge for right-aligned columns), and the footer totals follow their column. The sort arrow always sits after the label; right-aligned cells get a right gutter as wide as the arrow (17px) so the numbers end exactly where the header label ends (see `.horis-table td.num`).
 
 ### Responsive breakpoints
 - `1100px` — dashboard stats 4→2 col; bottom grid stacks

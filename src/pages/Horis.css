@@ -592,7 +592,9 @@
 .horis-sort-btn.active { color: var(--color-text-dark-primary); }
 .horis-sort-btn.active svg { opacity: 1; color: var(--color-primary); }
 .horis-sort-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
-/* Column alignment rule: text and bars are left-aligned (header and cells start at the same edge);
-   numbers are right-aligned (header text and cells end at the same edge, so the sort arrow
-   goes in front of the label in numeric headers instead of hanging off the right side). */
-.horis-table th.num .horis-sort-btn { justify-content: flex-end; flex-direction: row-reverse; }
+/* Column alignment rule: text and bars are left-aligned, numbers right-aligned. The sort arrow
+   always sits after the label. In right-aligned columns the cells get a gutter as wide as the
+   arrow (icon 13px + 4px gap), so the numbers end exactly where the header label ends. */
+.horis-table th.num .horis-sort-btn { justify-content: flex-end; }
+.horis-table td.num { padding-right: calc(var(--space-lg) + 17px); }
+.horis-table td.horis-actions { padding-right: var(--space-lg); }

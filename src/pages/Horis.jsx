@@ -452,7 +452,7 @@ const Horis = () => {
                     ) : <span className="horis-muted">—</span>}
                   </td>
                   <td className="num horis-mono horis-strong">{counted ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
-                  <td className="num">
+                  <td className="num horis-actions">
                     <div className="action-btns">
                       <button
                         type="button"

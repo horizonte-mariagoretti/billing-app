@@ -8,7 +8,7 @@
 - **Inactive Horis no longer count:** their hours are left out of the total (summary card and table footer) and out of everyone's Anteil %, and an inactive Hori shows "—" for Anteil and Lagerbeitrag. Their own hours stay visible, greyed out. Migration 24: DE/FR labels.
 - **Anteil % bars:** the share is now an in-cell data bar coloured with a heat gradient (red = lowest share → yellow → green = highest share, spanning the shares shown) with the bar length relative to the top Hori, with the same corners as the buttons and the percentage in front of the bar.
 - **"Inaktive mitzählen" toggle** next to "Inaktive anzeigen": when on, inactive Horis count in the hours total, the Horis count, Ø Lagerbeitrag and everyone's Anteil, exactly like active ones. Off by default.
-- **Column alignment** in the Horis table follows one rule: text and bars left, numbers right; header and cells (and footer totals) share the same edge. Sort arrows in numeric headers sit in front of the label so the header text lines up with the numbers; the Anteil number is left-aligned next to the bar.
+- **Column alignment** in the Horis table follows one rule: text and bars left, numbers right; header and cells (and footer totals) share the same edge. The sort arrow always sits after the label; numeric cells get a gutter as wide as the arrow so the numbers end under the header text; the Anteil number is left-aligned next to the bar.
 - **Summary cards:** "Aktive Horis" is now "Horis" and counts only active Horis (no "/ total"); "Gearbeitete Stunden gesamt" is now "Stunden gesamt" with the unit "h" in the same size as the number.
 
 ## [1.12.1] - 2026-10-14
