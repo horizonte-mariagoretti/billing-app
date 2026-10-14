@@ -49,7 +49,7 @@ const Bootstrap = () => {
     if (electronMode) return;
 
     // DEV BYPASS: skip GitHub auth in local Vite dev server.
-    // Uses an empty in-memory DB — data does not persist across reloads.
+    // Uses an in-memory DB pre-filled with sample data — nothing persists across reloads.
     // This code path is tree-shaken out of production builds (import.meta.env.DEV = false).
     if (import.meta.env.DEV) {
       let cancelled = false;
@@ -59,6 +59,16 @@ const Bootstrap = () => {
           await engine.init(null);
           engine.migrate();
           engine.installAsElectronShim();
+          // Fill the throw-away DB with sample content so every page has data
+          // to look at. Add ?empty to the URL for a blank database instead.
+          if (!new URLSearchParams(window.location.search).has('empty')) {
+            const { buildSampleStatements } = await import('./dev/sampleData.js');
+            // StrictMode runs this effect twice; only seed a still-empty database.
+            // (engine calls are synchronous, so check + insert cannot interleave.)
+            if (engine.query('SELECT COUNT(*) AS n FROM clients')[0].n === 0) {
+              engine.transaction(buildSampleStatements());
+            }
+          }
           if (!cancelled) setPhase('ready');
         } catch (err) {
           if (!cancelled) { setLoadError(err.message); setPhase('error'); }

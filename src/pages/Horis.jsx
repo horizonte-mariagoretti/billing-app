@@ -7,6 +7,7 @@ import { useT } from '../hooks/useUiTranslations';
 import { calcAge, formatTimeRange } from '../utils/jobHours';
 import { calcContribution, campRulesFromSettings } from '../utils/campContribution';
 import Button from '../components/Button';
+import SegmentedToggle from '../components/SegmentedToggle';
 import HoriModal from '../components/HoriModal';
 import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -624,26 +625,16 @@ const Horis = () => {
       )}
 
       <div className="horis-toolbar">
-        <div className="horis-segmented" role="tablist" aria-label={t('horis_view_label', 'Ansicht')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === 'overview'}
-            className={view === 'overview' ? 'active' : ''}
-            onClick={() => setView('overview')}
-          >
-            <LayoutList size={15} /> {t('horis_view_overview', 'Übersicht')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === 'matrix'}
-            className={view === 'matrix' ? 'active' : ''}
-            onClick={() => setView('matrix')}
-          >
-            <Grid3x3 size={15} /> {t('horis_view_matrix', 'Matrix')}
-          </button>
-        </div>
+        <SegmentedToggle
+          className="seg-toggle-fill"
+          ariaLabel={t('horis_view_label', 'Ansicht')}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'overview', label: t('horis_view_overview', 'Übersicht'), icon: <LayoutList size={15} /> },
+            { value: 'matrix', label: t('horis_view_matrix', 'Matrix'), icon: <Grid3x3 size={15} /> },
+          ]}
+        />
         {view === 'overview' && (
           <div className="horis-toggles">
             <label className="horis-inactive-toggle">

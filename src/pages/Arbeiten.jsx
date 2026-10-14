@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import useJobs from '../hooks/useJobs';
 import { useT } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
+import SegmentedToggle from '../components/SegmentedToggle';
 import ConfirmDialog from '../components/ConfirmDialog';
 import JobModal from '../components/JobModal';
 import JobCalendar from '../components/JobCalendar';
@@ -192,29 +193,16 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
         </Button>
       </div>
 
-      <div className="arbeiten-tabs" role="tablist" aria-label={t('arbeiten_view_label', 'Ansicht')}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'list'}
-          className={`arbeiten-tab${view === 'list' ? ' active' : ''}`}
-          onClick={() => changeView('list')}
-        >
-          <LayoutList size={15} aria-hidden="true" />
-          {t('arbeiten_view_list', 'Liste')}
-          <span className="arbeiten-tab-count">{filtered.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'calendar'}
-          className={`arbeiten-tab${view === 'calendar' ? ' active' : ''}`}
-          onClick={() => changeView('calendar')}
-        >
-          <CalendarDays size={15} aria-hidden="true" />
-          {t('arbeiten_view_calendar', 'Kalender')}
-        </button>
-      </div>
+      <SegmentedToggle
+        className="seg-toggle-fill"
+        ariaLabel={t('arbeiten_view_label', 'Ansicht')}
+        value={view}
+        onChange={changeView}
+        options={[
+          { value: 'list', label: t('arbeiten_view_list', 'Liste'), icon: <LayoutList size={15} aria-hidden="true" />, count: filtered.length },
+          { value: 'calendar', label: t('arbeiten_view_calendar', 'Kalender'), icon: <CalendarDays size={15} aria-hidden="true" /> },
+        ]}
+      />
       {error && (
         <div className="page-error" role="alert">
           <AlertCircle size={16} />

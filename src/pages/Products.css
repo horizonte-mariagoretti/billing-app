@@ -455,3 +455,98 @@
     font-size: 0.75rem;
   }
 }
+
+/* Category groups inside the product table */
+.products-table .products-group-row td {
+  padding: var(--space-xs) var(--space-lg);
+  background-color: var(--color-surface-muted);
+}
+.products-table .products-group-row:hover td { background-color: var(--color-surface-muted); }
+
+.products-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.products-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.products-group-toggle:hover { color: var(--color-text-dark-primary); }
+
+.products-group-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  font-size: 0.75rem;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.products-group-add {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.products-group-add:hover { color: var(--color-primary); background: var(--color-light-surface); }
+
+.products-group-toggle:focus-visible,
+.products-group-add:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Header actions + Produkte / Kategorien toggle (same look as Horis) */
+.products-header-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.products-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.manage-categories-panel .cat-chip-add { align-self: flex-start; }
+
+@media (max-width: 600px) {
+}
+
+.product-actions-cell .action-btns button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* One header button; its two labels cross-fade in the same spot (width = longer label, so nothing jumps) */
+.products-header-btn-labels {
+  display: inline-grid;
+  text-align: center;
+}
+
+.products-header-btn-labels > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.products-header-btn-labels > span.on { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .products-header-btn-labels > span { transition: none; }
+}

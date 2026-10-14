@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import SyncStatusBadge from '../sync/SyncStatusBadge';
 import { useT } from '../hooks/useUiTranslations';
+import OverlayScrollArea from './OverlayScrollArea';
 import './Layout.css';
 
 const isWebRuntime = typeof window !== 'undefined' && window.__ELECTRON_PRELOAD__ !== true;
@@ -69,9 +70,9 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
             {isWebRuntime && <SyncStatusBadge />}
           </div>
         </header>
-        <div className={`content-body${noPadding ? ' content-body--no-padding' : ''}`}>
+        <OverlayScrollArea className={`content-body${noPadding ? ' content-body--no-padding' : ''}`}>
           {children}
-        </div>
+        </OverlayScrollArea>
       </main>
       {/* Bottom nav: hidden in editor (noPadding) mode and on desktop via CSS */}
       {!noPadding && (
