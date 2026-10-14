@@ -22,9 +22,8 @@ const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
 
-// Heat scale for the Anteil bars: soft yellow -> light orange -> coral red, by share relative to the top Hori.
-// All stops are light enough that the dark number on top is readable at any bar length.
-const HEAT_STOPS = [[0, [253, 230, 138]], [0.5, [251, 176, 100]], [1, [240, 98, 90]]];
+// Heat scale for the Anteil bars, by share relative to the top Hori: soft yellow -> lime -> green (highest = good).
+const HEAT_STOPS = [[0, [253, 230, 138]], [0.5, [184, 224, 122]], [1, [72, 187, 120]]];
 function heatColor(rel) {
   const r = Math.max(0, Math.min(1, rel));
   const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
@@ -442,10 +441,10 @@ const Horis = () => {
                   <td>
                     {counted ? (
                       <div className="horis-heat">
+                        <span className="horis-mono">{fmtPct(share)}</span>
                         <div className="horis-heat-bar" aria-hidden="true">
                           <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: heat.bg }} />
                         </div>
-                        <span className="horis-mono">{fmtPct(share)}</span>
                       </div>
                     ) : <span className="horis-muted">—</span>}
                   </td>

@@ -205,7 +205,7 @@
   vertical-align: middle;
 }
 
-/* Anteil: bar coloured with a heat scale by share relative to the top Hori; the number sits next to it */
+/* Anteil: number first, then a bar coloured with a heat scale (green = highest) by share relative to the top Hori */
 .horis-heat {
   display: flex;
   align-items: center;
@@ -230,8 +230,8 @@
 }
 
 .horis-heat .horis-mono {
-  min-width: 48px;
-  text-align: left;
+  min-width: 52px;
+  text-align: right;
   color: var(--color-text-dark-primary);
   font-weight: 600;
 }
