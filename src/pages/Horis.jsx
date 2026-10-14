@@ -22,8 +22,8 @@ const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
 
-// Heat scale for the Anteil bars, by share relative to the top Hori: soft yellow -> lime -> green (highest = good).
-const HEAT_STOPS = [[0, [253, 230, 138]], [0.5, [184, 224, 122]], [1, [72, 187, 120]]];
+// Heat scale for the Anteil bars: soft red (lowest share) -> yellow -> green (highest share).
+const HEAT_STOPS = [[0, [238, 112, 104]], [0.5, [252, 218, 108]], [1, [72, 187, 120]]];
 function heatColor(rel) {
   const r = Math.max(0, Math.min(1, rel));
   const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
@@ -269,7 +269,9 @@ const Horis = () => {
     }
   };
   // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
-  const maxShare = Math.max(0, ...visibleStats.filter(h => isActive(h) || countInactive).map(h => num(h.share_pct)));
+  const countedShares = visibleStats.filter(h => isActive(h) || countInactive).map(h => num(h.share_pct));
+  const maxShare = Math.max(0, ...countedShares);
+  const minShare = countedShares.length ? Math.min(...countedShares) : 0;
   const sortedStats = [...visibleStats].sort((a, b) => {
     const va = sortValue(a, sort.key);
     const vb = sortValue(b, sort.key);
@@ -423,7 +425,8 @@ const Horis = () => {
               const age = h.birth_date ? calcAge(h.birth_date) : null;
               const counted = active || countInactive;
               const share = Math.max(0, Math.min(100, num(h.share_pct)));
-              const heat = heatColor(maxShare > 0 ? share / maxShare : 0);
+              // Colour spans lowest -> highest share of the rows shown; a single row (or all equal) is green.
+              const heat = heatColor(maxShare > minShare ? (share - minShare) / (maxShare - minShare) : 1);
               return (
                 <tr
                   key={h.id}
