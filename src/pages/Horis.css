@@ -205,21 +205,24 @@
   vertical-align: middle;
 }
 
-/* Anteil: in-cell data bar, colour = heat scale by share relative to the top Hori */
+/* Anteil: bar coloured with a heat scale by share relative to the top Hori; the number sits next to it */
 .horis-heat {
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  min-width: 130px;
-  height: 28px;
-  padding: 0 10px;
+  gap: var(--space-sm);
+  min-width: 160px;
+}
+
+.horis-heat-bar {
+  position: relative;
+  flex: 1;
+  height: 24px;
   border-radius: var(--radius-md);
   background-color: var(--color-light-bg);
   overflow: hidden;
 }
 
-.horis-heat i {
+.horis-heat-bar i {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: var(--radius-md);
@@ -227,7 +230,8 @@
 }
 
 .horis-heat .horis-mono {
-  position: relative;
+  min-width: 52px;
+  text-align: right;
   color: var(--color-text-dark-primary);
   font-weight: 600;
 }

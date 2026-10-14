@@ -6,7 +6,7 @@
 - **Horis table cleaned up:** the Jobs and Geplant columns are removed (jobs and planned hours are still in the details popup when you click a Hori); the "Gearbeitete Std." column is now just "Stunden".
 - **Activate/deactivate from the actions column** (new icon next to edit and delete).
 - **Inactive Horis no longer count:** their hours are left out of the total (summary card and table footer) and out of everyone's Anteil %, and an inactive Hori shows "—" for Anteil and Lagerbeitrag. Their own hours stay visible, greyed out. Migration 24: DE/FR labels.
-- **Anteil % bars:** the share is now an in-cell data bar coloured with a light heat gradient (yellow → orange → coral) by share relative to the top Hori, with the same rounded corners as the buttons and the percentage in dark text on top (all colours are light enough for dark text).
+- **Anteil % bars:** the share is now an in-cell data bar coloured with a light heat gradient (yellow → orange → coral) by share relative to the top Hori, with the same rounded corners as the buttons and the percentage next to the bar.
 - **"Inaktive mitzählen" toggle** next to "Inaktive anzeigen": when on, inactive Horis count in the hours total, the Horis count, Ø Lagerbeitrag and everyone's Anteil, exactly like active ones. Off by default.
 - **Summary cards:** "Aktive Horis" is now "Horis" and counts only active Horis (no "/ total"); "Gearbeitete Stunden gesamt" is now "Stunden gesamt" with the unit "h" in the same size as the number.
 

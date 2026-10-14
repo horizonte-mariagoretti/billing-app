@@ -441,8 +441,10 @@ const Horis = () => {
                   <td className={`num horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
                     {counted ? (
-                      <div className="horis-heat" title={`${fmtPct(share)}`}>
-                        <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: heat.bg }} aria-hidden="true" />
+                      <div className="horis-heat">
+                        <div className="horis-heat-bar" aria-hidden="true">
+                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: heat.bg }} />
+                        </div>
                         <span className="horis-mono">{fmtPct(share)}</span>
                       </div>
                     ) : <span className="horis-muted">—</span>}
