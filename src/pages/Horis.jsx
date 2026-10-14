@@ -22,8 +22,9 @@ const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
 
-// Heat scale for the Anteil bars: warm yellow -> orange -> brand red, by share relative to the top Hori.
-const HEAT_STOPS = [[0, [247, 215, 116]], [0.5, [239, 138, 61]], [1, [187, 22, 21]]];
+// Heat scale for the Anteil bars: soft yellow -> light orange -> coral red, by share relative to the top Hori.
+// All stops are light enough that the dark number on top is readable at any bar length.
+const HEAT_STOPS = [[0, [253, 230, 138]], [0.5, [251, 176, 100]], [1, [240, 98, 90]]];
 function heatColor(rel) {
   const r = Math.max(0, Math.min(1, rel));
   const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
