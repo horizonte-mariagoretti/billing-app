@@ -229,6 +229,8 @@
   transition: width var(--transition-normal), background-color var(--transition-normal);
 }
 
+.horis-row.inactive .horis-heat .horis-mono { color: var(--color-text-dark-tertiary); }
+
 .horis-heat .horis-mono {
   min-width: 44px;
   text-align: left;

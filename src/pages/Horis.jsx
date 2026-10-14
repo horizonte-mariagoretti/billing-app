@@ -446,7 +446,7 @@ const Horis = () => {
                       <div className="horis-heat">
                         <span className="horis-mono">{fmtPct(share)}</span>
                         <div className="horis-heat-bar" aria-hidden="true">
-                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: heat.bg }} />
+                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: active ? heat.bg : 'var(--color-text-dark-tertiary)' }} />
                         </div>
                       </div>
                     ) : <span className="horis-muted">—</span>}
