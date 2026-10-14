@@ -1,47 +1,10 @@
 .arbeiten-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
 }
 
 /* ── Segmented tabs (Kommend / Vergangen) ── */
-.arbeiten-tabs {
-  display: inline-flex;
-  align-self: flex-start;
-  gap: var(--space-2xs);
-  padding: var(--space-2xs);
-  background-color: var(--color-light-surface);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-md);
-}
-
-.arbeiten-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 6px var(--space-sm);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-dark-secondary);
-  cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-
-.arbeiten-tab:hover {
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-dark-primary);
-}
-
-.arbeiten-tab.active {
-  background-color: var(--color-primary-alpha);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
 .arbeiten-tab-count {
   min-width: 22px;
   padding: 1px 7px;
@@ -53,12 +16,6 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
-}
-
-.arbeiten-tab.active .arbeiten-tab-count {
-  background-color: var(--color-light-surface);
-  border-color: var(--color-primary-border-light);
-  color: var(--color-primary);
 }
 
 /* ── Table ── */
@@ -353,14 +310,6 @@ button.arbeiten-doc-chip:hover {
 
   .arbeiten-page .search-bar { max-width: 100%; }
 
-  .arbeiten-tabs {
-    align-self: stretch;
-  }
-
-  .arbeiten-tab {
-    flex: 1;
-    justify-content: center;
-  }
 }
 
 /* Mobile card view: reflow rows as compact cards */

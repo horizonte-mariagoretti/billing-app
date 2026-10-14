@@ -200,6 +200,12 @@ input:focus, textarea:focus, select:focus {
 .search-bar input {
   width: 100%;
   padding-left: calc(var(--space-sm) * 3);
+  box-sizing: border-box;
+  height: 40px; /* matches .btn-md so the search aligns with the action buttons */
+}
+
+@media (max-width: 768px) {
+  .search-bar input { height: 44px; }
 }
 
 /* Shared error banner used by all data pages */

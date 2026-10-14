@@ -20,41 +20,8 @@
   justify-content: space-between;
   gap: var(--space-md);
   flex-wrap: wrap;
-  margin-top: calc(-1 * var(--space-md));
 }
 
-.horis-segmented {
-  display: inline-flex;
-  gap: var(--space-2xs);
-  background: var(--color-light-bg);
-  padding: var(--space-2xs);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light-theme);
-}
-
-.horis-segmented button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-dark-tertiary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.horis-segmented button:hover { color: var(--color-text-dark-primary); }
-
-.horis-segmented button.active {
-  background: var(--color-light-surface);
-  color: var(--color-primary);
-}
-
-.horis-segmented button:focus-visible,
 .horis-row:focus-visible,
 .horis-matrix-name button:focus-visible,
 .horis-matrix-scroll:focus-visible {
@@ -317,7 +284,6 @@
   flex-wrap: wrap;
   font-size: 0.8rem;
   color: var(--color-text-dark-secondary);
-  margin-top: calc(-1 * var(--space-md));
 }
 
 .horis-legend span {
@@ -559,9 +525,6 @@
 
   .horis-page .search-bar { max-width: 100%; }
 
-  .horis-toolbar { margin-top: 0; }
-  .horis-segmented { flex: 1; }
-  .horis-segmented button { flex: 1; justify-content: center; }
 
   .horis-detail-header { margin-bottom: var(--space-md); }
 }

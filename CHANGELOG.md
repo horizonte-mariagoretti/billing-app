@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.3] - 2026-10-14
+
+### Changed
+- **Sample data in web dev:** `npm run dev:web` now starts with a throw-away in-memory database filled with sample categories, products, clients, Horis, Arbeiten, quotes, invoices (all statuses incl. overdue/cash), payments and audit events, so every page can be reviewed with content. Nothing is saved; add `?empty` to the URL for a blank database. Production builds are unaffected.
+- **Overlay page scrollbar:** the main content area uses a slim scrollbar that floats over the right edge (fades in while scrolling or hovering, draggable) and takes no layout space, so content no longer shifts left when a page grows taller than the window.
+- **Animated view toggles:** Arbeiten (Liste / Kalender), Horis (Übersicht / Matrix) and Products (Produkte / Kategorien) now share one `SegmentedToggle` component whose highlight slides smoothly between options (respects reduced-motion). The Products header has a single primary button that changes with the view (Add Product on Produkte, New Category on Kategorien) and cross-fades its label on change.
+- **Search bars** on Offers, Invoices, Clients, Products, Arbeiten and Horis are now the same height as the action buttons next to them (40px, 44px on mobile).
+- **Products grouped by category:** the category chip strip is gone. The table now shows one collapsible section per category (colour dot, name, count, and a + to add a product to that category), with uncategorised products last. The Category column is removed. A Produkte / Kategorien toggle (same style as Horis Übersicht / Matrix) switches to the category manager (reorder, edit, delete, product counts); a "New Category" button sits next to "Add Product" like "Mehrere hinzufügen" on Horis.
+- **Arbeiten view toggle (Kommend / Vergangen)** now uses the same segmented style as the Horis Übersicht / Matrix toggle, with the same spacing below the search bar as Produkte (also applied to the Horis toggle).
+
 ## [1.12.2] - 2026-10-14
 
 ### Changed

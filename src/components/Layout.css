@@ -156,6 +156,7 @@
 
 .content-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-xl);
   animation: fadeIn 0.4s ease-out;
@@ -235,4 +236,49 @@
     width: 44px;
     height: 44px;
   }
+}
+
+/* Overlay scrollbar: visible, but floats over the content and takes no layout space */
+.overlay-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-scroll-body {
+  scrollbar-width: none;
+}
+.overlay-scroll-body::-webkit-scrollbar { display: none; }
+
+.overlay-scroll-track {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  width: 10px;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  z-index: 5;
+}
+.overlay-scroll-track.active,
+.overlay-scroll-track:hover { opacity: 1; }
+
+.overlay-scroll-thumb {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  width: 6px;
+  border-radius: var(--radius-full);
+  background: #94A3B8;
+  opacity: 0.7;
+  cursor: grab;
+  transition: width 150ms ease, background-color 150ms ease;
+}
+.overlay-scroll-track:hover .overlay-scroll-thumb,
+.overlay-scroll-thumb:active { width: 8px; background: #64748B; }
+
+@media (hover: none) {
+  .overlay-scroll-track { display: none; }
 }

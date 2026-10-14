@@ -4,13 +4,14 @@ import useSettings from '../hooks/useSettings';
 import { useT, getUiLang } from '../hooks/useUiTranslations';
 import useFocusTrap from '../hooks/useFocusTrap';
 import Button from '../components/Button';
+import SegmentedToggle from '../components/SegmentedToggle';
 import Input from '../components/Input';
 import StyledSelect from '../components/StyledSelect';
 import CategoryEditor from '../components/CategoryEditor';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
-  Plus, Search, Package, Edit2, Trash2,
-  ChevronDown, ChevronUp, ArrowUp, ArrowDown, AlertCircle
+  Plus, Search, Package, Edit2, Trash2, Tags, LayoutList,
+  ChevronDown, ChevronRight, ArrowUp, ArrowDown, AlertCircle
 } from 'lucide-react';
 import './Products.css';
 
@@ -36,7 +37,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [collapsed, setCollapsed] = useState(() => new Set());
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [activeLang, setActiveLang] = useState('de');
@@ -46,7 +47,7 @@ const Products = () => {
 
   // Category UI state
   const [showStripEditor, setShowStripEditor] = useState(false);
-  const [showManagePanel, setShowManagePanel] = useState(false);
+  const [view, setView] = useState('products'); // 'products' | 'categories'
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [showInlineModalCatEditor, setShowInlineModalCatEditor] = useState(false);
 
@@ -140,7 +141,6 @@ const Products = () => {
     } else if (confirm.type === 'category') {
       await run('UPDATE products SET category_id = NULL WHERE category_id = ?', [confirm.id]);
       await run('DELETE FROM product_categories WHERE id = ?', [confirm.id]);
-      if (activeCategory === confirm.id) setActiveCategory('all');
       fetchAll();
     }
     setConfirm(null);
@@ -162,11 +162,17 @@ const Products = () => {
     setShowModal(true);
   };
 
-  const handleNew = () => {
+  const startNewCategory = () => {
+    setView('categories');
+    setEditingCategoryId(null);
+    setShowStripEditor(true);
+  };
+
+  const handleNew = (presetCategory) => {
     setEditingProduct(null);
     setFormData({
       ...EMPTY_PRODUCT,
-      category_id: activeCategory !== 'all' ? activeCategory : '',
+      category_id: presetCategory || '',
     });
     setShowInlineModalCatEditor(false);
     setShowModal(true);
@@ -230,7 +236,6 @@ const Products = () => {
   };
 
   const filteredProducts = products
-    .filter((p) => activeCategory === 'all' || p.category_id === activeCategory)
     .filter((p) => {
       if (!search) return true;
       const s = search.toLowerCase();
@@ -239,6 +244,17 @@ const Products = () => {
     });
 
   const categoryById = (id) => categories.find(c => c.id === id);
+
+  const groups = [
+    ...categories.map((cat) => ({ key: cat.id, cat, items: filteredProducts.filter((p) => p.category_id === cat.id) })),
+    { key: 'none', cat: null, items: filteredProducts.filter((p) => !categoryById(p.category_id)) },
+  ].filter((g) => g.items.length > 0 || (!search && g.cat));
+
+  const toggleGroup = (key) => setCollapsed((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
 
   return (
     <div className="products-page">
@@ -252,8 +268,17 @@ const Products = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
-          {t('products_add', 'Add Product')}
+        <Button
+          ref={openBtnRef}
+          className="products-header-btn"
+          variant="primary"
+          icon={Plus}
+          onClick={view === 'categories' ? startNewCategory : () => handleNew()}
+        >
+          <span className="products-header-btn-labels">
+            <span className={view === 'products' ? 'on' : ''} aria-hidden={view !== 'products'}>{t('products_add', 'Add Product')}</span>
+            <span className={view === 'categories' ? 'on' : ''} aria-hidden={view !== 'categories'}>{t('products_new_category', 'New Category')}</span>
+          </span>
         </Button>
       </div>
 
@@ -264,96 +289,92 @@ const Products = () => {
         </div>
       )}
 
-      <div className="categories-strip-wrap">
-        <div className="categories-strip">
-          <button
-            className={`cat-chip ${activeCategory === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('all')}
-          >
-            {t('products_all', 'All')} <span className="cat-chip-count">{products.length}</span>
-          </button>
-          {categories.map((cat) => {
-            const count = products.filter(p => p.category_id === cat.id).length;
-            const isActive = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                className={`cat-chip ${isActive ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat.id)}
-                style={isActive ? { backgroundColor: cat.color, color: '#0a0c10', borderColor: cat.color } : { borderColor: cat.color }}
-              >
-                <span className="cat-chip-dot" style={{ backgroundColor: cat.color }} />
-                {cat.name} <span className="cat-chip-count">{count}</span>
-              </button>
-            );
-          })}
-          {!showStripEditor && (
-            <button
-              className="cat-chip cat-chip-add"
-              onClick={() => setShowStripEditor(true)}
-              title={t('products_create_category', 'Create category')}
-            >
-              <Plus size={14} /> {t('products_new_category', 'New Category')}
-            </button>
-          )}
-        </div>
-        {showStripEditor && (
-          <CategoryEditor
-            initial={null}
-            onSave={handleStripSave}
-            onCancel={() => setShowStripEditor(false)}
-          />
-        )}
-        {categories.length > 0 && (
-          <button
-            className="manage-categories-toggle"
-            onClick={() => setShowManagePanel(!showManagePanel)}
-          >
-            {showManagePanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showManagePanel ? t('products_hide', 'Hide') : t('products_manage_categories', 'Manage categories')}
-          </button>
-        )}
-
-        {showManagePanel && (
-          <div className="manage-categories-panel">
-            {categories.map((cat, idx) => (
-              <div key={cat.id} className="manage-cat-row">
-                {editingCategoryId === cat.id ? (
-                  <CategoryEditor
-                    initial={cat}
-                    onSave={handleManageSave}
-                    onCancel={() => setEditingCategoryId(null)}
-                  />
-                ) : (
-                  <>
-                    <span className="manage-cat-swatch" style={{ backgroundColor: cat.color }} />
-                    <span className="manage-cat-name">{cat.name}</span>
-                    <span className="manage-cat-langs">
-                      {cat.name_de && <span className="cat-lang-tag">DE</span>}
-                      {cat.name_fr && <span className="cat-lang-tag">FR</span>}
-                    </span>
-                    <div className="manage-cat-actions">
-                      <button title={t('products_move_up', 'Move up')} onClick={() => moveCategory(cat.id, 'up')} disabled={idx === 0}>
-                        <ArrowUp size={14} />
-                      </button>
-                      <button title={t('products_move_down', 'Move down')} onClick={() => moveCategory(cat.id, 'down')} disabled={idx === categories.length - 1}>
-                        <ArrowDown size={14} />
-                      </button>
-                      <button title={t('btn_edit', 'Edit')} onClick={() => setEditingCategoryId(cat.id)}>
-                        <Edit2 size={14} />
-                      </button>
-                      <button title={t('btn_delete', 'Delete')} aria-label={`${t('btn_delete', 'Delete')} category ${cat.name}`} onClick={() => deleteCategory(cat.id, cat.name)}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="products-toolbar">
+        <SegmentedToggle
+          className="seg-toggle-fill"
+          ariaLabel={t('products_view_label', 'Ansicht')}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'products', label: t('products_view_products', 'Produkte'), icon: <LayoutList size={15} /> },
+            { value: 'categories', label: t('products_view_categories', 'Kategorien'), icon: <Tags size={15} /> },
+          ]}
+        />
       </div>
 
+      {view === 'categories' && (
+        <div className="products-table-container">
+          {categories.length === 0 && !showStripEditor ? (
+            <div className="products-empty">
+              <Tags size={32} strokeWidth={1.3} />
+              <div className="products-empty-title">{t('products_no_categories', 'Noch keine Kategorien')}</div>
+            </div>
+          ) : (
+            <table className="products-table">
+              <thead>
+                <tr>
+                  <th>{t('col_name', 'Name')}</th>
+                  <th>{t('products_cat_languages', 'Sprachen')}</th>
+                  <th>{t('products_view_products', 'Produkte')}</th>
+                  <th>{t('col_actions', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {showStripEditor && (
+                  <tr>
+                    <td colSpan={4}>
+                      <CategoryEditor
+                        initial={null}
+                        onSave={handleStripSave}
+                        onCancel={() => setShowStripEditor(false)}
+                      />
+                    </td>
+                  </tr>
+                )}
+                {categories.map((cat, idx) => (
+                  editingCategoryId === cat.id ? (
+                    <tr key={cat.id}>
+                      <td colSpan={4}>
+                        <CategoryEditor
+                          initial={cat}
+                          onSave={handleManageSave}
+                          onCancel={() => setEditingCategoryId(null)}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={cat.id} className="product-row-clickable" onClick={() => setEditingCategoryId(cat.id)}>
+                      <td>
+                        <div className="product-name-cell">
+                          <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />
+                          <span className="product-name-text">{cat.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="manage-cat-langs">
+                          {cat.name_de && <span className="cat-lang-tag">DE</span>}
+                          {cat.name_fr && <span className="cat-lang-tag">FR</span>}
+                        </span>
+                      </td>
+                      <td className="product-unit-cell">{products.filter((p) => p.category_id === cat.id).length}</td>
+                      <td className="product-actions-cell">
+                        <div className="action-btns">
+                          <button title={t('products_move_up', 'Move up')} aria-label={t('products_move_up', 'Move up')} disabled={idx === 0} onClick={(e) => { e.stopPropagation(); moveCategory(cat.id, 'up'); }}><ArrowUp size={16} /></button>
+                          <button title={t('products_move_down', 'Move down')} aria-label={t('products_move_down', 'Move down')} disabled={idx === categories.length - 1} onClick={(e) => { e.stopPropagation(); moveCategory(cat.id, 'down'); }}><ArrowDown size={16} /></button>
+                          <button title={t('btn_edit', 'Edit')} aria-label={`${t('btn_edit', 'Edit')} ${cat.name}`} onClick={(e) => { e.stopPropagation(); setEditingCategoryId(cat.id); }}><Edit2 size={16} /></button>
+                          <button title={t('btn_delete', 'Delete')} aria-label={`${t('btn_delete', 'Delete')} ${cat.name}`} onClick={(e) => { e.stopPropagation(); deleteCategory(cat.id, cat.name); }}><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {view === 'products' && (
       <div className="products-table-container">
         {filteredProducts.length === 0 ? (
           <div className="products-empty">
@@ -370,50 +391,75 @@ const Products = () => {
             <thead>
               <tr>
                 <th>{t('col_name', 'Name')}</th>
-                <th>{t('products_field_category', 'Category')}</th>
                 <th>{t('products_field_rate', 'Rate')}</th>
                 <th>{t('products_field_unit', 'Unit')}</th>
                 <th>{t('col_actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((product) => {
-                const cat = categoryById(product.category_id);
-                const displayName = getLocalizedName(product);
+              {groups.map((group) => {
+                const isCollapsed = collapsed.has(group.key);
+                const label = group.cat ? group.cat.name : t('products_uncategorised_group', 'Ohne Kategorie');
                 return (
-                  <tr key={product.id} className="product-row-clickable" onClick={() => handleEdit(product)}>
-                    <td>
-                      <div className="product-name-cell">
-                        {cat && <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />}
-                        <span className="product-name-text">{displayName || product.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      {cat ? (
-                        <span className="product-cat-tag" style={{ borderColor: cat.color, color: cat.color }}>
-                          {cat.name}
-                        </span>
-                      ) : (
-                        <span className="product-no-cat">{t('products_uncategorised', '—')}</span>
-                      )}
-                    </td>
-                    <td className="product-rate-cell">
-                      {product.rate.toLocaleString('de-DE', { style: 'currency', currency: settings?.default_currency || 'EUR' })}
-                    </td>
-                    <td className="product-unit-cell">{product.unit}</td>
-                    <td className="product-actions-cell">
-                      <div className="action-btns">
-                        <button aria-label={`${t('btn_edit', 'Edit')} ${product.name}`} title={t('btn_edit', 'Edit')} onClick={(e) => { e.stopPropagation(); handleEdit(product); }}><Edit2 size={16} /></button>
-                        <button aria-label={`${t('btn_delete', 'Delete')} ${product.name}`} title={t('btn_delete', 'Delete')} onClick={(e) => { e.stopPropagation(); handleDelete(product.id, product.name); }}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
+                  <React.Fragment key={group.key}>
+                    <tr className="products-group-row">
+                      <td colSpan={4}>
+                        <div className="products-group-head">
+                          <button
+                            type="button"
+                            className="products-group-toggle"
+                            aria-expanded={!isCollapsed}
+                            onClick={() => toggleGroup(group.key)}
+                          >
+                            {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                            {group.cat && <span className="product-cat-dot" style={{ backgroundColor: group.cat.color }} />}
+                            <span>{label}</span>
+                            <span className="products-group-count">{group.items.length}</span>
+                          </button>
+                          {group.cat && (
+                            <button
+                              type="button"
+                              className="products-group-add"
+                              title={t('products_add', 'Add Product')}
+                              aria-label={`${t('products_add', 'Add Product')} - ${label}`}
+                              onClick={() => handleNew(group.cat.id)}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {!isCollapsed && group.items.map((product) => {
+                      const displayName = getLocalizedName(product);
+                      return (
+                        <tr key={product.id} className="product-row-clickable" onClick={() => handleEdit(product)}>
+                          <td>
+                            <div className="product-name-cell">
+                              <span className="product-name-text">{displayName || product.name}</span>
+                            </div>
+                          </td>
+                          <td className="product-rate-cell">
+                            {product.rate.toLocaleString('de-DE', { style: 'currency', currency: settings?.default_currency || 'EUR' })}
+                          </td>
+                          <td className="product-unit-cell">{product.unit}</td>
+                          <td className="product-actions-cell">
+                            <div className="action-btns">
+                              <button aria-label={`${t('btn_edit', 'Edit')} ${product.name}`} title={t('btn_edit', 'Edit')} onClick={(e) => { e.stopPropagation(); handleEdit(product); }}><Edit2 size={16} /></button>
+                              <button aria-label={`${t('btn_delete', 'Delete')} ${product.name}`} title={t('btn_delete', 'Delete')} onClick={(e) => { e.stopPropagation(); handleDelete(product.id, product.name); }}><Trash2 size={16} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         )}
       </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}>
