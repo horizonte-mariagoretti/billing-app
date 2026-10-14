@@ -410,7 +410,6 @@ const Horis = () => {
                 >
                   <td className="horis-name-cell">
                     <span>{fullName(h)}</span>
-                    {!active && <span className="horis-badge-inactive">{t('horis_inactive', 'Inaktiv')}</span>}
                   </td>
                   <td className="num">{age ?? '—'}</td>
                   <td className={`num horis-mono ${active ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
