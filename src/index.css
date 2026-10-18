@@ -144,6 +144,13 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--color-primary);
 }
 
+/* Scrollbar — Firefox ignores ::-webkit-scrollbar; use its thin native bar
+   for any scroller that isn't an OverlayScrollArea. Scoped to Firefox so
+   Chromium keeps the webkit styling below. */
+@supports (-moz-appearance: none) {
+  :root { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

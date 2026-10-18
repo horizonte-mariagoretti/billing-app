@@ -5,6 +5,7 @@ import { useT } from '../hooks/useUiTranslations';
 import { parseHoriLines } from '../utils/horiImport';
 import Button from './Button';
 import { AlertCircle, Check } from 'lucide-react';
+import OverlayScrollArea, { OverlayScrollBox } from './OverlayScrollArea';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './HoriModal.css';
 import './BulkHoriModal.css';
@@ -53,7 +54,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bulk-hori-title">
-      <div className="modal-content horis-modal bulk-hori-modal" ref={modalRef}>
+      <OverlayScrollBox className="modal-content horis-modal bulk-hori-modal" innerRef={modalRef}>
         <h2 id="bulk-hori-title">{t('horis_bulk_title', 'Mehrere Horis hinzufügen')}</h2>
         <p className="bulk-hori-help">
           {t('horis_bulk_help', 'Pro Zeile ein Hori: Vorname Nachname und Geburtsdatum, z. B. Anna Muster 14.03.2011. Kann direkt aus einer Tabelle eingefügt werden.')}
@@ -76,7 +77,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
         />
 
         {rows.length > 0 && (
-          <div className="bulk-hori-preview">
+          <OverlayScrollArea className="bulk-hori-preview">
             <table className="bulk-hori-table">
               <thead>
                 <tr>
@@ -104,7 +105,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </OverlayScrollArea>
         )}
 
         <div className="modal-actions">
@@ -121,7 +122,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
               : `${valid.length || ''} ${t('horis_bulk_import', 'Horis importieren')}`.trim()}
           </Button>
         </div>
-      </div>
+      </OverlayScrollBox>
     </div>
   );
 };

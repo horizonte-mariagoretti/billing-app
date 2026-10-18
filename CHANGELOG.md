@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.6] - 2026-10-18
+
+### Changed
+- **Overlay scrollbar in dialogs:** the floating scrollbar now also applies to all popups (Kunde, Hori, mehrere Horis, Hori detail, Arbeit, Dokument aus Arbeit, Aus Arbeit laden) and their inner lists (Horis in Arbeit, Arbeiten picker, bulk preview) via a new `OverlayScrollBox`.
+- **Firefox speed:** dialog overlays no longer use `backdrop-filter: blur` (full-screen blur is slow in Firefox and was barely visible under the dark overlay).
+- **Firefox:** other scrollers fall back to Firefox's thin scrollbar, since Firefox ignores the `::-webkit-scrollbar` styling.
+
 ## [1.12.5] - 2026-10-18
 
 ### Changed

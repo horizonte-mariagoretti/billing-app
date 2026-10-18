@@ -1,3 +1,4 @@
+import { OverlayScrollBox } from '../components/OverlayScrollArea';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import useHoris from '../hooks/useHoris';
 import useSettings from '../hooks/useSettings';
@@ -90,7 +91,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="horis-detail-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-content horis-detail" ref={ref}>
+      <OverlayScrollBox className="modal-content horis-detail" innerRef={ref}>
         <div className="horis-detail-header">
           <div>
             <h2 id="horis-detail-title">{fullName(hori)}</h2>
@@ -170,7 +171,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
             {t('btn_edit', 'Bearbeiten')}
           </Button>
         </div>
-      </div>
+      </OverlayScrollBox>
     </div>
   );
 };
