@@ -12,7 +12,6 @@ import DatePicker from './DatePicker';
 import ClientPicker from './ClientPicker';
 import { computeHours } from '../utils/jobHours';
 import { AlertCircle, Check, X, FileText, Receipt, FilePlus, ReceiptText } from 'lucide-react';
-import OverlayScrollArea, { OverlayScrollBox } from './OverlayScrollArea';
 import './JobModal.css';
 
 const todayISO = () => {
@@ -324,7 +323,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
   return (
     <div className="job-modal-overlay" ref={overlayRef} role="dialog" aria-modal="true" aria-label={heading}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <OverlayScrollBox className="job-modal-content" innerRef={modalRef}>
+      <div className="job-modal-content" ref={modalRef}>
         <div className="job-modal-head">
           <h2>{heading}</h2>
           <button type="button" className="job-modal-close" onClick={onCancel}
@@ -508,7 +507,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
                     <span>{t('arbeiten_planned_hours', 'Std. geplant')}</span>
                     <span>{t('arbeiten_actual_hours', 'Std. gearbeitet')}</span>
                   </div>
-                  <OverlayScrollArea as="ul" className="job-modal-hori-list">
+                  <ul className="job-modal-hori-list">
                     {visibleHoris.map((h) => {
                       const a = assign[h.id];
                       const name = `${h.first_name || ''} ${h.last_name || ''}`.trim();
@@ -551,7 +550,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
                         </li>
                       );
                     })}
-                  </OverlayScrollArea>
+                  </ul>
                   {selectedCount > 0 && (
                     <div className="job-modal-hori-total">
                       <span>{t('arbeiten_total', 'Summe')}</span>
@@ -597,7 +596,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
           </form>
         )}
 
-      </OverlayScrollBox>
+      </div>
     </div>
   );
 };

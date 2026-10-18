@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, Search, Users } from 'lucide-react';
-import OverlayScrollArea, { OverlayScrollBox } from './OverlayScrollArea';
 import Button from './Button';
 import JobRateSource from './JobRateSource';
 import useJobRateSource from '../hooks/useJobRateSource';
@@ -124,7 +123,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
       aria-labelledby="job-lines-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <OverlayScrollBox className="job-doc-box job-lines-box" innerRef={boxRef}>
+      <div className="job-doc-box job-lines-box" ref={boxRef}>
         <h3 id="job-lines-title">{t('joblines_title', 'Positionen aus Arbeit laden')}</h3>
         <p className="job-doc-hint">
           {t('joblines_hint', 'Wähle eine Arbeit: je Stundenanzahl der Horis wird eine Position angehängt (Menge = Anzahl Horis, Dauer = Stunden).')}
@@ -146,7 +145,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
                   aria-label={t('joblines_search', 'Arbeit suchen…')}
                 />
               </div>
-              <OverlayScrollArea as="ul" className="job-lines-list" aria-labelledby="job-lines-list-label">
+              <ul className="job-lines-list" aria-labelledby="job-lines-list-label">
                 {visibleJobs.length === 0 ? (
                   <li className="job-lines-empty">{t('joblines_empty', 'Keine Arbeiten gefunden')}</li>
                 ) : visibleJobs.map((j) => {
@@ -178,7 +177,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
                     </li>
                   );
                 })}
-              </OverlayScrollArea>
+              </ul>
             </div>
 
             {job && <JobRateSource rs={rs} job={job} type={type} idPrefix="job-lines" />}
@@ -196,7 +195,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
             </div>
           </form>
         )}
-      </OverlayScrollBox>
+      </div>
     </div>,
     document.body
   );

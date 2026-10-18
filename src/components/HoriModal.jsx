@@ -7,7 +7,6 @@ import Button from './Button';
 import Input from './Input';
 import DatePicker from './DatePicker';
 import { AlertCircle } from 'lucide-react';
-import { OverlayScrollBox } from './OverlayScrollArea';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row styles
 import './HoriModal.css';
 
@@ -72,7 +71,7 @@ const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="hori-modal-title">
-      <OverlayScrollBox className="modal-content horis-modal" innerRef={modalRef}>
+      <div className="modal-content horis-modal" ref={modalRef}>
         <h2 id="hori-modal-title">{title}</h2>
         <form onSubmit={handleSubmit} noValidate>
           {saveError && (
@@ -134,7 +133,7 @@ const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
             </Button>
           </div>
         </form>
-      </OverlayScrollBox>
+      </div>
     </div>
   );
 };

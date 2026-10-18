@@ -279,19 +279,6 @@
 .overlay-scroll-track:hover .overlay-scroll-thumb,
 .overlay-scroll-thumb:active { width: 8px; background: #64748B; }
 
-/* Box variant: track rides in a zero-height sticky child of the scroller. */
-.overlay-scroll-sticky {
-  position: sticky;
-  top: 0;
-  height: 0;
-  z-index: 5;
-  pointer-events: none;
-}
-.overlay-scroll-sticky .overlay-scroll-track {
-  bottom: auto;
-  pointer-events: auto;
-}
-
 @media (hover: none) {
   .overlay-scroll-track { display: none; }
 }

@@ -5,7 +5,6 @@ import { useT } from '../hooks/useUiTranslations';
 import Button from './Button';
 import Input from './Input';
 import { Check, X, Loader2, AlertCircle } from 'lucide-react';
-import { OverlayScrollBox } from './OverlayScrollArea';
 import {
   validateEmail,
   validatePhone,
@@ -161,7 +160,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true"
       aria-label={editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}>
-      <OverlayScrollBox className="modal-content" innerRef={modalRef}>
+      <div className="modal-content" ref={modalRef}>
         <h2>{editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}</h2>
         <form onSubmit={handleSubmit}>
           <Input
@@ -262,7 +261,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
             </Button>
           </div>
         </form>
-      </OverlayScrollBox>
+      </div>
     </div>
   );
 };

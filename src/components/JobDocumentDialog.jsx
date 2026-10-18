@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle } from 'lucide-react';
-import { OverlayScrollBox } from './OverlayScrollArea';
 import Button from './Button';
 import JobRateSource from './JobRateSource';
 import useJobRateSource from '../hooks/useJobRateSource';
@@ -77,7 +76,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
       aria-labelledby="job-doc-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <OverlayScrollBox className="job-doc-box" innerRef={boxRef}>
+      <div className="job-doc-box" ref={boxRef}>
         <h3 id="job-doc-title">{title}</h3>
         {jobLine && <p className="job-doc-job">{jobLine}</p>}
         <p className="job-doc-hint">
@@ -103,7 +102,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
             </div>
           </form>
         )}
-      </OverlayScrollBox>
+      </div>
     </div>,
     document.body
   );
