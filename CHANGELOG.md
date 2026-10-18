@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.5] - 2026-10-18
+
+### Changed
+- **Arbeit dialog:** added a close (X) button in the top-right corner, matching the other dialogs.
+
+## [1.12.4] - 2026-10-18
+
+### Fixed
+- **Sluggish UI:** the overlay scrollbar watched every DOM change in the page (subtree `MutationObserver`) and re-rendered on each one, forcing layout reads constantly. It now observes direct children only, measures at most once per animation frame, and skips state updates when the thumb didn't move.
+
 ## [1.12.3] - 2026-10-14
 
 ### Changed

@@ -11,7 +11,7 @@ import StyledSelect from './StyledSelect';
 import DatePicker from './DatePicker';
 import ClientPicker from './ClientPicker';
 import { computeHours } from '../utils/jobHours';
-import { AlertCircle, Check, FileText, Receipt, FilePlus, ReceiptText } from 'lucide-react';
+import { AlertCircle, Check, X, FileText, Receipt, FilePlus, ReceiptText } from 'lucide-react';
 import './JobModal.css';
 
 const todayISO = () => {
@@ -324,7 +324,13 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
     <div className="job-modal-overlay" ref={overlayRef} role="dialog" aria-modal="true" aria-label={heading}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="job-modal-content" ref={modalRef}>
-        <h2>{heading}</h2>
+        <div className="job-modal-head">
+          <h2>{heading}</h2>
+          <button type="button" className="job-modal-close" onClick={onCancel}
+            aria-label={t('btn_close', 'Schließen')} title={t('btn_close', 'Schließen')}>
+            <X size={18} />
+          </button>
+        </div>
 
         {loadError && (
           <div className="page-error" role="alert">

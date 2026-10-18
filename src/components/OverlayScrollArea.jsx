@@ -24,8 +24,20 @@ const OverlayScrollArea = ({ className = '', children }) => {
     }
     const height = Math.max(MIN_THUMB, (clientHeight / scrollHeight) * clientHeight);
     const top = (scrollTop / (scrollHeight - clientHeight)) * (clientHeight - height);
-    setThumb({ top, height, visible: true });
+    // Bail out (no re-render) when nothing visibly changed.
+    setThumb((p) => (
+      p.visible && Math.abs(p.top - top) < 0.5 && Math.abs(p.height - height) < 0.5
+        ? p
+        : { top, height, visible: true }
+    ));
   }, []);
+
+  // Coalesce bursts (scroll, resize, DOM churn) into one measurement per frame.
+  const rafRef = useRef(0);
+  const scheduleUpdate = useCallback(() => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; update(); });
+  }, [update]);
 
   const flash = useCallback(() => {
     setActive(true);
@@ -37,18 +49,24 @@ const OverlayScrollArea = ({ className = '', children }) => {
     const el = bodyRef.current;
     if (!el) return undefined;
     update();
-    const ro = new ResizeObserver(update);
+    const ro = new ResizeObserver(scheduleUpdate);
     ro.observe(el);
     Array.from(el.children).forEach((c) => ro.observe(c));
+    // Direct children only: a page swap replaces them; inner churn is caught
+    // by the ResizeObserver on the child when its height actually changes.
     const mo = new MutationObserver(() => {
       Array.from(el.children).forEach((c) => ro.observe(c));
-      update();
+      scheduleUpdate();
     });
-    mo.observe(el, { childList: true, subtree: true });
-    return () => { ro.disconnect(); mo.disconnect(); clearTimeout(hideTimer.current); };
-  }, [update]);
+    mo.observe(el, { childList: true });
+    return () => {
+      ro.disconnect(); mo.disconnect();
+      clearTimeout(hideTimer.current);
+      cancelAnimationFrame(rafRef.current); rafRef.current = 0;
+    };
+  }, [update, scheduleUpdate]);
 
-  const onScroll = () => { update(); flash(); };
+  const onScroll = () => { scheduleUpdate(); if (!active) flash(); else { clearTimeout(hideTimer.current); hideTimer.current = setTimeout(() => setActive(false), 900); } };
 
   const onThumbDown = (e) => {
     e.preventDefault();
