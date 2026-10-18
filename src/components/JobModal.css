@@ -21,8 +21,33 @@
   overflow-y: auto;
 }
 
-.job-modal-content h2 {
+.job-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
   margin-bottom: var(--space-lg);
+}
+
+.job-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-dark-tertiary);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+.job-modal-close:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+.job-modal-content h2 {
+  margin-bottom: 0;
   font-family: var(--font-heading);
   color: var(--color-text-dark-primary);
 }
