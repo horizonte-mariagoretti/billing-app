@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.12.6] - 2026-10-18
+
+### Fixed
+- **Firefox scrollbars:** Firefox ignores `::-webkit-scrollbar`, so popups and lists showed its native bar. They now get a thin bar in the same colours as the other browsers.
+- **Firefox speed:** dialog overlays no longer use `backdrop-filter: blur` (full-screen blur is slow in Firefox and was barely visible under the dark overlay).
+
 ## [1.12.5] - 2026-10-18
 
 ### Changed

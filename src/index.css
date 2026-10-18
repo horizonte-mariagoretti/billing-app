@@ -144,6 +144,13 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--color-primary);
 }
 
+/* Scrollbar — Firefox ignores ::-webkit-scrollbar, so mirror it with the
+   standard properties (thin bar, same thumb/track colours). Scoped to Firefox
+   so Chromium keeps the webkit rules below. */
+@supports (-moz-appearance: none) {
+  * { scrollbar-width: thin; scrollbar-color: #CBD5E1 var(--color-light-bg); }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
