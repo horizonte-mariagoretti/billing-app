@@ -56,10 +56,10 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}${isMobileOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-header">
-        <div className="logo">IF</div>
+        <div className="logo">HA</div>
         {!collapsed && (
           <div className="app-info">
-            <span className="app-name">InvoiceForge</span>
+            <span className="app-name">Hori-Admin</span>
             <span className="app-version">v{appVersion}</span>
           </div>
         )}
