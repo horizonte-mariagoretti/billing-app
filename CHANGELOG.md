@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.12.7] - 2026-10-22
+
+### Changed
+- **Build and deploy on Node 24 LTS.** The GitHub Pages workflow ran Node 20, which is end of life and older than the security-patched 22.23.4 / 24.22.1 / 26.12.1 releases. The workflow now reads the version from `.nvmrc` (`24`, latest 24.x), and `package.json` declares `engines` `>=22.23.4`.
+
 ## [1.12.6] - 2026-10-18
 
 ### Fixed
