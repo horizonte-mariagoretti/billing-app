@@ -1,4 +1,4 @@
-# InvoiceForge — Project Reference
+# Hori-Admin — Project Reference
 
 **Version:** 1.12.8 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 

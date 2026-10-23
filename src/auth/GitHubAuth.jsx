@@ -40,7 +40,7 @@ const GitHubAuth = ({ authError }) => {
         <div className="gh-auth-header">
           <div className="gh-auth-logo"><Cloud size={28} /></div>
           <h1>{t('auth_connect_title', 'Connect to GitHub')}</h1>
-          <p>{t('auth_desc', 'InvoiceForge stores your data in a private GitHub repository. Sign in to read and save invoices.')}</p>
+          <p>{t('auth_desc', 'Hori-Admin stores your data in a private GitHub repository. Sign in to read and save invoices.')}</p>
         </div>
 
         {authError && (

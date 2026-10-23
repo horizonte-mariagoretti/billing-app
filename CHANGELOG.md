@@ -10,6 +10,11 @@
 
 ### Changed
 - **Build and deploy on Node 24 LTS.** The GitHub Pages workflow ran Node 20, which is end of life and older than the security-patched 22.23.4 / 24.22.1 / 26.12.1 releases. The workflow now reads the version from `.nvmrc` (`24`, latest 24.x), and `package.json` declares `engines` `>=22.23.4`.
+## [1.13.0] - 2026-10-22
+
+### Changed
+- **Renamed app to Hori-Admin:** window/tab title, sidebar name and logo initials (now "HA"), package name, and the GitHub sign-in text in DE/EN/FR (new migration 25 updates the stored text in existing databases).
+- **Kept as-is on purpose:** the database file name (`invoiceforge.db`), the GitHub data repo and the `mg-invoices-pat` key. Renaming these would break existing data and sign-in.
 
 ## [1.12.6] - 2026-10-18
 

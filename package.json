@@ -1,10 +1,7 @@
 {
-  "name": "billing-app",
-  "engines": {
-    "node": ">=22.23.4"
-  },
+  "name": "hori-admin",
   "private": true,
-  "version": "1.12.8",
+  "version": "1.13.0",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

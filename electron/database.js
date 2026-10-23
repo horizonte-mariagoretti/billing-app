@@ -1294,6 +1294,19 @@ UPDATE ui_translations SET value_de = 'Stunden gesamt', value_fr = 'Total des he
   setVersion(24);
 }
 
+// Migration 25: rename app to Hori-Admin in the GitHub sign-in text (DE/EN/FR).
+if (getVersion() < 25) {
+  try {
+    db.exec(`
+UPDATE ui_translations SET value_de = 'Hori-Admin speichert deine Daten in einem privaten GitHub-Repository. Melde dich an, um Rechnungen zu lesen und zu speichern.', value_en = 'Hori-Admin stores your data in a private GitHub repository. Sign in to read and save invoices.' WHERE key = 'auth_desc';
+UPDATE ui_translations SET value_fr = 'Hori-Admin stocke tes données dans un dépôt GitHub privé. Connecte-toi pour lire et enregistrer tes factures.' WHERE key = 'auth_desc';
+    `);
+  } catch (e) {
+    console.error('Migration 25 failed:', e.message);
+  }
+  setVersion(25);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
