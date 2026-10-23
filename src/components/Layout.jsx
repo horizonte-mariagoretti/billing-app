@@ -26,6 +26,7 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
     products: ['nav_products', 'Products'],
     arbeiten: ['nav_arbeiten', 'Arbeiten'],
     horis: ['nav_horis', 'Horis'],
+    lasagnen: ['nav_lasagnen', 'Lasagnen'],
     settings: ['nav_settings', 'Settings'],
   };
   const [fallbackKey, fallbackText] = VIEW_TITLE_KEYS[currentView] || [null, currentView];

@@ -1307,6 +1307,79 @@ UPDATE ui_translations SET value_fr = 'Hori-Admin stocke tes données dans un d�
   setVersion(25);
 }
 
+// Migration 26: Lasagnen — per-Hori portion orders (Bolo/Veggie) + paid flag, prices, UI strings (DE/FR).
+if (getVersion() < 26) {
+  try {
+    db.exec(`
+CREATE TABLE IF NOT EXISTS lasagna_orders (
+  id TEXT PRIMARY KEY,
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  bolo INTEGER DEFAULT 0,
+  veggie INTEGER DEFAULT 0,
+  paid INTEGER DEFAULT 0,
+  final_amount REAL,
+  UNIQUE(hori_id)
+);
+INSERT OR IGNORE INTO settings (key, value) VALUES ('lasagna_price', '0');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('lasagna_discount_from', '');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('lasagna_discount_price', '');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('lasagna_bonus_enabled', '0');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('lasagna_bonus_factor', '100');
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('nav_lasagnen','Lasagnen','Lasagnes','Lasagnen'),
+('lasagnen_search','Horis suchen…','Rechercher des Horis…','Horis suchen…'),
+('lasagnen_col_bolo','Bolo','Bolo','Bolo'),
+('lasagnen_col_veggie','Veggie','Veggie','Veggie'),
+('lasagnen_col_amount_bolo','Betrag Bolo','Montant Bolo','Betrag Bolo'),
+('lasagnen_col_amount_veggie','Betrag Veggie','Montant Veggie','Betrag Veggie'),
+('lasagnen_col_amount_min','Betrag min','Montant min','Betrag min'),
+('lasagnen_col_amount_final','Betrag final','Montant final','Betrag final'),
+('lasagnen_col_paid','Bezahlt','Payé','Bezahlt'),
+('lasagnen_prices','Preise','Prix','Preise'),
+('lasagnen_load_error','Lasagnen konnten nicht geladen werden.','Les lasagnes n''ont pas pu être chargées.','Lasagnen konnten nicht geladen werden.'),
+('lasagnen_save_error','Änderung konnte nicht gespeichert werden.','La modification n''a pas pu être enregistrée.','Änderung konnte nicht gespeichert werden.'),
+('lasagnen_no_horis','Noch keine aktiven Horis','Pas encore de Horis actifs','Noch keine aktiven Horis'),
+('settings_lasagna_price','Preis pro Lasagne','Prix par lasagne','Preis pro Lasagne'),
+('settings_lasagna_price_hint','Gilt für Bolo und Veggie.','Valable pour bolo et veggie.','Gilt für Bolo und Veggie.'),
+('settings_lasagna_discount_from','Mengenrabatt ab (Lasagnen pro Hori)','Remise à partir de (lasagnes par Hori)','Mengenrabatt ab (Lasagnen pro Hori)'),
+('settings_lasagna_discount_from_hint','Ab dieser Anzahl (Bolo + Veggie) gilt für alle Lasagnen des Horis der Rabattpreis. Leer oder 0 = kein Rabatt.','À partir de ce nombre (bolo + veggie), toutes les lasagnes du Hori sont au prix réduit. Vide ou 0 = pas de remise.','Ab dieser Anzahl (Bolo + Veggie) gilt für alle Lasagnen des Horis der Rabattpreis. Leer oder 0 = kein Rabatt.'),
+('settings_lasagna_discount_price','Rabattpreis pro Lasagne','Prix réduit par lasagne','Rabattpreis pro Lasagne'),
+('settings_lasagna_discount_price_hint','Leer oder 0 = kein Rabatt.','Vide ou 0 = pas de remise.','Leer oder 0 = kein Rabatt.'),
+('lasagnen_discount_from','ab','à partir de','ab'),
+('lasagnen_discount_none','kein Mengenrabatt','pas de remise','kein Mengenrabatt'),
+('lasagnen_pieces','Stk.','pcs','Stk.'),
+('lasagnen_col_share','Anteil','Part','Anteil'),
+('lasagnen_col_bonus','Bonus %','Bonus %','Bonus %'),
+('lasagnen_dist_per_hori','Verkaufte Lasagnen pro Hori','Lasagnes vendues par Hori','Verkaufte Lasagnen pro Hori'),
+('settings_lasagna_bonus_enabled','Lasagnen-Bonus aktiv','Bonus lasagnes actif','Lasagnen-Bonus aktiv'),
+('settings_lasagna_bonus_enabled_hint','Der Lasagnen-Anteil eines Horis senkt seinen Lagerbeitrag.','La part de lasagnes d''un Hori réduit sa contribution au camp.','Der Lasagnen-Anteil eines Horis senkt seinen Lagerbeitrag.'),
+('settings_lasagna_bonus_factor','Bonus-Faktor','Facteur de bonus','Bonus-Faktor'),
+('settings_lasagna_bonus_factor_hint','Wie viel vom Lasagnen-Anteil als Reduktion gilt: 100 % = voller Anteil, 50 % = halber Anteil.','Part de la quote-part appliquée comme réduction : 100 % = totale, 50 % = moitié.','Wie viel vom Lasagnen-Anteil als Reduktion gilt: 100 % = voller Anteil, 50 % = halber Anteil.'),
+('settings_modal_err_max','Höchstens','Au maximum','Höchstens'),
+('lasagnen_view_distribution','Verteilung','Répartition','Verteilung'),
+('lasagnen_price_card','Lasagnen-Preis','Prix des lasagnes','Lasagnen-Preis'),
+('lasagnen_price_edit','Preise bearbeiten','Modifier les prix','Preise bearbeiten'),
+('lasagnen_price_modal_desc','Grundpreise pro Lasagne und optionaler Mengenrabatt pro Hori.','Prix de base par lasagne et remise de quantité optionnelle par Hori.','Grundpreise pro Lasagne und optionaler Mengenrabatt pro Hori.'),
+('lasagnen_total_bolo','Total Bolo','Total bolo','Total Bolo'),
+('lasagnen_total_veggie','Total Veggie','Total veggie','Total Veggie'),
+('lasagnen_dist_title','Verkaufsverteilung','Répartition des ventes','Verkaufsverteilung'),
+('lasagnen_dist_empty','Noch keine Lasagnen bestellt.','Aucune lasagne commandée pour l''instant.','Noch keine Lasagnen bestellt.'),
+('lasagnen_portions','Portionen','portions','Portionen'),
+('lasagnen_paid_locked','Bezahlt – zum Bearbeiten Haken entfernen','Payé – décocher pour modifier','Bezahlt – zum Bearbeiten Haken entfernen'),
+('lasagnen_discount_applied','Mengenrabatt angewendet','Remise de quantité appliquée','Mengenrabatt angewendet'),
+('settings_modal_err_count','Bitte eine ganze Zahl eingeben.','Veuillez saisir un nombre entier.','Bitte eine ganze Zahl eingeben.'),
+('settings_modal_err_number','Bitte einen gültigen Betrag (≥ 0) eingeben.','Veuillez saisir un montant valide (≥ 0).','Bitte einen gültigen Betrag (≥ 0) eingeben.'),
+('settings_modal_save_error','Einstellungen konnten nicht gespeichert werden.','Les paramètres n''ont pas pu être enregistrés.','Einstellungen konnten nicht gespeichert werden.'),
+('lasagnen_final_below_min','Unter dem Mindestbetrag','Inférieur au montant minimum','Unter dem Mindestbetrag'),
+('lasagnen_final_invalid','Ungültiger Betrag','Montant invalide','Ungültiger Betrag'),
+('lasagnen_final_not_saved','nicht gespeichert','non enregistré','nicht gespeichert');
+    `);
+  } catch (e) {
+    console.error('Migration 26 failed:', e.message);
+  }
+  setVersion(26);
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

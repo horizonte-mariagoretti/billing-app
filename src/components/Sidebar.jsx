@@ -7,6 +7,7 @@ import {
   Package,
   Briefcase,
   Baby,
+  UtensilsCrossed,
   ReceiptEuro,
   PanelLeftClose,
   PanelLeftOpen,
@@ -26,6 +27,7 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
     { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
     { id: 'arbeiten',  label: t('nav_arbeiten', 'Arbeiten'),  icon: Briefcase },
     { id: 'horis',     label: t('nav_horis', 'Horis'),         icon: Baby },
+    { id: 'lasagnen',  label: t('nav_lasagnen', 'Lasagnen'),   icon: UtensilsCrossed },
   ];
 
   const generalNav = [

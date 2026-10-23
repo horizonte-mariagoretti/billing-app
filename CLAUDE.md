@@ -62,6 +62,7 @@ Billing_App/
 │   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
 │   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
 │   │   ├── Input.css
+│   │   ├── SettingsFieldsModal.jsx / .css # Popup editing a few settings keys (decimal via DecimalInput / whole-number count), saves via useSettings.saveSettings
 │   │   ├── StatusBadge.jsx     # draft|sent|paid|overdue|cancelled|accepted|declined|converted
 │   │   ├── StatusBadge.css
 │   │   ├── ConfirmDialog.jsx   # Modal confirm/cancel dialog with focus trap
@@ -78,6 +79,7 @@ Billing_App/
 │   │   ├── Products.jsx / .css       # Product cards + category chips + modal
 │   │   ├── Arbeiten.jsx / .css       # Work dates (times/open end), assigned Horis, planned vs actual hours, links to client/quote/invoice
 │   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share, matrix view
+│   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Verteilung (bars per Hori)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])
@@ -86,6 +88,7 @@ Billing_App/
 │   │   ├── useJobs.js          # CRUD for jobs (Arbeiten) + job_assignments
 │   │   ├── useJobRateSource.js # Products + "Aus Produkt | Manuell" wage state for JobRateSource (resolved name/rate/productId)
 │   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
+│   │   ├── useLasagnen.js      # fetchOrders (all Horis LEFT JOIN lasagna_orders), saveOrder (upsert by hori_id)
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
@@ -105,6 +108,7 @@ Billing_App/
 │       ├── documentLifecycle.js  # Status FSM (pure functions, no DB)
 │       ├── jobHours.js           # Pure helpers: planned/actual hours, work share, camp contribution reduction
 │       ├── jobDocumentLines.js   # Pure: groupHoriHours, formatClockRange, buildJobItems (job → offer/invoice lines)
+│       ├── lasagnaBonus.js       # Pure: lasagnaShares(rows), bonusReductionPct({sharePct,enabled,factor}), applyBonus(contribution,pct), lasagnaBonusFromSettings(settings)
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
 ├── CLAUDE.md            # ← this file
@@ -203,7 +207,13 @@ client_id(FK), quote_id(FK), invoice_id(FK), notes, created_at
 id, job_id(FK), hori_id(FK), hours
 ```
 **Offer/invoice from a job**: Arbeiten (list row icons / JobModal "Dokumente") → `App.handleCreateDocFromJob(jobId, type, params)` builds editor `initialData` with `source_job_id` (not a DB column; lives only in editor state). `App.handleSaveDoc` on the first save sets `jobs.quote_id` / `jobs.invoice_id`; a new invoice with `source_quote_id` also links to the job whose `quote_id` matches. Invoice for a job with a quote → reuses `handleConvertToInvoice`. Already linked → `App.handleOpenDoc(docId)`.
-Settings (Settings > Billing): `camp_base_contribution` (max per Hori), `camp_min_contribution` (floor), `camp_reduction_per_percent` (€ per 1% work share; empty = proportional). Formula in `utils/campContribution.js`: max(min, base − reduction).
+Settings (edited in a popup on the Horis page, not in Settings > Billing): `camp_base_contribution` (max per Hori), `camp_min_contribution` (floor), `camp_reduction_per_percent` (€ per 1% work share; empty = proportional). Formula in `utils/campContribution.js`: max(min, base − reduction).
+
+**`lasagna_orders`** (migration 26) — one row per Hori
+```
+id, hori_id(FK, UNIQUE), bolo, veggie, paid(0/1), final_amount (nullable)
+```
+Settings: `lasagna_price` (one base price per lasagne, Bolo and Veggie alike), `lasagna_discount_from` (count per Hori, Bolo + Veggie, from which the discount applies; empty/0 = none), `lasagna_discount_price` (one discount price per lasagne; empty/0 = no discount). Missing keys read as 0. Betrag min = (Bolo + Veggie) × applicable price: `lasagna_discount_price` once the threshold is reached and that price is > 0 (all-units), else `lasagna_price`. Betrag final is user-entered and always saved; below Betrag min it is only highlighted red. A paid row is locked (inputs disabled) until Bezahlt is unticked. The lasagne price keys are edited only in the Lasagnen-Preis popup (not in Settings). Bonus: `lasagna_bonus_enabled` ('0'/'1'), `lasagna_bonus_factor` (% of the share applied, default 100). Share = Hori's Bolo + Veggie / total of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (helpers in `utils/lasagnaBonus.js`).
 
 **`document_events`** — append-only audit log
 ```
@@ -245,7 +255,7 @@ draft → sent → accepted → converted
 No external store. `App.jsx` holds:
 
 ```js
-view          // 'dashboard' | 'invoices' | 'quotes' | 'clients' | 'products' | 'arbeiten' | 'horis' | 'settings'
+view          // 'dashboard' | 'invoices' | 'quotes' | 'clients' | 'products' | 'arbeiten' | 'horis' | 'lasagnen' | 'settings'
 isEditing     // bool
 editingData   // null | { doc, type }
 appSettings   // loaded once from DB on mount

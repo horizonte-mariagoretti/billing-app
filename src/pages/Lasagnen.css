@@ -1,0 +1,377 @@
+/* Lasagnen page — look copied from Horis.css (same spacing, cards, table), scoped to .lasagnen-* */
+
+.lasagnen-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.lasagnen-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.lasagnen-strong { color: var(--color-text-dark-primary) !important; font-weight: 600; }
+.lasagnen-muted  { color: var(--color-text-dark-tertiary) !important; }
+.lasagnen-discounted { color: var(--stat-green-icon) !important; font-weight: 600; }
+.lasagnen-bonus { color: var(--stat-green-icon); font-weight: 600; }
+
+/* ── Toolbar: segmented view toggle + inactive checkbox ── */
+.lasagnen-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.lasagnen-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.lasagnen-toggle input,
+.lasagnen-paid {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.lasagnen-paid { width: 18px; height: 18px; vertical-align: middle; }
+
+/* ── Summary cards ── */
+.lasagnen-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.lasagnen-summary-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+/* Clickable price card (opens the price popup) */
+.lasagnen-summary-card-btn {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.lasagnen-summary-card-btn:hover:not(:disabled) {
+  border-color: var(--color-indigo);
+  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+}
+.lasagnen-summary-card-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.lasagnen-summary-card-btn:disabled { cursor: default; }
+
+.lasagnen-summary-body { min-width: 0; flex: 1; }
+
+
+.lasagnen-summary-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+.lasagnen-summary-icon.amber  { background: var(--stat-amber-bg);  color: var(--stat-amber-icon); }
+.lasagnen-summary-icon.bolo   { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
+.lasagnen-summary-icon.veggie { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+
+.lasagnen-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.lasagnen-summary-value {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-dark-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lasagnen-summary-value small {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+}
+
+
+/* ── Overview table (same look as .horis-table) ── */
+.lasagnen-table-container {
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow-card);
+}
+
+.lasagnen-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.lasagnen-table th {
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-light-theme);
+  white-space: nowrap;
+}
+
+.lasagnen-table td {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-light-theme);
+  font-size: 0.95rem;
+  color: var(--color-text-dark-secondary);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Money is right-aligned; everything else left (CLAUDE.md table rule). */
+.lasagnen-table .num { text-align: right; }
+
+.lasagnen-table th:nth-child(1) { min-width: 180px; }
+
+.lasagnen-table tbody tr:hover td { background-color: var(--color-surface-muted); }
+
+.lasagnen-name-cell {
+  font-weight: 600;
+  color: var(--color-text-dark-primary) !important;
+}
+
+.lasagnen-lock {
+  margin-left: var(--space-xs);
+  vertical-align: -1px;
+  color: var(--stat-green-icon);
+}
+
+.lasagnen-row.inactive td,
+.lasagnen-row.inactive .lasagnen-name-cell { color: var(--color-text-dark-tertiary) !important; }
+
+/* Paid rows: tinted green and locked (inputs disabled) */
+.lasagnen-row.paid td,
+.lasagnen-table tbody tr.lasagnen-row.paid:hover td {
+  background-color: color-mix(in srgb, var(--stat-green-icon) 12%, var(--color-light-surface));
+}
+.lasagnen-row.paid td:first-child { box-shadow: inset 3px 0 0 var(--stat-green-icon); }
+
+/* Anteil: number first, then a heat bar — same rules as .horis-heat on the Horis page */
+.lasagnen-heat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.lasagnen-heat-bar {
+  position: relative;
+  flex: none;
+  width: 130px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-light-bg);
+  overflow: hidden;
+}
+
+.lasagnen-heat-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-md);
+  transition: width var(--transition-normal), background-color var(--transition-normal);
+}
+
+.lasagnen-heat .lasagnen-mono {
+  min-width: 44px;
+  text-align: left;
+  color: var(--color-text-dark-primary);
+  font-weight: 600;
+}
+
+.lasagnen-table th:nth-child(4) { min-width: 150px; }
+
+/* Inputs sit inside the Horis-style cell padding: 28px tall with -2px vertical margin, so rows are
+   as tall as Horis rows (24px content, like the heat bar). The text inside starts/ends exactly at the
+   column edge (inner padding = space-xs, cancelled by a negative margin), aligned with the header. */
+.lasagnen-count,
+.lasagnen-final {
+  box-sizing: border-box;
+  height: 28px;
+  margin: -2px 0;
+  padding: 0 calc(var(--space-xs) - 1px);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background-color: var(--color-light-surface);
+  color: var(--color-text-dark-primary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.lasagnen-count { width: 56px; margin-left: calc(-1 * var(--space-xs)); }
+.lasagnen-final { width: 110px; text-align: right; margin-right: calc(-1 * var(--space-xs)); }
+
+.lasagnen-count:focus,
+.lasagnen-final:focus {
+  outline: none;
+  border-color: var(--color-indigo);
+  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+}
+
+.lasagnen-count:disabled,
+.lasagnen-final:disabled {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--color-text-dark-primary);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.lasagnen-final.invalid,
+.lasagnen-final.invalid:focus,
+.lasagnen-final.invalid:disabled {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+.lasagnen-final.invalid:focus { box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.15); }
+
+.lasagnen-table tfoot td {
+  background-color: var(--color-surface-muted);
+  border-top: 1px solid var(--color-border-light-theme);
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--color-text-dark-primary);
+}
+
+/* ── Verteilung: lasagnes per Hori (bars like .horis-heat-bar) ── */
+.lasagnen-dist-card { padding: var(--space-lg); }
+
+.lasagnen-dist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.lasagnen-dist-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.lasagnen-dist-legend {
+  display: flex;
+  gap: var(--space-md);
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+}
+.lasagnen-dist-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lasagnen-dist-legend i { width: 12px; height: 12px; border-radius: 3px; }
+
+.lasagnen-dist-legend i.bolo,
+.lasagnen-bars-track i.bolo   { background: var(--stat-indigo-icon); }
+.lasagnen-dist-legend i.veggie,
+.lasagnen-bars-track i.veggie { background: var(--stat-green-icon); }
+
+.lasagnen-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.lasagnen-bars-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) 64px 56px;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.lasagnen-bars-name {
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lasagnen-bars-row.inactive .lasagnen-bars-name { color: var(--color-text-dark-tertiary); }
+
+.lasagnen-bars-track {
+  display: flex;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-light-bg);
+  overflow: hidden;
+}
+.lasagnen-bars-track i { height: 100%; transition: width var(--transition-normal); }
+.lasagnen-bars-row.inactive .lasagnen-bars-track i { opacity: 0.45; }
+
+.lasagnen-bars-count,
+.lasagnen-bars-pct { text-align: right; white-space: nowrap; }
+
+/* ── Empty state ── */
+.lasagnen-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-text-dark-tertiary);
+  text-align: center;
+}
+
+.lasagnen-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+
+.lasagnen-empty-desc {
+  font-size: 0.875rem;
+  max-width: 340px;
+}
+
+@media (max-width: 700px) {
+  .lasagnen-summary { grid-template-columns: 1fr; }
+  .lasagnen-bars-row { grid-template-columns: minmax(80px, 120px) minmax(0, 1fr) 56px 48px; gap: var(--space-sm); }
+}
