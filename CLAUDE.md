@@ -62,6 +62,8 @@ Billing_App/
 │   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
 │   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
 │   │   ├── Input.css
+│   │   ├── SortableTh.jsx       # Sortable <th> (props: column, label, align left|right, sort, onSort). Right-aligned: arrow before label; unsorted: arrow hidden, space kept
+│   │   ├── DataTable.css        # Shared table look (.data-table-container, .data-table, .num, .dt-mono/.dt-strong/.dt-muted, .dt-sort-btn, .dt-heat bar) — Horis + Lasagnen Übersicht
 │   │   ├── SettingsFieldsModal.jsx / .css # Popup editing a few settings keys (decimal via DecimalInput / whole-number count), saves via useSettings.saveSettings
 │   │   ├── StatusBadge.jsx     # draft|sent|paid|overdue|cancelled|accepted|declined|converted
 │   │   ├── StatusBadge.css
@@ -88,6 +90,7 @@ Billing_App/
 │   │   ├── useJobs.js          # CRUD for jobs (Arbeiten) + job_assignments
 │   │   ├── useJobRateSource.js # Products + "Aus Produkt | Manuell" wage state for JobRateSource (resolved name/rate/productId)
 │   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
+│   │   ├── useTableSort.js     # Shared sort state: cycle none → asc → desc → none, sortRows(rows, accessors, {tieBreak, locale})
 │   │   ├── useLasagnen.js      # fetchOrders (all Horis LEFT JOIN lasagna_orders), saveOrder (upsert by hori_id)
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
@@ -108,6 +111,7 @@ Billing_App/
 │       ├── documentLifecycle.js  # Status FSM (pure functions, no DB)
 │       ├── jobHours.js           # Pure helpers: planned/actual hours, work share, camp contribution reduction
 │       ├── jobDocumentLines.js   # Pure: groupHoriHours, formatClockRange, buildJobItems (job → offer/invoice lines)
+│       ├── heatColor.js          # Shared red→yellow→green heat scale for share bars
 │       ├── lasagnaBonus.js       # Pure: lasagnaShares(rows), bonusReductionPct({sharePct,enabled,factor}), applyBonus(contribution,pct), lasagnaBonusFromSettings(settings)
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
