@@ -6,6 +6,7 @@ import Products from './pages/Products';
 import Settings from './pages/Settings';
 import Arbeiten from './pages/Arbeiten';
 import Horis from './pages/Horis';
+import Lasagnen from './pages/Lasagnen';
 import DocumentList from './pages/DocumentList';
 import DocumentEditor from './pages/DocumentEditor';
 import useDocuments from './hooks/useDocuments';
@@ -237,6 +238,8 @@ function AppInner() {
         return <Arbeiten onCreateDocFromJob={handleCreateDocFromJob} onOpenDoc={handleOpenDoc} />;
       case 'horis':
         return <Horis />;
+      case 'lasagnen':
+        return <Lasagnen />;
       case 'settings':
         return <Settings />;
       default:

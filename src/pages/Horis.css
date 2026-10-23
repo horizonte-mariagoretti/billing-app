@@ -63,6 +63,38 @@
   min-width: 0;
 }
 
+/* Clickable summary card (opens the Lagerbeitrag popup). Resets the
+   button's centred text so label + value share the left edge like the
+   plain cards. */
+.horis-summary-card-btn {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.horis-summary-card-btn:hover:not(:disabled) {
+  border-color: var(--color-indigo);
+  box-shadow: 0 0 0 3px var(--color-indigo-alpha);
+}
+.horis-summary-card-btn:disabled { cursor: default; }
+.horis-summary-body { min-width: 0; }
+
+/* Lagerbeitrag reduced by the lasagne bonus: original struck through before the final */
+.horis-contribution {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-xs, 6px);
+  white-space: nowrap;
+}
+.horis-contribution-orig {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--color-text-dark-tertiary);
+}
+
 .horis-summary-icon {
   width: 42px;
   height: 42px;

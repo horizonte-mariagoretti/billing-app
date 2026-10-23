@@ -6,11 +6,14 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
 import { calcAge, formatTimeRange } from '../utils/jobHours';
 import { calcContribution, campRulesFromSettings } from '../utils/campContribution';
+import { lasagnaShares, bonusReductionPct, applyBonus, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
+import useDatabase from '../hooks/useDatabase';
 import Button from '../components/Button';
 import SegmentedToggle from '../components/SegmentedToggle';
 import HoriModal from '../components/HoriModal';
 import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import CampBaseDialog from '../components/CampBaseDialog';
 import {
   Plus, ListPlus, Search, Edit2, Trash2, UserX, UserCheck, AlertCircle, Baby, Clock, PiggyBank,
   LayoutList, Grid3x3, X, CalendarDays, ArrowUp, ArrowDown, ChevronsUpDown,
@@ -180,9 +183,11 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
 const Horis = () => {
   const { fetchHoriStats, fetchMatrix, deleteHori, saveHori } = useHoris();
   const { loadSettings } = useSettings();
+  const { query } = useDatabase();
   const t = useT();
 
   const [settings, setSettings] = useState(null);
+  const [lasagnaRows, setLasagnaRows] = useState([]); // [{ hori_id, active, bolo, veggie }]
   const [stats, setStats] = useState([]);
   const [matrix, setMatrix] = useState({ jobs: [], horis: [], assignments: [] });
   const [loading, setLoading] = useState(true);
@@ -198,6 +203,13 @@ const Horis = () => {
   const [editingHori, setEditingHori] = useState(null);
   const [confirm, setConfirm] = useState(null);   // { id, name }
   const [detailHori, setDetailHori] = useState(null);
+  const [showCampBase, setShowCampBase] = useState(false);
+  const campBaseBtnRef = useRef(null);
+  const closeCampBase = useCallback(() => setShowCampBase(false), []);
+  const handleCampBaseSaved = (patch) => {
+    setSettings((s) => ({ ...(s || {}), ...patch }));
+    setShowCampBase(false);
+  };
 
   const openBtnRef = useRef(null);
   const formatCurrency = useCurrency(settings);
@@ -215,9 +227,23 @@ const Horis = () => {
     try {
       setLoading(true);
       setError(null);
-      const [s, st, mx] = await Promise.all([loadSettings(), fetchHoriStats(), fetchMatrix()]);
+      const [s, st, mx, lo] = await Promise.all([
+        loadSettings(), fetchHoriStats(), fetchMatrix(),
+        // Lasagne counts per Hori for the bonus; an older DB without the table just means no bonus.
+        query(`
+          SELECT h.id AS hori_id, h.active,
+            COALESCE(o.bolo, 0) AS bolo, COALESCE(o.veggie, 0) AS veggie
+          FROM horis h
+          LEFT JOIN lasagna_orders o ON o.hori_id = h.id
+        `).catch((err) => {
+          // Keep the page usable; log so a real query failure is not silent.
+          console.warn('Lasagnen-Bonus übersprungen:', err);
+          return [];
+        }),
+      ]);
       setSettings(s);
       setStats(st || []);
+      setLasagnaRows(lo || []);
       setMatrix({
         jobs: mx?.jobs || [],
         horis: mx?.horis || [],
@@ -235,7 +261,21 @@ const Horis = () => {
 
   const baseContribution = num(settings?.camp_base_contribution);
   const campRules = campRulesFromSettings(settings);
-  const contributionFor = (h) => calcContribution({ ...campRules, sharePct: h.share_pct });
+  const lasagnaBonus = lasagnaBonusFromSettings(settings);
+  const lasagnaShareMap = useMemo(() => lasagnaShares(lasagnaRows), [lasagnaRows]);
+  // Lagerbeitrag before and after the (optional) lasagne bonus. Everything on this
+  // page that shows or sorts by the contribution goes through contributionInfo.
+  const contributionInfo = (h) => {
+    const original = calcContribution({ ...campRules, sharePct: h.share_pct });
+    const reductionPct = bonusReductionPct({
+      sharePct: lasagnaShareMap.get(h.id)?.sharePct ?? 0,
+      enabled: lasagnaBonus.enabled,
+      factor: lasagnaBonus.factor,
+    });
+    const final = applyBonus(original, reductionPct);
+    return { original, final, reduced: lasagnaBonus.enabled && reductionPct > 0 && final !== original };
+  };
+  const contributionFor = (h) => contributionInfo(h).final;
 
   const matchesSearch = useCallback((h) => {
     const q = search.trim().toLowerCase();
@@ -452,7 +492,15 @@ const Horis = () => {
                       </div>
                     ) : <span className="horis-muted">—</span>}
                   </td>
-                  <td className="num horis-mono horis-strong">{counted ? formatCurrency(contributionFor(h)) : <span className="horis-muted">—</span>}</td>
+                  <td className="num horis-mono horis-strong">{counted ? (() => {
+                    const c = contributionInfo(h);
+                    return c.reduced ? (
+                      <span className="horis-contribution" title={t('horis_lasagna_bonus_tooltip', 'Reduziert durch Lasagnen-Bonus')}>
+                        <s className="horis-contribution-orig">{formatCurrency(c.original)}</s>
+                        {formatCurrency(c.final)}
+                      </span>
+                    ) : formatCurrency(c.final);
+                  })() : <span className="horis-muted">—</span>}</td>
                   <td className="num horis-actions">
                     <div className="action-btns">
                       <button
@@ -668,13 +716,21 @@ const Horis = () => {
                 <div className="horis-summary-value">{fmtHours(totalActualHours)} h</div>
               </div>
             </div>
-            <div className="horis-summary-card">
+            <button
+              type="button"
+              ref={campBaseBtnRef}
+              className="horis-summary-card horis-summary-card-btn"
+              onClick={() => setShowCampBase(true)}
+              disabled={!settings}
+              aria-haspopup="dialog"
+              title={t('horis_summary_base_edit', 'Lagerbeitrag bearbeiten')}
+            >
               <div className="horis-summary-icon amber"><PiggyBank size={20} /></div>
-              <div>
+              <div className="horis-summary-body">
                 <div className="horis-summary-label">{t('horis_summary_base', 'Basis-Lagerbeitrag')}</div>
                 <div className="horis-summary-value">{formatCurrency(baseContribution)}</div>
               </div>
-            </div>
+            </button>
           </div>
           {renderOverview()}
         </>
@@ -703,6 +759,14 @@ const Horis = () => {
       {detailHori && !showModal && !showBulk && (
         <HoriDetail hori={detailHori} fmtHours={fmtHours} onClose={closeDetail} onEdit={handleEdit} />
       )}
+
+      <CampBaseDialog
+        open={showCampBase}
+        settings={settings}
+        onClose={closeCampBase}
+        onSaved={handleCampBaseSaved}
+        triggerRef={campBaseBtnRef}
+      />
 
       {confirm && (
         <ConfirmDialog

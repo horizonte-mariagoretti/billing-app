@@ -1,0 +1,73 @@
+.settings-fields-modal {
+  max-width: 560px;
+}
+
+.modal-content.settings-fields-modal h2 {
+  margin-bottom: var(--space-xs);
+}
+
+.settings-fields-modal-desc {
+  margin: 0 0 var(--space-lg);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.settings-fields-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.settings-fields-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.settings-fields-modal-field.wide { grid-column: 1 / -1; }
+
+.settings-fields-modal-field .input-field.error {
+  border-color: var(--color-danger);
+}
+
+.settings-fields-modal-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+  padding-left: 2px;
+}
+
+@media (max-width: 560px) {
+  .settings-fields-modal-grid { grid-template-columns: 1fr; }
+}
+
+.settings-fields-modal-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.settings-fields-modal-input .input-field { flex: 1; min-width: 0; }
+.settings-fields-modal-suffix {
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+
+.settings-fields-modal-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-dark-primary);
+  cursor: pointer;
+}
+.settings-fields-modal-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}

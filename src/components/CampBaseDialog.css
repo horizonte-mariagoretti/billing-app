@@ -1,0 +1,20 @@
+.camp-dialog {
+  max-width: 480px;
+}
+
+.camp-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.camp-dialog-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+  margin: 0;
+  padding-left: 2px;
+}
+
+.camp-dialog .camp-dialog-input-error {
+  border-color: var(--color-danger);
+}

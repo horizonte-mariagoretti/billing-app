@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.14.0] - 2026-10-23
+
+### Added
+- **Lasagnen tab** (main menu, after Horis): one row per Hori (active only; "Inaktive anzeigen" shows all) with editable Bolo / Veggie portion counts, Anteil (lasagne share in % of all active Horis), Bonus % (when the Lasagnen bonus is on), Betrag min (what the Hori must pay at least: count × applicable price, see volume discount), an editable Betrag final (amount actually paid) and a Bezahlt checkbox. Edits save on blur / on click. Betrag final is always saved; a value below Betrag min is highlighted in red (border + text, tooltip shows the minimum). Footer shows totals. Same look as the Horis page (summary boxes, table, Übersicht / Verteilung toggle).
+- **Paid rows are locked:** once Bezahlt is ticked the row is tinted green with a lock icon, and its Bolo, Veggie and Betrag final fields are disabled (not editable by mouse or keyboard). Unticking Bezahlt unlocks the row.
+- **Summary boxes on Übersicht:** Lasagnen-Preis (price per lasagne, shown as "base / discount" when a discount is set), Total Bolo and Total Veggie (portions of the Horis shown). Clicking Lasagnen-Preis opens a popup to edit both base prices and the volume discount.
+- **Verteilung view:** one horizontal bar per Hori (Bolo and Veggie stacked), sorted by total lasagnes descending, with count and Anteil % at the end. Inactive Horis only with "Inaktive anzeigen".
+- **Lasagnen bonus (optional, in the Lasagnen-Preis popup):** "Lasagnen-Bonus aktiv" (`lasagna_bonus_enabled`, default off) and Bonus-Faktor (`lasagna_bonus_factor`, default 100 %, max 100). A Hori's lasagne share × factor is the % by which their Lagerbeitrag is reduced (e.g. 70 €, share 10 %, factor 100 % → 63 €; factor 50 % → 66,50 €). Pure helpers in `src/utils/lasagnaBonus.js`; the Horis page applies the reduction.
+- **Lasagne prices (popup on the Lasagnen page only):** one price per lasagne for Bolo and Veggie alike (`lasagna_price`, default 0) and an optional volume discount: Mengenrabatt ab (`lasagna_discount_from`) plus one Rabattpreis pro Lasagne (`lasagna_discount_price`). When a Hori's Bolo + Veggie count reaches the threshold, all their lasagnes are priced at the discount price. Empty or 0 = no discount. Comma decimals; the discount count accepts digits only.
+### Changed
+- **Settings > Billing:** the three Lagerbeitrag fields (`camp_base_contribution`, `camp_min_contribution`, `camp_reduction_per_percent`) are removed from Settings; they are edited from a popup on the Horis page instead. The setting keys are unchanged, so existing values keep working.
+- New shared `SettingsFieldsModal` component: small popup that edits a few settings keys with validation.
+
+### Database
+- **Migration 26:** new `lasagna_orders` table (one row per Hori: bolo, veggie, paid, final_amount), the five settings defaults, and DE/FR labels.
+
 ## [1.13.0] - 2026-10-22
 
 ### Changed
