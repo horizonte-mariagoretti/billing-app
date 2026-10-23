@@ -13,11 +13,15 @@ import SegmentedToggle from '../components/SegmentedToggle';
 import HoriModal from '../components/HoriModal';
 import BulkHoriModal from '../components/BulkHoriModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import SortableTh from '../components/SortableTh';
+import useTableSort from '../hooks/useTableSort';
+import { heatColor } from '../utils/heatColor';
 import CampBaseDialog from '../components/CampBaseDialog';
 import {
   Plus, ListPlus, Search, Edit2, Trash2, UserX, UserCheck, AlertCircle, Baby, Clock, PiggyBank,
-  LayoutList, Grid3x3, X, CalendarDays, ArrowUp, ArrowDown, ChevronsUpDown,
+  LayoutList, Grid3x3, X, CalendarDays,
 } from 'lucide-react';
+import '../components/DataTable.css';
 import './Horis.css';
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -25,16 +29,6 @@ import './Horis.css';
 const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
 const isActive = (h) => h.active === 1 || h.active === true;
 const num = (v) => Number(v) || 0;
-
-// Heat scale for the Anteil bars: soft red (lowest share) -> yellow -> green (highest share).
-const HEAT_STOPS = [[0, [238, 112, 104]], [0.5, [252, 218, 108]], [1, [72, 187, 120]]];
-function heatColor(rel) {
-  const r = Math.max(0, Math.min(1, rel));
-  const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
-  const k = (r - a[0]) / (b[0] - a[0]);
-  const c = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * k));
-  return { bg: `rgb(${c.join(',')})` };
-}
 
 function formatDateShort(iso) {
   if (!iso) return '—';
@@ -141,11 +135,11 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
                   const worked = j.actual_hours != null && j.actual_hours !== '';
                   return (
                     <tr key={j.job_id}>
-                      <td className="horis-mono">{formatDateLong(j.date)}</td>
+                      <td className="dt-mono">{formatDateLong(j.date)}</td>
                       <td className="horis-detail-title-cell">{j.title || '—'}</td>
-                      <td className="horis-mono">{formatTimeRange(j.start_time, j.end_time, j.open_end, t('jobs_open_prefix', 'ab')) || '—'}</td>
-                      <td className="num horis-mono">{j.planned_hours != null ? fmtHours(j.planned_hours) : '—'}</td>
-                      <td className="num horis-mono">{worked ? fmtHours(j.actual_hours) : '—'}</td>
+                      <td className="dt-mono">{formatTimeRange(j.start_time, j.end_time, j.open_end, t('jobs_open_prefix', 'ab')) || '—'}</td>
+                      <td className="num dt-mono">{j.planned_hours != null ? fmtHours(j.planned_hours) : '—'}</td>
+                      <td className="num dt-mono">{worked ? fmtHours(j.actual_hours) : '—'}</td>
                       <td>
                         <span className={`horis-status ${worked ? 'worked' : 'planned'}`}>
                           {worked ? t('horis_status_worked', 'Gearbeitet') : t('horis_status_planned', 'Geplant')}
@@ -158,8 +152,8 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
               <tfoot>
                 <tr>
                   <td colSpan={3}>{t('horis_total', 'Gesamt')}</td>
-                  <td className="num horis-mono">{fmtHours(totals.planned)}</td>
-                  <td className="num horis-mono">{fmtHours(totals.actual)}</td>
+                  <td className="num dt-mono">{fmtHours(totals.planned)}</td>
+                  <td className="num dt-mono">{fmtHours(totals.actual)}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -196,7 +190,8 @@ const Horis = () => {
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [countInactive, setCountInactive] = useState(false); // include inactive Horis in totals + Anteil
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' }); // key: name|age|actual|share|contribution
+  // Shared table sort: none → asc → desc → none. Default Name A→Z. Keys: name|age|actual|share|contribution
+  const { sort, toggleSort, sortRows } = useTableSort({ key: 'name', dir: 'asc' });
   const [showModal, setShowModal] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const bulkBtnRef = useRef(null);
@@ -299,47 +294,20 @@ const Horis = () => {
     [shareStats, showInactive, matchesSearch]
   );
 
-  const sortValue = (h, key) => {
-    switch (key) {
-      case 'name': return fullName(h).toLowerCase();
-      case 'age': return h.birth_date ? calcAge(h.birth_date) : null;
-      case 'actual': return num(h.total_actual_hours);
-      case 'share': return num(h.share_pct);
-      case 'contribution': return contributionFor(h);
-      default: return 0;
-    }
-  };
-  // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
   const countedShares = visibleStats.filter(h => isActive(h) || countInactive).map(h => num(h.share_pct));
   const maxShare = Math.max(0, ...countedShares);
   const minShare = countedShares.length ? Math.min(...countedShares) : 0;
-  const sortedStats = [...visibleStats].sort((a, b) => {
-    const va = sortValue(a, sort.key);
-    const vb = sortValue(b, sort.key);
-    if (va == null && vb == null) return 0;
-    if (va == null) return 1;
-    if (vb == null) return -1;
-    const cmp = typeof va === 'string' ? va.localeCompare(vb, locale) : va - vb;
-    const dirCmp = sort.dir === 'asc' ? cmp : -cmp;
-    return dirCmp || fullName(a).localeCompare(fullName(b), locale);
-  });
-  const toggleSort = (key) => setSort((p) => (p.key === key ? { key, dir: p.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
-  const sortTh = (key, label, { className = '', title } = {}) => {
-    const active = sort.key === key;
-    const Icon = !active ? ChevronsUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
-    return (
-      <th
-        className={className}
-        title={title}
-        aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-      >
-        <button type="button" className={`horis-sort-btn${active ? ' active' : ''}`} onClick={() => toggleSort(key)}>
-          <span>{label}</span>
-          <Icon size={13} aria-hidden="true" />
-        </button>
-      </th>
-    );
-  };
+  // Missing values (e.g. no birth date) always sink to the bottom, whatever the direction.
+  const sortedStats = sortRows(visibleStats, {
+    name: (h) => fullName(h).toLowerCase(),
+    age: (h) => (h.birth_date ? calcAge(h.birth_date) : null),
+    actual: (h) => num(h.total_actual_hours),
+    share: (h) => num(h.share_pct),
+    contribution: (h) => contributionFor(h),
+  }, { tieBreak: fullName, locale });
+  const sortTh = (key, label, align = 'left') => (
+    <SortableTh column={key} label={label} align={align} sort={sort} onSort={toggleSort} />
+  );
 
   const countedStats = shareStats.filter(h => isActive(h) || countInactive);
   // Inactive Horis are left out of every total unless "Inaktive mitzählen" is on.
@@ -434,7 +402,7 @@ const Horis = () => {
   const renderOverview = () => {
     if (!error && (loading || visibleStats.length === 0)) {
       return (
-        <div className="horis-table-container">
+        <div className="data-table-container">
           {loading
             ? renderEmpty(t('loading', 'Laden…'))
             : search
@@ -448,15 +416,15 @@ const Horis = () => {
     if (error && stats.length === 0) return null;
 
     return (
-      <div className="horis-table-container">
-        <table className="horis-table">
+      <div className="data-table-container">
+        <table className="data-table horis-table">
           <thead>
             <tr>
               {sortTh('name', t('horis_col_name', 'Name'))}
               {sortTh('age', t('horis_col_age', 'Alter'))}
               {sortTh('actual', t('horis_col_actual', 'Stunden'))}
               {sortTh('share', t('horis_col_share', 'Anteil %'))}
-              {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), { className: 'num' })}
+              {sortTh('contribution', t('horis_col_contribution', 'Lagerbeitrag'), 'right')}
               <th className="num" aria-label={t('col_actions', 'Aktionen')} />
             </tr>
           </thead>
@@ -481,18 +449,18 @@ const Horis = () => {
                     <span>{fullName(h)}</span>
                   </td>
                   <td>{age ?? '—'}</td>
-                  <td className={`horis-mono ${counted ? 'horis-strong' : 'horis-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
+                  <td className={`dt-mono ${counted ? 'dt-strong' : 'dt-muted'}`}>{fmtHours(h.total_actual_hours)}</td>
                   <td>
                     {counted ? (
-                      <div className="horis-heat">
-                        <span className="horis-mono">{fmtPct(share)}</span>
-                        <div className="horis-heat-bar" aria-hidden="true">
-                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: active ? heat.bg : 'var(--color-text-dark-tertiary)' }} />
+                      <div className="dt-heat">
+                        <span className="dt-mono">{fmtPct(share)}</span>
+                        <div className="dt-heat-bar" aria-hidden="true">
+                          <i style={{ width: `${maxShare > 0 ? (share / maxShare) * 100 : 0}%`, background: active ? heat : 'var(--color-text-dark-tertiary)' }} />
                         </div>
                       </div>
-                    ) : <span className="horis-muted">—</span>}
+                    ) : <span className="dt-muted">—</span>}
                   </td>
-                  <td className="num horis-mono horis-strong">{counted ? (() => {
+                  <td className="num dt-mono dt-strong">{counted ? (() => {
                     const c = contributionInfo(h);
                     return c.reduced ? (
                       <span className="horis-contribution" title={t('horis_lasagna_bonus_tooltip', 'Reduziert durch Lasagnen-Bonus')}>
@@ -500,7 +468,7 @@ const Horis = () => {
                         {formatCurrency(c.final)}
                       </span>
                     ) : formatCurrency(c.final);
-                  })() : <span className="horis-muted">—</span>}</td>
+                  })() : <span className="dt-muted">—</span>}</td>
                   <td className="num horis-actions">
                     <div className="action-btns">
                       <button
@@ -536,9 +504,9 @@ const Horis = () => {
           <tfoot>
             <tr>
               <td colSpan={2}>{t('horis_total', 'Gesamt')}</td>
-              <td className="horis-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
+              <td className="dt-mono">{fmtHours(search.trim() ? visibleActualHours : totalActualHours)}</td>
               <td />
-              <td className="num horis-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
+              <td className="num dt-mono" title={t('horis_avg_contribution_tooltip', 'Durchschnittlicher Lagerbeitrag der aktiven Horis')}>
                 <span className="horis-foot-label">{t('horis_avg_short', 'Ø')}</span> {formatCurrency(avgContribution)}
               </td>
               <td />
@@ -553,7 +521,7 @@ const Horis = () => {
     const { jobs, horis, cell, rowTotals, colTotals, allActual } = matrixData;
     if (!error && (loading || horis.length === 0 || jobs.length === 0)) {
       return (
-        <div className="horis-table-container">
+        <div className="data-table-container">
           {loading
             ? renderEmpty(t('loading', 'Laden…'))
             : search && horis.length === 0
@@ -613,8 +581,8 @@ const Horis = () => {
                         </td>
                       );
                     })}
-                    <td className="horis-matrix-total horis-mono">{fmtHours(rt.hours)}</td>
-                    <td className="horis-matrix-total horis-mono">{fmtPct(rt.pct)}</td>
+                    <td className="horis-matrix-total dt-mono">{fmtHours(rt.hours)}</td>
+                    <td className="horis-matrix-total dt-mono">{fmtPct(rt.pct)}</td>
                   </tr>
                 );
               })}
@@ -625,15 +593,15 @@ const Horis = () => {
                 {jobs.map(j => {
                   const ct = colTotals.get(j.id);
                   return (
-                    <td key={j.id} className="horis-mono">
+                    <td key={j.id} className="dt-mono">
                       {ct?.hasActual
                         ? fmtHours(ct.actual)
-                        : ct?.count ? <small className="horis-muted">{fmtHours(ct.planned)}</small> : '—'}
+                        : ct?.count ? <small className="dt-muted">{fmtHours(ct.planned)}</small> : '—'}
                     </td>
                   );
                 })}
-                <td className="horis-matrix-total horis-mono">{fmtHours(allActual)}</td>
-                <td className="horis-matrix-total horis-mono">{allActual > 0 ? fmtPct(100) : '—'}</td>
+                <td className="horis-matrix-total dt-mono">{fmtHours(allActual)}</td>
+                <td className="horis-matrix-total dt-mono">{allActual > 0 ? fmtPct(100) : '—'}</td>
               </tr>
             </tfoot>
           </table>

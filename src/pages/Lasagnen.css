@@ -1,4 +1,4 @@
-/* Lasagnen page — look copied from Horis.css (same spacing, cards, table), scoped to .lasagnen-* */
+/* Lasagnen page — page-specific styles. Shared table look: components/DataTable.css */
 
 .lasagnen-page {
   display: flex;
@@ -6,14 +6,6 @@
   gap: var(--space-xl);
 }
 
-.lasagnen-mono {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-}
-
-.lasagnen-strong { color: var(--color-text-dark-primary) !important; font-weight: 600; }
-.lasagnen-muted  { color: var(--color-text-dark-tertiary) !important; }
 .lasagnen-discounted { color: var(--stat-green-icon) !important; font-weight: 600; }
 .lasagnen-bonus { color: var(--stat-green-icon); font-weight: 600; }
 
@@ -83,7 +75,6 @@
 
 .lasagnen-summary-body { min-width: 0; flex: 1; }
 
-
 .lasagnen-summary-icon {
   width: 42px;
   height: 42px;
@@ -122,51 +113,7 @@
   color: var(--color-text-dark-tertiary);
 }
 
-
-/* ── Overview table (same look as .horis-table) ── */
-.lasagnen-table-container {
-  background-color: var(--color-light-surface);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-lg);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  box-shadow: var(--shadow-card);
-}
-
-.lasagnen-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.lasagnen-table th {
-  padding: var(--space-md) var(--space-lg);
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-dark-tertiary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--color-border-light-theme);
-  white-space: nowrap;
-}
-
-.lasagnen-table td {
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-border-light-theme);
-  font-size: 0.95rem;
-  color: var(--color-text-dark-secondary);
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-/* Money is right-aligned; everything else left (CLAUDE.md table rule). */
-.lasagnen-table .num { text-align: right; }
-
-.lasagnen-table th:nth-child(1) { min-width: 180px; }
-
-.lasagnen-table tbody tr:hover td { background-color: var(--color-surface-muted); }
-
+/* ── Overview table: shared look in components/DataTable.css (.data-table); page-specific bits below ── */
 .lasagnen-name-cell {
   font-weight: 600;
   color: var(--color-text-dark-primary) !important;
@@ -188,40 +135,9 @@
 }
 .lasagnen-row.paid td:first-child { box-shadow: inset 3px 0 0 var(--stat-green-icon); }
 
-/* Anteil: number first, then a heat bar — same rules as .horis-heat on the Horis page */
-.lasagnen-heat {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
+.lasagnen-table th:nth-child(4) { min-width: 150px; } /* Anteil (heat bar) */
 
-.lasagnen-heat-bar {
-  position: relative;
-  flex: none;
-  width: 130px;
-  height: 24px;
-  border-radius: var(--radius-md);
-  background-color: var(--color-light-bg);
-  overflow: hidden;
-}
-
-.lasagnen-heat-bar i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: var(--radius-md);
-  transition: width var(--transition-normal), background-color var(--transition-normal);
-}
-
-.lasagnen-heat .lasagnen-mono {
-  min-width: 44px;
-  text-align: left;
-  color: var(--color-text-dark-primary);
-  font-weight: 600;
-}
-
-.lasagnen-table th:nth-child(4) { min-width: 150px; }
-
-/* Inputs sit inside the Horis-style cell padding: 28px tall with -2px vertical margin, so rows are
+/* Inputs sit inside the shared .data-table cell padding: 28px tall with -2px vertical margin, so rows are
    as tall as Horis rows (24px content, like the heat bar). The text inside starts/ends exactly at the
    column edge (inner padding = space-xs, cancelled by a negative margin), aligned with the header. */
 .lasagnen-count,
@@ -268,15 +184,7 @@
 }
 .lasagnen-final.invalid:focus { box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.15); }
 
-.lasagnen-table tfoot td {
-  background-color: var(--color-surface-muted);
-  border-top: 1px solid var(--color-border-light-theme);
-  border-bottom: none;
-  font-weight: 700;
-  color: var(--color-text-dark-primary);
-}
-
-/* ── Verteilung: lasagnes per Hori (bars like .horis-heat-bar) ── */
+/* ── Verteilung: lasagnes per Hori (bars like .dt-heat-bar) ── */
 .lasagnen-dist-card { padding: var(--space-lg); }
 
 .lasagnen-dist-head {

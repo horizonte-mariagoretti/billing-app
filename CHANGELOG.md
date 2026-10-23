@@ -11,6 +11,7 @@
 - **Lasagne prices (popup on the Lasagnen page only):** one price per lasagne for Bolo and Veggie alike (`lasagna_price`, default 0) and an optional volume discount: Mengenrabatt ab (`lasagna_discount_from`) plus one Rabattpreis pro Lasagne (`lasagna_discount_price`). When a Hori's Bolo + Veggie count reaches the threshold, all their lasagnes are priced at the discount price. Empty or 0 = no discount. Comma decimals; the discount count accepts digits only.
 ### Changed
 - **Settings > Billing:** the three Lagerbeitrag fields (`camp_base_contribution`, `camp_min_contribution`, `camp_reduction_per_percent`) are removed from Settings; they are edited from a popup on the Horis page instead. The setting keys are unchanged, so existing values keep working.
+- **Shared table pieces:** Horis and Lasagnen tables now use one sort hook (`useTableSort`: none → asc → desc → none, default Name A→Z), one sortable header (`SortableTh`; on right-aligned money columns the arrow sits before the label, unsorted columns show no arrow) and one stylesheet (`DataTable.css`). Heat colour moved to `utils/heatColor.js`.
 - New shared `SettingsFieldsModal` component: small popup that edits a few settings keys with validation.
 
 ### Database

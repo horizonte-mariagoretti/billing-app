@@ -7,6 +7,7 @@ import Button from './Button';
 import { AlertCircle, Check } from 'lucide-react';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './HoriModal.css';
+import './DataTable.css'; // .dt-mono
 import './BulkHoriModal.css';
 
 const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
@@ -92,7 +93,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
                   <tr key={r.line} className={r.status === 'ok' ? '' : 'bulk-hori-row-bad'}>
                     <td>{r.first_name || '—'}</td>
                     <td>{r.last_name || '—'}</td>
-                    <td className="horis-mono">{r.birth_date ? r.birth_date.split('-').reverse().join('.') : '—'}</td>
+                    <td className="dt-mono">{r.birth_date ? r.birth_date.split('-').reverse().join('.') : '—'}</td>
                     <td>{r.age ?? '—'}</td>
                     <td>
                       <span className={`bulk-hori-status ${r.status}`}>

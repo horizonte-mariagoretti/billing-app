@@ -4,15 +4,6 @@
   gap: var(--space-xl);
 }
 
-.horis-mono {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-}
-
-.horis-strong { color: var(--color-text-dark-primary) !important; font-weight: 600; }
-.horis-muted  { color: var(--color-text-dark-tertiary) !important; }
-
 /* ── Toolbar: segmented view toggle + inactive checkbox ── */
 .horis-toolbar {
   display: flex;
@@ -133,23 +124,7 @@
   color: var(--color-text-dark-tertiary);
 }
 
-/* ── Overview table ── */
-.horis-table-container {
-  background-color: var(--color-light-surface);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-lg);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  box-shadow: var(--shadow-card);
-}
-
-.horis-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.horis-table th,
+/* ── Overview table: shared look in components/DataTable.css (.data-table); page-specific bits below ── */
 .horis-detail-table th {
   padding: var(--space-md) var(--space-lg);
   background-color: var(--color-surface-muted);
@@ -162,22 +137,11 @@
   white-space: nowrap;
 }
 
-.horis-table td {
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-border-light-theme);
-  font-size: 0.95rem;
-  color: var(--color-text-dark-secondary);
-  white-space: nowrap;
-}
-
-.horis-table .num,
 .horis-detail-table .num { text-align: right; }
 
-.horis-table th:nth-child(1) { min-width: 180px; }
 .horis-table th:nth-child(4) { min-width: 150px; }
 
 .horis-row { cursor: pointer; }
-.horis-table tbody tr:hover td { background-color: var(--color-surface-muted); }
 
 .horis-name-cell {
   font-weight: 600;
@@ -188,7 +152,7 @@
 
 .horis-row.inactive td { color: var(--color-text-dark-tertiary); }
 .horis-row.inactive .horis-name-cell,
-.horis-row.inactive .horis-strong { color: var(--color-text-dark-tertiary) !important; }
+.horis-row.inactive .dt-strong { color: var(--color-text-dark-tertiary) !important; }
 
 .horis-badge-inactive {
   display: inline-block;
@@ -204,38 +168,8 @@
   vertical-align: middle;
 }
 
-/* Anteil: number first, then a bar coloured with a heat scale (green = highest) by share relative to the top Hori */
-.horis-heat {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.horis-heat-bar {
-  position: relative;
-  flex: none;
-  width: 130px;
-  height: 24px;
-  border-radius: var(--radius-md);
-  background-color: var(--color-light-bg);
-  overflow: hidden;
-}
-
-.horis-heat-bar i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: var(--radius-md);
-  transition: width var(--transition-normal), background-color var(--transition-normal);
-}
-
-.horis-row.inactive .horis-heat .horis-mono { color: var(--color-text-dark-tertiary); }
-
-.horis-heat .horis-mono {
-  min-width: 44px;
-  text-align: left;
-  color: var(--color-text-dark-primary);
-  font-weight: 600;
-}
+/* Anteil heat bar: shared .dt-heat (DataTable.css); inactive rows greyed */
+.horis-row.inactive .dt-heat .dt-mono { color: var(--color-text-dark-tertiary); }
 
 .horis-toggles {
   display: flex;
@@ -245,7 +179,6 @@
   justify-content: flex-end;
 }
 
-.horis-table tfoot td,
 .horis-detail-table tfoot td {
   background-color: var(--color-surface-muted);
   border-top: 1px solid var(--color-border-light-theme);
@@ -543,8 +476,6 @@
   .horis-summary { grid-template-columns: 1fr; }
   .horis-summary-card { padding: var(--space-sm) var(--space-md); }
   .horis-summary-value { font-size: 1.3rem; }
-  .horis-table th,
-  .horis-table td { padding: var(--space-sm) var(--space-md); }
   .horis-matrix-sticky { min-width: 130px; }
   .horis-matrix-scroll { max-height: none; }
 }
@@ -566,31 +497,3 @@
   gap: var(--space-sm);
   flex-wrap: wrap;
 }
-
-/* Sortable column headers (Übersicht table) */
-.horis-sort-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-transform: inherit;
-  letter-spacing: inherit;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.horis-sort-btn svg { opacity: 0.45; flex-shrink: 0; }
-.horis-sort-btn:hover svg { opacity: 0.8; }
-.horis-sort-btn.active { color: var(--color-text-dark-primary); }
-.horis-sort-btn.active svg { opacity: 1; color: var(--color-primary); }
-.horis-sort-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
-/* Column alignment rule: everything is left-aligned (header and cells start at the same edge)
-   except money, which is right-aligned. The sort arrow always sits after the label. In
-   right-aligned columns the cells get a gutter as wide as the arrow (icon 13px + 4px gap),
-   so the amounts end exactly where the header label ends. */
-.horis-table th.num .horis-sort-btn { justify-content: flex-end; }
-.horis-table td.num { padding-right: calc(var(--space-lg) + 17px); }
-.horis-table td.horis-actions { padding-right: var(--space-lg); }

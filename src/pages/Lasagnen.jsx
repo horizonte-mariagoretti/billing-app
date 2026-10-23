@@ -6,8 +6,12 @@ import { useT } from '../hooks/useUiTranslations';
 import DecimalInput from '../components/DecimalInput';
 import SegmentedToggle from '../components/SegmentedToggle';
 import SettingsFieldsModal from '../components/SettingsFieldsModal';
+import SortableTh from '../components/SortableTh';
+import useTableSort from '../hooks/useTableSort';
+import { heatColor } from '../utils/heatColor';
 import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, PieChart, Lock } from 'lucide-react';
 import { lasagnaShares, bonusReductionPct, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
+import '../components/DataTable.css';
 import './Lasagnen.css';
 
 const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
@@ -27,16 +31,6 @@ const parseFinal = (v) => {
   return Number.isFinite(n) ? n : NaN;
 };
 const round2 = (n) => Math.round(n * 100) / 100;
-
-// Heat scale for the Anteil bars (same as Horis): soft red (lowest share) -> yellow -> green (highest).
-const HEAT_STOPS = [[0, [238, 112, 104]], [0.5, [252, 218, 108]], [1, [72, 187, 120]]];
-function heatColor(rel) {
-  const r = Math.max(0, Math.min(1, rel));
-  const [a, b] = r <= 0.5 ? [HEAT_STOPS[0], HEAT_STOPS[1]] : [HEAT_STOPS[1], HEAT_STOPS[2]];
-  const k = (r - a[0]) / (b[0] - a[0]);
-  const c = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * k));
-  return `rgb(${c.join(',')})`;
-}
 
 const toRowState = (r) => {
   const saved = parseFinal(r.final_amount);
@@ -71,8 +65,8 @@ const HoriBars = ({ rows, shares, t, fmtPct }) => {
               <i className="bolo" style={{ width: w(r.bolo) }} />
               <i className="veggie" style={{ width: w(r.veggie) }} />
             </div>
-            <span className="lasagnen-mono lasagnen-strong lasagnen-bars-count">{r.total} {t('lasagnen_pieces', 'Stk.')}</span>
-            <span className="lasagnen-mono lasagnen-muted lasagnen-bars-pct">{share ? fmtPct(share.sharePct) : '—'}</span>
+            <span className="dt-mono dt-strong lasagnen-bars-count">{r.total} {t('lasagnen_pieces', 'Stk.')}</span>
+            <span className="dt-mono dt-muted lasagnen-bars-pct">{share ? fmtPct(share.sharePct) : '—'}</span>
           </li>
         );
       })}
@@ -94,6 +88,8 @@ const Lasagnen = () => {
   const [view, setView] = useState('overview'); // 'overview' | 'distribution'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  // Shared table sort: none → asc → desc → none. Default: Name A→Z.
+  const { sort, toggleSort, sortRows } = useTableSort({ key: 'name', dir: 'asc' });
   const [showPriceModal, setShowPriceModal] = useState(false);
   const priceBtnRef = useRef(null);
 
@@ -272,25 +268,40 @@ const Lasagnen = () => {
     </div>
   );
 
+  /* ── sorting: shared hook + header (same as the Horis table) ── */
+  // Sorts the visible (filtered) rows only. Missing values sink to the bottom; ties fall back to name.
+  const sortedRows = sortRows(visible, {
+    name: (r) => fullName(r).toLowerCase(),
+    bolo: (r) => toCount(r.bolo),
+    veggie: (r) => toCount(r.veggie),
+    share: (r) => shares.get(r.hori_id)?.sharePct ?? null, // inactive: no share
+    min: (r) => amountsFor(r).min,
+    final: (r) => r.savedFinal, // null = not entered
+    paid: (r) => (r.paid ? 1 : 0),
+  }, { tieBreak: fullName, locale });
+  const sortTh = (key, label, align = 'left') => (
+    <SortableTh column={key} label={label} align={align} sort={sort} onSort={toggleSort} />
+  );
+
   const renderTable = () => {
-    if (loading || visible.length === 0) return <div className="lasagnen-table-container">{emptyState()}</div>;
+    if (loading || visible.length === 0) return <div className="data-table-container">{emptyState()}</div>;
     return (
-      <div className="lasagnen-table-container">
-        <table className="lasagnen-table">
+      <div className="data-table-container">
+        <table className="data-table lasagnen-table">
           <thead>
             <tr>
-              <th>{t('horis_col_name', 'Name')}</th>
-              <th>{t('lasagnen_col_bolo', 'Bolo')}</th>
-              <th>{t('lasagnen_col_veggie', 'Veggie')}</th>
-              <th>{t('lasagnen_col_share', 'Anteil')}</th>
+              {sortTh('name', t('horis_col_name', 'Name'))}
+              {sortTh('bolo', t('lasagnen_col_bolo', 'Bolo'))}
+              {sortTh('veggie', t('lasagnen_col_veggie', 'Veggie'))}
+              {sortTh('share', t('lasagnen_col_share', 'Anteil'))}
               {bonus.enabled && <th>{t('lasagnen_col_bonus', 'Bonus %')}</th>}
-              <th className="num">{t('lasagnen_col_amount_min', 'Betrag min')}</th>
-              <th className="num">{t('lasagnen_col_amount_final', 'Betrag final')}</th>
-              <th>{t('lasagnen_col_paid', 'Bezahlt')}</th>
+              {sortTh('min', t('lasagnen_col_amount_min', 'Betrag min'), 'right')}
+              {sortTh('final', t('lasagnen_col_amount_final', 'Betrag final'), 'right')}
+              {sortTh('paid', t('lasagnen_col_paid', 'Bezahlt'))}
             </tr>
           </thead>
           <tbody>
-            {visible.map((r) => {
+            {sortedRows.map((r) => {
               const a = amountsFor(r);
               const name = fullName(r);
               const share = shares.get(r.hori_id); // undefined for inactive Horis
@@ -338,9 +349,9 @@ const Lasagnen = () => {
                   </td>
                   <td>
                     {share && share.sharePct > 0 ? (
-                      <div className="lasagnen-heat">
-                        <span className="lasagnen-mono">{fmtPct(share.sharePct)}</span>
-                        <div className="lasagnen-heat-bar" aria-hidden="true">
+                      <div className="dt-heat">
+                        <span className="dt-mono">{fmtPct(share.sharePct)}</span>
+                        <div className="dt-heat-bar" aria-hidden="true">
                           <i
                             style={{
                               width: `${maxShare > 0 ? (share.sharePct / maxShare) * 100 : 0}%`,
@@ -349,15 +360,15 @@ const Lasagnen = () => {
                           />
                         </div>
                       </div>
-                    ) : <span className="lasagnen-muted">—</span>}
+                    ) : <span className="dt-muted">—</span>}
                   </td>
                   {bonus.enabled && (
-                    <td className="lasagnen-mono lasagnen-bonus">
-                      {share ? fmtPct(bonusReductionPct({ sharePct: share.sharePct, ...bonus })) : <span className="lasagnen-muted">—</span>}
+                    <td className="dt-mono lasagnen-bonus">
+                      {share ? fmtPct(bonusReductionPct({ sharePct: share.sharePct, ...bonus })) : <span className="dt-muted">—</span>}
                     </td>
                   )}
                   <td
-                    className={`num lasagnen-mono ${a.discounted ? 'lasagnen-discounted' : 'lasagnen-muted'}`}
+                    className={`num dt-mono ${a.discounted ? 'lasagnen-discounted' : 'dt-muted'}`}
                     title={a.discounted ? t('lasagnen_discount_applied', 'Mengenrabatt angewendet') : undefined}
                   >
                     {formatCurrency(a.min)}
@@ -394,13 +405,13 @@ const Lasagnen = () => {
           <tfoot>
             <tr>
               <td>{t('horis_total', 'Gesamt')}</td>
-              <td className="lasagnen-mono">{totals.bolo}</td>
-              <td className="lasagnen-mono">{totals.veggie}</td>
+              <td className="dt-mono">{totals.bolo}</td>
+              <td className="dt-mono">{totals.veggie}</td>
               <td />
               {bonus.enabled && <td />}
-              <td className="num lasagnen-mono">{formatCurrency(totals.amountMin)}</td>
-              <td className="num lasagnen-mono">{formatCurrency(totals.amountFinal)}</td>
-              <td className="lasagnen-mono">{totals.paid} / {visible.length}</td>
+              <td className="num dt-mono">{formatCurrency(totals.amountMin)}</td>
+              <td className="num dt-mono">{formatCurrency(totals.amountFinal)}</td>
+              <td className="dt-mono">{totals.paid} / {visible.length}</td>
             </tr>
           </tfoot>
         </table>
@@ -418,9 +429,9 @@ const Lasagnen = () => {
     .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, locale));
 
   const renderDistribution = () => {
-    if (loading || visible.length === 0) return <div className="lasagnen-table-container">{emptyState()}</div>;
+    if (loading || visible.length === 0) return <div className="data-table-container">{emptyState()}</div>;
     return (
-      <div className="lasagnen-table-container lasagnen-dist-card">
+      <div className="data-table-container lasagnen-dist-card">
         <div className="lasagnen-dist-head">
           <h3 className="lasagnen-dist-title">{t('lasagnen_dist_per_hori', 'Verkaufte Lasagnen pro Hori')}</h3>
           <div className="lasagnen-dist-legend">
