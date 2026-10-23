@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.12.8] - 2026-10-22
+
+### Security
+- **Dependency security fixes** (`npm audit fix`, semver-compatible only, no `package.json` range changes). `npm audit` went from 30 findings (1 critical, 20 high) to 10 (no critical, 1 high). Updated among others: `dompurify` (XSS bypasses), `fflate` (ZIP infinite loop), `tar` (critical), `undici`, `vite`, `postcss`, `js-yaml`, `nanoid`, `form-data`.
+- **Not yet fixed (need major upgrades, tracked separately):** `electron` 41 → 45+ and `electron-builder` 26 → 27 (plus their transitive packages), and one high in `brace-expansion`.
+
 ## [1.12.7] - 2026-10-22
 
 ### Changed
