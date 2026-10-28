@@ -1098,6 +1098,13 @@
   text-transform: capitalize;
 }
 
+.total-row > span:last-child,
+.col-total,
+.payment-amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .payment-amount {
   text-align: right;
   font-weight: 600;

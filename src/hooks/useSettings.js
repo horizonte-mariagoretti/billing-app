@@ -1,5 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import useDatabase from './useDatabase';
+
+const AMOUNT_SETTING_KEYS = ['camp_base_contribution', 'camp_min_contribution', 'camp_reduction_per_percent', 'lasagna_price', 'lasagna_discount_from', 'lasagna_discount_price', 'lasagna_bonus_enabled', 'lasagna_bonus_factor'];
 
 const defaultSettings = {
   company_name: '',
@@ -77,6 +79,32 @@ const useSettings = () => {
     await transaction(operations);
   }, [transaction]);
 
+  const loadYearSettings = useCallback(async (year) => {
+    const loaded = await loadSettings();
+    const rows = await query('SELECT key, value FROM year_settings WHERE year = ?', [year]);
+    const maxRows = await query('SELECT MAX(year) AS y FROM app_years');
+    const newest = maxRows[0]?.y;
+    if (newest != null && Number(year) !== Number(newest)) {
+      AMOUNT_SETTING_KEYS.forEach((key) => {
+        loaded[key] = '';
+      });
+    }
+    rows.forEach(({ key, value }) => {
+      loaded[key] = value;
+    });
+    return loaded;
+  }, [loadSettings, query]);
+
+  const saveYearSettings = useCallback(async (year, patch) => {
+    const lockRows = await query('SELECT locked FROM app_years WHERE year = ?', [year]);
+    if (lockRows[0]?.locked) throw new Error('YEAR_LOCKED');
+    const operations = Object.entries(patch).map(([key, value]) => ({
+      sql: 'INSERT INTO year_settings (year, key, value) VALUES (?, ?, ?) ON CONFLICT(year, key) DO UPDATE SET value = excluded.value',
+      params: [year, key, String(value)],
+    }));
+    await transaction(operations);
+  }, [query, transaction]);
+
   const getNextDocumentNumber = useCallback(async (type) => {
     const numberKey = type === 'invoice' ? 'invoice_next_number' : 'quote_next_number';
     const patternKey = type === 'invoice' ? 'invoice_pattern' : 'quote_pattern';
@@ -88,12 +116,12 @@ const useSettings = () => {
     const patternStr = settingsMap[patternKey] || defaultSettings[patternKey];
     const nextNum = parseInt(settingsMap[numberKey] || '1', 10);
     
-    let pattern = [];
+    let pattern;
     try {
       pattern = JSON.parse(patternStr);
     } catch (e) {
       console.error('Failed to parse numbering pattern', e);
-      throw new Error(`Corrupt ${type} numbering pattern. Please reset it in Settings → Numbering.`);
+      throw new Error(`Corrupt ${type} numbering pattern. Please reset it in Settings → Numbering.`, { cause: e });
     }
 
     let result = '';
@@ -133,7 +161,7 @@ const useSettings = () => {
     );
   }, [run]);
 
-  return { loadSettings, saveSettings, getNextDocumentNumber, incrementDocumentNumber };
+  return { loadSettings, saveSettings, loadYearSettings, saveYearSettings, getNextDocumentNumber, incrementDocumentNumber };
 };
 
 export default useSettings;

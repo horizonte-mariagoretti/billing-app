@@ -137,7 +137,7 @@ export function buildSampleStatements() {
   const q2 = mkDoc({ id: 'd-q2', type: 'quote', client_id: 'c-3', title: 'Bastelnachmittag Herbst', status: 'accepted', locked: 1, dateOffset: -20, dueOffset: 10, issued_at: ts(-20), items: [it('p-craft'), it('p-mat-kit', 12, 1), it('p-mat-snack', 12, 1)], discount_value: 5 });
   const q3 = mkDoc({ id: 'd-q3', type: 'quote', client_id: 'c-4', title: 'Sommerfest Betreuung', status: 'sent', locked: 1, dateOffset: -6, dueOffset: 24, issued_at: ts(-6), language: 'fr', items: [it('p-event', 6, 1), it('p-night'), it('p-trans-km', 80, 1)] });
   const q4 = mkDoc({ id: 'd-q4', type: 'quote', client_id: 'c-5', title: 'Sporttag Schule', status: 'draft', dateOffset: -2, dueOffset: 28, items: [it('p-sport'), it('p-trans-bus'), it('p-mat-snack', 40, 1)] });
-  const q5 = mkDoc({ id: 'd-q5', type: 'quote', client_id: 'c-10', title: 'Vereinsfest Kinderprogramm', status: 'declined', locked: 1, dateOffset: -40, dueOffset: -10, issued_at: ts(-40), items: [it('p-care-h', 4, 6), it('p-craft')], discount_value: 50, discount_type: 'fixed' });
+  mkDoc({ id: 'd-q5', type: 'quote', client_id: 'c-10', title: 'Vereinsfest Kinderprogramm', status: 'declined', locked: 1, dateOffset: -40, dueOffset: -10, issued_at: ts(-40), items: [it('p-care-h', 4, 6), it('p-craft')], discount_value: 50, discount_type: 'fixed' });
   const q6 = mkDoc({ id: 'd-q6', type: 'quote', client_id: 'c-9', title: 'Geburtstagsfeier Betreuung', status: 'sent', locked: 1, dateOffset: -3, dueOffset: 27, issued_at: ts(-3), language: 'en', items: [it('p-care-h', 2, 4), it('p-cook')] });
   const q7 = mkDoc({ id: 'd-q7', type: 'quote', client_id: 'c-1', title: 'Kochworkshop Familienfest', status: 'draft', dateOffset: 0, dueOffset: 30, items: [it('p-cook'), it('p-mat-snack', 15, 1)] });
 
@@ -148,10 +148,10 @@ export function buildSampleStatements() {
   const i4 = mkDoc({ id: 'd-i4', type: 'invoice', client_id: 'c-4', title: 'Firmenfest Betreuung', status: 'sent', locked: 1, dateOffset: -12, dueOffset: 18, issued_at: ts(-12), language: 'fr', items: [it('p-event', 5, 6), it('p-night')] });
   const i5 = mkDoc({ id: 'd-i5', type: 'invoice', client_id: 'c-7', title: 'Kinderanimation Hoffest', status: 'sent', locked: 1, dateOffset: -50, dueOffset: -20, issued_at: ts(-50), items: [it('p-care-h', 2, 5), it('p-craft')] }); // overdue
   const i6 = mkDoc({ id: 'd-i6', type: 'invoice', client_id: 'c-8', title: 'Pfarrfest Spielprogramm', status: 'sent', locked: 1, dateOffset: -35, dueOffset: -5, issued_at: ts(-35), items: [it('p-sport'), it('p-mat-snack', 30, 1)] }); // overdue
-  const i7 = mkDoc({ id: 'd-i7', type: 'invoice', client_id: 'c-5', title: 'Projekttag Schule', status: 'draft', dateOffset: -1, dueOffset: 29, items: [it('p-cook'), it('p-mat-kit', 25, 1), it('p-admin')] });
-  const i8 = mkDoc({ id: 'd-i8', type: 'invoice', client_id: 'c-6', title: 'Nachhilfe-Betreuung (storniert)', status: 'cancelled', locked: 1, dateOffset: -70, dueOffset: -40, issued_at: ts(-70), cancelled_at: ts(-65), items: [it('p-care-h', 1, 10)] });
+  mkDoc({ id: 'd-i7', type: 'invoice', client_id: 'c-5', title: 'Projekttag Schule', status: 'draft', dateOffset: -1, dueOffset: 29, items: [it('p-cook'), it('p-mat-kit', 25, 1), it('p-admin')] });
+  mkDoc({ id: 'd-i8', type: 'invoice', client_id: 'c-6', title: 'Nachhilfe-Betreuung (storniert)', status: 'cancelled', locked: 1, dateOffset: -70, dueOffset: -40, issued_at: ts(-70), cancelled_at: ts(-65), items: [it('p-care-h', 1, 10)] });
   const i9 = mkDoc({ id: 'd-i9', type: 'invoice', client_id: 'c-9', title: 'Barzahlung Ausflug', status: 'paid', locked: 1, dateOffset: -25, dueOffset: -25, issued_at: ts(-25), paid_at: ts(-25), payment_mode: 'cash', tax_rate: 0, items: [it('p-care-h', 2, 4), it('p-mat-snack', 8, 1)] });
-  const i10 = mkDoc({ id: 'd-i10', type: 'invoice', client_id: 'c-10', title: 'Vereinsfest Sporttag', status: 'paid', locked: 1, dateOffset: -100, dueOffset: -70, issued_at: ts(-100), paid_at: ts(-80), language: 'en', discount_value: 10, items: [it('p-sport'), it('p-trans-bus')] });
+  mkDoc({ id: 'd-i10', type: 'invoice', client_id: 'c-10', title: 'Vereinsfest Sporttag', status: 'paid', locked: 1, dateOffset: -100, dueOffset: -70, issued_at: ts(-100), paid_at: ts(-80), language: 'en', discount_value: 10, items: [it('p-sport'), it('p-trans-bus')] });
   const i11 = mkDoc({ id: 'd-i11', type: 'invoice', client_id: 'c-3', title: 'Bastelnachmittag Herbst', status: 'draft', dateOffset: 0, dueOffset: 30, source_quote_id: q2.id, items: q2.items, discount_value: 5 });
 
   const docTotal = (d) => {
@@ -226,6 +226,60 @@ export function buildSampleStatements() {
       id: `a-${++asg}`, job_id: id, hori_id: hori, planned_hours: planned, actual_hours: actual,
     }));
   });
+
+  /* ── lasagnen: prices, orders and Einkaufsliste stock ────── */
+  Object.entries({
+    lasagna_price: '12',
+    lasagna_discount_from: '6',
+    lasagna_discount_price: '10',
+    lasagna_bonus_enabled: '0',
+    lasagna_bonus_factor: '100',
+  }).forEach(([k, v]) => setting(k, v));
+
+  const currentYear = (today.getMonth() + 1 >= 9 ? today.getFullYear() : today.getFullYear() - 1);
+  // Migration 28 already created the current year on an empty DB, so upsert instead of insert.
+  statements.push({
+    sql: 'INSERT INTO app_years (year, locked) VALUES (?, ?) ON CONFLICT(year) DO UPDATE SET locked = excluded.locked',
+    params: [currentYear, 0],
+  });
+  statements.push({
+    sql: 'INSERT INTO app_years (year, locked) VALUES (?, ?) ON CONFLICT(year) DO UPDATE SET locked = excluded.locked',
+    params: [currentYear - 1, 1],
+  });
+  [currentYear, currentYear - 1].forEach((year) => horis.forEach((h) => insert('hori_years', {
+    hori_id: h.id, year, active: h.active ?? 1,
+  })));
+  Object.entries({
+    lasagna_price: '12',
+    lasagna_discount_from: '6',
+    lasagna_discount_price: '10',
+    lasagna_bonus_enabled: '0',
+    lasagna_bonus_factor: '100',
+    camp_base_contribution: '120',
+    camp_min_contribution: '30',
+    camp_reduction_per_percent: '4',
+  }).forEach(([key, value]) => statements.push({
+    sql: 'INSERT INTO year_settings (year, key, value) VALUES (?, ?, ?) ON CONFLICT(year, key) DO UPDATE SET value = excluded.value',
+    params: [currentYear, key, String(value)],
+  }));
+
+  // [hori, bolo, veggie, paid, final]
+  const lasagnaOrders = [
+    ['h-1', 2, 3, 0, null], ['h-2', 1, 0, 0, null], ['h-3', 0, 4, 1, 40], ['h-4', 3, 2, 0, null],
+    ['h-5', 2, 2, 0, null], ['h-6', 0, 3, 0, null], ['h-7', 1, 1, 0, null], ['h-8', 4, 0, 0, null],
+    ['h-9', 0, 2, 0, null], ['h-10', 1, 1, 0, null], ['h-11', 2, 2, 1, 35], ['h-14', 1, 0, 0, null],
+  ];
+  lasagnaOrders.forEach(([hori, bolo, veggie, paid, final]) => insert('lasagna_orders', {
+    id: `lo-${hori}-${currentYear}`, hori_id: hori, year: currentYear, bolo, veggie, paid, final_amount: final,
+  }));
+
+  // Stock on hand per Einkaufsliste item, in the item's unit (see utils/lasagnaShoppingList.js).
+  Object.entries({
+    zucchini: 2000, champignons: 1500, zwiebel: 5, petersilie: 2,
+    oel: 100, salz: 3, muskat: 1.5, kraeuter: 2,
+    emmentaler: 1000, rahm: 2000, parmesan: 500, butter: 200, blaetter: 10,
+    aluschalen: 50, deckel: 30, bolo_lasagne: 5,
+  }).forEach(([key, value]) => setting(`lasagna_stock_${key}`, value));
 
   /* ── numbering counters follow the generated docs ────────── */
   setting('invoice_next_number', invSeq + 1);

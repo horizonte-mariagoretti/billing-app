@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import useHoris from '../hooks/useHoris';
 import useSettings from '../hooks/useSettings';
+import useYear from '../hooks/useYear';
 import useCurrency from '../hooks/useCurrency';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
@@ -17,6 +18,7 @@ import SortableTh from '../components/SortableTh';
 import useTableSort from '../hooks/useTableSort';
 import { heatColor } from '../utils/heatColor';
 import CampBaseDialog from '../components/CampBaseDialog';
+import YearSwitcher from '../components/YearSwitcher';
 import {
   Plus, ListPlus, Search, Edit2, Trash2, UserX, UserCheck, AlertCircle, Baby, Clock, PiggyBank,
   LayoutList, Grid3x3, X, CalendarDays,
@@ -46,7 +48,7 @@ function formatDateLong(iso) {
 
 /* ── Detail modal: one Hori's jobs ───────────────────────── */
 
-const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
+const HoriDetail = ({ hori, year, locked, fmtHours, onClose, onEdit }) => {
   const { fetchHoriJobs } = useHoris();
   const t = useT();
   const [jobs, setJobs] = useState([]);
@@ -59,7 +61,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
     let cancelled = false;
     (async () => {
       try {
-        const rows = await fetchHoriJobs(hori.id);
+        const rows = await fetchHoriJobs(hori.id, year);
         if (!cancelled) setJobs(rows || []);
       } catch {
         if (!cancelled) setError(t('horis_jobs_load_error', 'Arbeiten konnten nicht geladen werden.'));
@@ -69,7 +71,7 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hori.id]);
+  }, [hori.id, year]);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -163,9 +165,11 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
 
         <div className="modal-actions">
           <Button variant="ghost" type="button" onClick={onClose}>{t('horis_close', 'Schließen')}</Button>
-          <Button variant="secondary" type="button" icon={Edit2} onClick={() => onEdit(hori)}>
-            {t('btn_edit', 'Bearbeiten')}
-          </Button>
+          {!locked && (
+            <Button variant="secondary" type="button" icon={Edit2} onClick={() => onEdit(hori)}>
+              {t('btn_edit', 'Bearbeiten')}
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -176,7 +180,8 @@ const HoriDetail = ({ hori, fmtHours, onClose, onEdit }) => {
 
 const Horis = () => {
   const { fetchHoriStats, fetchMatrix, deleteHori, saveHori } = useHoris();
-  const { loadSettings } = useSettings();
+  const { loadYearSettings, saveYearSettings } = useSettings();
+  const { selectedYear, isLocked: yearLocked } = useYear();
   const { query } = useDatabase();
   const t = useT();
 
@@ -218,19 +223,17 @@ const Horis = () => {
     [locale]
   );
 
-  const load = async () => {
+  const fetchAll = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const [s, st, mx, lo] = await Promise.all([
-        loadSettings(), fetchHoriStats(), fetchMatrix(),
+        loadYearSettings(selectedYear), fetchHoriStats(selectedYear), fetchMatrix(selectedYear),
         // Lasagne counts per Hori for the bonus; an older DB without the table just means no bonus.
         query(`
           SELECT h.id AS hori_id, h.active,
             COALESCE(o.bolo, 0) AS bolo, COALESCE(o.veggie, 0) AS veggie
           FROM horis h
-          LEFT JOIN lasagna_orders o ON o.hori_id = h.id
-        `).catch((err) => {
+          LEFT JOIN lasagna_orders o ON o.hori_id = h.id AND o.year = ?
+        `, [selectedYear]).catch((err) => {
           // Keep the page usable; log so a real query failure is not silent.
           console.warn('Lasagnen-Bonus übersprungen:', err);
           return [];
@@ -244,15 +247,30 @@ const Horis = () => {
         horis: mx?.horis || [],
         assignments: mx?.assignments || [],
       });
-    } catch (err) {
+    } catch {
       setError(t('horis_load_error', 'Horis konnten nicht geladen werden. Bitte die App neu starten.'));
     } finally {
       setLoading(false);
     }
   };
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    return fetchAll();
+  };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  const [loadedYear, setLoadedYear] = useState(selectedYear);
+  if (loadedYear !== selectedYear) {
+    setLoadedYear(selectedYear);
+    setLoading(true);
+    setError(null);
+  }
+
+  // The loader is async: its setState calls run after the await. The lint rule can't see that,
+  // so it flags the synchronous call here. Left as is on purpose.
+  /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+  useEffect(() => { fetchAll(); }, [selectedYear]);
+  /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
   const baseContribution = num(settings?.camp_base_contribution);
   const campRules = campRulesFromSettings(settings);
@@ -337,7 +355,7 @@ const Horis = () => {
         active: isActive(h) ? 0 : 1,
       });
       await load();
-    } catch (_err) {
+    } catch {
       setError(t('horis_save_error', 'Hori konnte nicht gespeichert werden.'));
     }
   };
@@ -352,6 +370,8 @@ const Horis = () => {
     } catch (err) {
       if (err?.message === 'HORI_HAS_ASSIGNMENTS') {
         setError(`"${target.name}" ${t('horis_delete_has_assignments', 'ist bereits Arbeiten zugeteilt und kann nicht gelöscht werden. Setze den Hori stattdessen auf inaktiv.')}`);
+      } else if (String(err?.message || '').startsWith('HORI_HAS_LASAGNA_ORDERS')) {
+        setError(t('horis_delete_has_lasagna_orders', 'Hori hat Lasagnen-Bestellungen. Bitte stattdessen auf inaktiv setzen.'));
       } else {
         setError(t('horis_delete_error', 'Hori konnte nicht gelöscht werden.'));
       }
@@ -470,7 +490,7 @@ const Horis = () => {
                     ) : formatCurrency(c.final);
                   })() : <span className="dt-muted">—</span>}</td>
                   <td className="num horis-actions">
-                    <div className="action-btns">
+                    {!yearLocked && <div className="action-btns">
                       <button
                         type="button"
                         title={t('btn_edit', 'Bearbeiten')}
@@ -495,7 +515,7 @@ const Horis = () => {
                       >
                         <Trash2 size={16} />
                       </button>
-                    </div>
+                    </div>}
                   </td>
                 </tr>
               );
@@ -623,13 +643,30 @@ const Horis = () => {
             aria-label={t('horis_search', 'Horis suchen…')}
           />
         </div>
-        <div className="horis-header-actions">
-          <Button ref={bulkBtnRef} variant="outline" icon={ListPlus} onClick={() => setShowBulk(true)}>
-            {t('horis_bulk_add', 'Mehrere hinzufügen')}
-          </Button>
-          <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
-            {t('horis_add', 'Hori hinzufügen')}
-          </Button>
+        <div className="page-header-end">
+          <Button
+            ref={bulkBtnRef}
+            variant="outline"
+            size="sm"
+            icon={ListPlus}
+            className="horis-icon-btn"
+            onClick={() => setShowBulk(true)}
+            disabled={yearLocked}
+            aria-label={t('horis_bulk_add', 'Mehrere hinzufügen')}
+            title={t('horis_bulk_add', 'Mehrere hinzufügen')}
+          />
+          <Button
+            ref={openBtnRef}
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            className="horis-icon-btn"
+            onClick={handleNew}
+            disabled={yearLocked}
+            aria-label={t('horis_add', 'Hori hinzufügen')}
+            title={t('horis_add', 'Hori hinzufügen')}
+          />
+          <YearSwitcher />
         </div>
       </div>
 
@@ -637,6 +674,13 @@ const Horis = () => {
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
           <span>{error}</span>
+        </div>
+      )}
+
+      {yearLocked && (
+        <div className="page-error" role="status">
+          <AlertCircle size={16} />
+          <span>{t('year_locked_banner', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
         </div>
       )}
 
@@ -689,7 +733,7 @@ const Horis = () => {
               ref={campBaseBtnRef}
               className="horis-summary-card horis-summary-card-btn"
               onClick={() => setShowCampBase(true)}
-              disabled={!settings}
+              disabled={!settings || yearLocked}
               aria-haspopup="dialog"
               title={t('horis_summary_base_edit', 'Lagerbeitrag bearbeiten')}
             >
@@ -725,7 +769,7 @@ const Horis = () => {
       )}
 
       {detailHori && !showModal && !showBulk && (
-        <HoriDetail hori={detailHori} fmtHours={fmtHours} onClose={closeDetail} onEdit={handleEdit} />
+        <HoriDetail hori={detailHori} year={selectedYear} locked={yearLocked} fmtHours={fmtHours} onClose={closeDetail} onEdit={handleEdit} />
       )}
 
       <CampBaseDialog
@@ -734,6 +778,7 @@ const Horis = () => {
         onClose={closeCampBase}
         onSaved={handleCampBaseSaved}
         triggerRef={campBaseBtnRef}
+        saveFn={(patch) => saveYearSettings(selectedYear, patch)}
       />
 
       {confirm && (

@@ -189,6 +189,14 @@ input:focus, textarea:focus, select:focus {
   gap: var(--space-md);
 }
 
+/* Right end of the page header: header buttons + year switcher */
+.page-header-end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
 .search-bar {
   flex: 1;
   max-width: 400px;

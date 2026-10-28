@@ -21,7 +21,7 @@ const parse = (s) => {
 
 // Mounted only while open, so every opening starts from the saved values and
 // Cancel simply drops the local form state.
-const CampBaseForm = ({ settings, onClose, onSaved, triggerRef }) => {
+const CampBaseForm = ({ settings, onClose, onSaved, triggerRef, saveFn }) => {
   const { saveSettings } = useSettings();
   const t = useT();
   const [form, setForm] = useState(() => Object.fromEntries(KEYS.map(k => [k, toField(settings?.[k])])));
@@ -72,10 +72,13 @@ const CampBaseForm = ({ settings, onClose, onSaved, triggerRef }) => {
     setSaving(true);
     setSaveError(null);
     try {
-      await saveSettings(patch);
+      if (saveFn) await saveFn(patch);
+      else await saveSettings(patch);
       onSaved?.(patch);
-    } catch {
-      setSaveError(t('camp_dialog_save_error', 'Lagerbeitrag konnte nicht gespeichert werden.'));
+    } catch (err) {
+      setSaveError(err?.message === 'YEAR_LOCKED'
+        ? 'Dieses Jahr ist gesperrt. Lagerbeitrag kann nicht geändert werden.'
+        : t('camp_dialog_save_error', 'Lagerbeitrag konnte nicht gespeichert werden.'));
       setSaving(false);
     }
   };
@@ -136,9 +139,9 @@ const CampBaseForm = ({ settings, onClose, onSaved, triggerRef }) => {
   );
 };
 
-const CampBaseDialog = ({ open, settings, onClose, onSaved, triggerRef }) => {
+const CampBaseDialog = ({ open, settings, onClose, onSaved, triggerRef, saveFn }) => {
   if (!open) return null;
-  return <CampBaseForm settings={settings} onClose={onClose} onSaved={onSaved} triggerRef={triggerRef} />;
+  return <CampBaseForm settings={settings} onClose={onClose} onSaved={onSaved} triggerRef={triggerRef} saveFn={saveFn} />;
 };
 
 export default CampBaseDialog;

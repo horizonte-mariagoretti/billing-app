@@ -38,6 +38,8 @@
 }
 
 .doc-amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
@@ -113,6 +115,8 @@
 }
 
 .doc-amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
 

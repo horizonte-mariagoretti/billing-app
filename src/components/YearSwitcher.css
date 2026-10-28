@@ -1,0 +1,94 @@
+/* Year switcher dropdown (YearSwitcher.jsx). Styled like ClientPicker's list. */
+.year-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-left: auto;
+}
+
+.year-switcher-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 36px;
+  min-width: 128px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background: var(--color-light-surface);
+  color: var(--color-text-dark-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.year-switcher-trigger span { flex: 1; text-align: left; }
+.year-switcher-trigger:hover { border-color: var(--color-text-dark-tertiary); }
+.year-switcher-trigger:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+.year-switcher-lock { color: var(--color-text-dark-tertiary); }
+
+.year-switcher-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 200;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.year-switcher-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-dark-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.year-switcher-option:hover {
+  background-color: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.year-switcher-option.is-selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.year-switcher-option--create {
+  justify-content: flex-start;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.year-switcher-badge {
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.year-switcher-error { color: var(--color-danger); font-size: 0.8rem; }
