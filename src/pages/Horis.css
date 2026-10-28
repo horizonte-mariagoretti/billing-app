@@ -13,6 +13,14 @@
   flex-wrap: wrap;
 }
 
+.horis-icon-btn {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+}
+
+.horis-icon-btn > span:empty { display: none; }
+
 .horis-row:focus-visible,
 .horis-matrix-name button:focus-visible,
 .horis-matrix-scroll:focus-visible {
@@ -492,8 +500,3 @@
   .horis-detail-header { margin-bottom: var(--space-md); }
 }
 
-.horis-header-actions {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}

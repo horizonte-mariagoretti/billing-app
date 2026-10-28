@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Lock, Unlock, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Lock, Unlock, Plus, ChevronDown, Check } from 'lucide-react';
 import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
 import useYear, { setYearLocked } from '../hooks/useYear';
@@ -9,12 +9,23 @@ import './YearSwitcher.css';
 const YearSwitcher = () => {
   const { years, currentYear, selectedYear, setSelectedYear, isLocked, label, startNewYear, refreshYears } = useYear();
   const [confirm, setConfirm] = useState(null); // 'new' | 'unlock' | 'lock' | null
+  const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
   const busyRef = useRef(false);
+  const wrapRef = useRef(null);
 
-  const idx = years.findIndex(y => y.year === selectedYear);
-  const older = idx >= 0 ? years[idx + 1] : undefined;
-  const newer = idx > 0 ? years[idx - 1] : undefined;
+  // Close the year list on outside click or Escape.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => { if (!wrapRef.current?.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   const run = async (fn) => {
     if (busyRef.current) return;
@@ -53,40 +64,64 @@ const YearSwitcher = () => {
     },
   }[confirm];
 
-  const optionText = (y) => {
-    let text = scoutYearLabel(y.year);
-    if (y.year === currentYear) text += ' (aktuell)';
-    if (y.locked) text += ' (gesperrt)';
-    return text;
+  const pick = (year) => {
+    setOpen(false);
+    setSelectedYear(year);
   };
 
   return (
-    <div className="year-switcher">
-      <button type="button" className="year-switcher-nav" onClick={() => older && setSelectedYear(older.year)}
-        disabled={!older} aria-label="Vorheriges Jahr" title="Vorheriges Jahr">
-        <ChevronLeft size={16} />
-      </button>
-      <div className="year-switcher-select-wrap">
+    <div className="year-switcher" ref={wrapRef}>
+      <button
+        type="button"
+        className="year-switcher-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Jahr"
+        onClick={() => setOpen(o => !o)}
+      >
         {isLocked && <Lock size={14} className="year-switcher-lock" aria-hidden="true" />}
-        <select className="year-switcher-select" value={selectedYear} aria-label="Jahr"
-          onChange={(e) => setSelectedYear(e.target.value)}>
-          {years.length === 0 && <option value={selectedYear}>{label}</option>}
-          {years.map(y => <option key={y.year} value={y.year}>{optionText(y)}</option>)}
-        </select>
-      </div>
-      <button type="button" className="year-switcher-nav" onClick={() => newer && setSelectedYear(newer.year)}
-        disabled={!newer} aria-label="Nächstes Jahr" title="Nächstes Jahr">
-        <ChevronRight size={16} />
+        <span>{label}</span>
+        <ChevronDown size={16} aria-hidden="true" />
       </button>
+
+      {open && (
+        <ul className="year-switcher-list" role="listbox" aria-label="Jahr">
+          {years.length === 0 && <li role="option" aria-selected="true" className="year-switcher-option is-selected">{label}</li>}
+          {years.map(y => {
+            const isSel = y.year === selectedYear;
+            return (
+              <li
+                key={y.year}
+                role="option"
+                aria-selected={isSel}
+                className={`year-switcher-option${isSel ? ' is-selected' : ''}`}
+                onClick={() => pick(y.year)}
+              >
+                <span>{scoutYearLabel(y.year)}</span>
+                {isSel && <Check size={13} aria-hidden="true" />}
+              </li>
+            );
+          })}
+          {selectedYear === currentYear && (
+            <li
+              role="option"
+              aria-selected={false}
+              className="year-switcher-option year-switcher-option--create"
+              onClick={() => { setOpen(false); setConfirm('new'); }}
+            >
+              <Plus size={13} aria-hidden="true" />
+              <span>Neues Jahr starten</span>
+            </li>
+          )}
+        </ul>
+      )}
+
       {isLocked && <span className="year-switcher-badge">Nur Lesen</span>}
       {isLocked && selectedYear !== currentYear && (
         <Button variant="ghost" size="sm" icon={Unlock} onClick={() => setConfirm('unlock')}>Entsperren</Button>
       )}
       {!isLocked && selectedYear !== currentYear && (
         <Button variant="ghost" size="sm" icon={Lock} onClick={() => setConfirm('lock')}>Sperren</Button>
-      )}
-      {selectedYear === currentYear && (
-        <Button variant="secondary" size="sm" icon={Plus} onClick={() => setConfirm('new')}>Neues Jahr starten</Button>
       )}
       {error && <span className="year-switcher-error" role="alert">{error}</span>}
       {dialog && (

@@ -201,9 +201,12 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
             aria-label={t('arbeiten_search', 'Arbeiten suchen...')}
           />
         </div>
-        <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew} disabled={isLocked}>
-          {t('arbeiten_add', 'Auftrag/Arbeit hinzufügen')}
-        </Button>
+        <div className="page-header-end">
+          <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew} disabled={isLocked}>
+            {t('arbeiten_add', 'Auftrag/Arbeit hinzufügen')}
+          </Button>
+          <YearSwitcher />
+        </div>
       </div>
 
       {isLocked && (
@@ -214,7 +217,6 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
       )}
 
       <div className="arbeiten-toolbar">
-        <YearSwitcher />
         <SegmentedToggle
           className="seg-toggle-fill"
           ariaLabel={t('arbeiten_view_label', 'Ansicht')}

@@ -535,6 +535,7 @@ const Lasagnen = () => {
             aria-label={t('lasagnen_search', 'Horis suchen…')}
           />
         </div>
+        <YearSwitcher />
       </div>
 
       {error && (
@@ -545,7 +546,6 @@ const Lasagnen = () => {
       )}
 
       <div className="lasagnen-toolbar">
-        <YearSwitcher />
         <SegmentedToggle
           className="seg-toggle-fill"
           ariaLabel={t('horis_view_label', 'Ansicht')}

@@ -643,13 +643,30 @@ const Horis = () => {
             aria-label={t('horis_search', 'Horis suchen…')}
           />
         </div>
-        <div className="horis-header-actions">
-          <Button ref={bulkBtnRef} variant="outline" icon={ListPlus} onClick={() => setShowBulk(true)} disabled={yearLocked}>
-            {t('horis_bulk_add', 'Mehrere hinzufügen')}
-          </Button>
-          <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew} disabled={yearLocked}>
-            {t('horis_add', 'Hori hinzufügen')}
-          </Button>
+        <div className="page-header-end">
+          <Button
+            ref={bulkBtnRef}
+            variant="outline"
+            size="sm"
+            icon={ListPlus}
+            className="horis-icon-btn"
+            onClick={() => setShowBulk(true)}
+            disabled={yearLocked}
+            aria-label={t('horis_bulk_add', 'Mehrere hinzufügen')}
+            title={t('horis_bulk_add', 'Mehrere hinzufügen')}
+          />
+          <Button
+            ref={openBtnRef}
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            className="horis-icon-btn"
+            onClick={handleNew}
+            disabled={yearLocked}
+            aria-label={t('horis_add', 'Hori hinzufügen')}
+            title={t('horis_add', 'Hori hinzufügen')}
+          />
+          <YearSwitcher />
         </div>
       </div>
 
@@ -668,7 +685,6 @@ const Horis = () => {
       )}
 
       <div className="horis-toolbar">
-        <YearSwitcher />
         <SegmentedToggle
           className="seg-toggle-fill"
           ariaLabel={t('horis_view_label', 'Ansicht')}
