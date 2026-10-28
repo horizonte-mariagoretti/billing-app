@@ -184,77 +184,8 @@
 }
 .lasagnen-final.invalid:focus { box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.15); }
 
-/* ── Verteilung: lasagnes per Hori (bars like .dt-heat-bar) ── */
-.lasagnen-dist-card { padding: var(--space-lg); }
-
-.lasagnen-dist-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-md);
-}
-
-.lasagnen-dist-title {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-dark-primary);
-}
-
-.lasagnen-dist-legend {
-  display: flex;
-  gap: var(--space-md);
-  font-size: 0.8rem;
-  color: var(--color-text-dark-secondary);
-}
-.lasagnen-dist-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.lasagnen-dist-legend i { width: 12px; height: 12px; border-radius: 3px; }
-
-.lasagnen-dist-legend i.bolo,
-.lasagnen-bars-track i.bolo   { background: var(--stat-indigo-icon); }
-.lasagnen-dist-legend i.veggie,
-.lasagnen-bars-track i.veggie { background: var(--stat-green-icon); }
-
-.lasagnen-bars {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.lasagnen-bars-row {
-  display: grid;
-  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) 64px 56px;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.lasagnen-bars-name {
-  font-weight: 600;
-  color: var(--color-text-dark-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lasagnen-bars-row.inactive .lasagnen-bars-name { color: var(--color-text-dark-tertiary); }
-
-.lasagnen-bars-track {
-  display: flex;
-  height: 24px;
-  border-radius: var(--radius-md);
-  background-color: var(--color-light-bg);
-  overflow: hidden;
-}
-.lasagnen-bars-track i { height: 100%; transition: width var(--transition-normal); }
-.lasagnen-bars-row.inactive .lasagnen-bars-track i { opacity: 0.45; }
-
-.lasagnen-bars-count,
-.lasagnen-bars-pct { text-align: right; white-space: nowrap; }
+/* ── Einkaufsliste: uses the shared .data-table look (DataTable.css) ── */
+.lasagnen-shop-table td:first-child { font-weight: 600; color: var(--color-text-dark-primary); }
 
 /* ── Empty state ── */
 .lasagnen-empty {
@@ -281,5 +212,4 @@
 
 @media (max-width: 700px) {
   .lasagnen-summary { grid-template-columns: 1fr; }
-  .lasagnen-bars-row { grid-template-columns: minmax(80px, 120px) minmax(0, 1fr) 56px 48px; gap: var(--space-sm); }
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.15.0] - 2026-10-28
+
+### Added
+- **Lasagnen: Einkaufsliste** replaces the Verteilung view. It totals the ingredients for the Veggie lasagnes of the Horis shown (same rows as the Übersicht): per-container amounts from the vegetarian recipe × Veggie count, rounded to buyable units (kg/l above 1000 g/ml, whole onions and bunches, Lasagneblätter in packs of 27). Salt, Italian herbs and nutmeg show grams next to TL. Changes agreed in the chat: zucchini fried briefly in oil, Emmental (56 g per container) instead of Fontina in the sauce, Parmesan 12.5 g and butter 5 g on top. Bolo is not included yet (no Bolo recipe).
+- Constants live in `src/utils/lasagnaShoppingList.js`.
+
+### Removed
+- Verteilung view and its bar styles.
+
 ## [1.14.0] - 2026-10-23
 
 ### Added

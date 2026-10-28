@@ -81,7 +81,7 @@ Billing_App/
 │   │   ├── Products.jsx / .css       # Product cards + category chips + modal
 │   │   ├── Arbeiten.jsx / .css       # Work dates (times/open end), assigned Horis, planned vs actual hours, links to client/quote/invoice
 │   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share, matrix view
-│   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Verteilung (bars per Hori)
+│   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])
