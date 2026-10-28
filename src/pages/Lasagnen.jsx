@@ -279,7 +279,7 @@ const Lasagnen = () => {
               {sortTh('name', t('horis_col_name', 'Name'))}
               {sortTh('bolo', t('lasagnen_col_bolo', 'Bolo'))}
               {sortTh('veggie', t('lasagnen_col_veggie', 'Veggie'))}
-              {sortTh('share', t('lasagnen_col_share', 'Anteil'))}
+              {sortTh('share', t('lasagnen_col_share', 'Anteil %'))}
               {bonus.enabled && <th>{t('lasagnen_col_bonus', 'Bonus %')}</th>}
               {sortTh('min', t('lasagnen_col_amount_min', 'Betrag min'), 'right')}
               {sortTh('final', t('lasagnen_col_amount_final', 'Betrag final'), 'right')}

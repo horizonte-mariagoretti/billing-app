@@ -1387,6 +1387,20 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
       }
     },
   },
+  {
+    version: 27,
+    up: (exec) => {
+      // Lasagnen Übersicht: "Anteil" header gets the "%" like the Horis list.
+      try {
+        exec(`
+UPDATE ui_translations SET value_de = 'Anteil %', value_fr = 'Part %', value_en = 'Anteil %'
+WHERE key = 'lasagnen_col_share';
+        `);
+      } catch (e) {
+        console.error('Migration 27 failed:', e.message);
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void
