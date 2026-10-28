@@ -9,8 +9,9 @@ import SettingsFieldsModal from '../components/SettingsFieldsModal';
 import SortableTh from '../components/SortableTh';
 import useTableSort from '../hooks/useTableSort';
 import { heatColor } from '../utils/heatColor';
-import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, PieChart, Lock } from 'lucide-react';
+import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, ShoppingCart, Lock } from 'lucide-react';
 import { lasagnaShares, bonusReductionPct, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
+import { veggieShoppingTotals } from '../utils/lasagnaShoppingList';
 import '../components/DataTable.css';
 import './Lasagnen.css';
 
@@ -45,33 +46,18 @@ const toRowState = (r) => {
   };
 };
 
-/* ── Verteilung: lasagnes per Hori (CSS bars, same look as the Horis Anteil bars) ── */
+/* ── Einkaufsliste: ingredient totals for the Veggie lasagnes shown (per-container amounts × count) ── */
 
-const HoriBars = ({ rows, shares, t, fmtPct }) => {
-  const max = Math.max(0, ...rows.map((r) => r.total));
-  return (
-    <ul className="lasagnen-bars">
-      {rows.map((r) => {
-        const share = shares.get(r.hori_id);
-        const w = (n) => (max > 0 ? `${(100 * n) / max}%` : '0%');
-        return (
-          <li key={r.hori_id} className={`lasagnen-bars-row${r.active ? '' : ' inactive'}`}>
-            <span className="lasagnen-bars-name" title={r.name}>{r.name}</span>
-            <div
-              className="lasagnen-bars-track"
-              role="img"
-              aria-label={`${r.name}: ${t('lasagnen_col_bolo', 'Bolo')} ${r.bolo}, ${t('lasagnen_col_veggie', 'Veggie')} ${r.veggie}`}
-            >
-              <i className="bolo" style={{ width: w(r.bolo) }} />
-              <i className="veggie" style={{ width: w(r.veggie) }} />
-            </div>
-            <span className="dt-mono dt-strong lasagnen-bars-count">{r.total} {t('lasagnen_pieces', 'Stk.')}</span>
-            <span className="dt-mono dt-muted lasagnen-bars-pct">{share ? fmtPct(share.sharePct) : '—'}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
+const fmtShopAmount = (item, total, locale) => {
+  const fmt = (n, digits) => n.toLocaleString(locale, { maximumFractionDigits: digits });
+  if (item.unit === 'g') return total >= 1000 ? `${fmt(total / 1000, 2)} kg` : `${fmt(Math.ceil(total), 0)} g`;
+  if (item.unit === 'ml') return total >= 1000 ? `${fmt(total / 1000, 2)} l` : `${fmt(Math.ceil(total), 0)} ml`;
+  if (item.unit === 'TL') {
+    const tl = `${fmt(total, 2)} TL`;
+    return item.gramsPerTl ? `${tl} (${fmt(Math.round(total * item.gramsPerTl), 0)} g)` : tl;
+  }
+  if (item.packSize) return `${fmt(Math.ceil(total / item.packSize), 0)} ${item.unit}`; // whole packs
+  return `${fmt(Math.ceil(total), 0)} ${item.unit}`; // Stk., Bund: buy whole units
 };
 
 /* ── Page ─────────────────────────────────────────────────── */
@@ -85,7 +71,7 @@ const Lasagnen = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [view, setView] = useState('overview'); // 'overview' | 'distribution'
+  const [view, setView] = useState('overview'); // 'overview' | 'shopping'
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   // Shared table sort: none → asc → desc → none. Default: Name A→Z.
@@ -293,7 +279,7 @@ const Lasagnen = () => {
               {sortTh('name', t('horis_col_name', 'Name'))}
               {sortTh('bolo', t('lasagnen_col_bolo', 'Bolo'))}
               {sortTh('veggie', t('lasagnen_col_veggie', 'Veggie'))}
-              {sortTh('share', t('lasagnen_col_share', 'Anteil'))}
+              {sortTh('share', t('lasagnen_col_share', 'Anteil %'))}
               {bonus.enabled && <th>{t('lasagnen_col_bonus', 'Bonus %')}</th>}
               {sortTh('min', t('lasagnen_col_amount_min', 'Betrag min'), 'right')}
               {sortTh('final', t('lasagnen_col_amount_final', 'Betrag final'), 'right')}
@@ -419,27 +405,34 @@ const Lasagnen = () => {
     );
   };
 
-  // Verteilung: one bar per Hori (same rows as the Übersicht), sorted by Bolo + Veggie descending.
-  const barRows = visible
-    .map((r) => {
-      const bolo = toCount(r.bolo);
-      const veggie = toCount(r.veggie);
-      return { hori_id: r.hori_id, name: fullName(r), active: isActive(r), bolo, veggie, total: bolo + veggie };
-    })
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, locale));
-
-  const renderDistribution = () => {
+  // Einkaufsliste: Veggie only (no Bolo recipe yet). Same visible Horis as the Übersicht totals.
+  const renderShoppingList = () => {
     if (loading || visible.length === 0) return <div className="data-table-container">{emptyState()}</div>;
+    const items = veggieShoppingTotals(totals.veggie);
     return (
-      <div className="data-table-container lasagnen-dist-card">
-        <div className="lasagnen-dist-head">
-          <h3 className="lasagnen-dist-title">{t('lasagnen_dist_per_hori', 'Verkaufte Lasagnen pro Hori')}</h3>
-          <div className="lasagnen-dist-legend">
-            <span><i className="bolo" aria-hidden="true" />{t('lasagnen_col_bolo', 'Bolo')}</span>
-            <span><i className="veggie" aria-hidden="true" />{t('lasagnen_col_veggie', 'Veggie')}</span>
-          </div>
-        </div>
-        <HoriBars rows={barRows} shares={shares} t={t} fmtPct={fmtPct} />
+      <div className="data-table-container">
+        <table className="data-table lasagnen-shop-table">
+          <thead>
+            <tr>
+              <th>{t('lasagnen_shop_col_item', 'Zutat')}</th>
+              <th className="num">{t('lasagnen_shop_col_total', 'Menge gesamt')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.key}>
+                <td>{t(`lasagnen_shop_${item.key}`, item.label)}</td>
+                <td className="num dt-mono">{fmtShopAmount(item, item.total, locale)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>{t('lasagnen_shop_count', 'Veggie-Lasagnen')}</td>
+              <td className="num dt-mono">{totals.veggie} {t('lasagnen_pieces', 'Stk.')}</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     );
   };
@@ -474,7 +467,7 @@ const Lasagnen = () => {
           onChange={setView}
           options={[
             { value: 'overview', label: t('horis_view_overview', 'Übersicht'), icon: <LayoutList size={15} /> },
-            { value: 'distribution', label: t('lasagnen_view_distribution', 'Verteilung'), icon: <PieChart size={15} /> },
+            { value: 'shopping', label: t('lasagnen_view_shopping', 'Einkaufsliste'), icon: <ShoppingCart size={15} /> },
           ]}
         />
         <label className="lasagnen-toggle">
@@ -490,7 +483,7 @@ const Lasagnen = () => {
         </>
       )}
 
-      {view === 'distribution' && renderDistribution()}
+      {view === 'shopping' && renderShoppingList()}
 
       {showPriceModal && settings && (
         <SettingsFieldsModal
