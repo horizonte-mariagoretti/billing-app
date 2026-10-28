@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import useJobs from '../hooks/useJobs';
 import { useT } from '../hooks/useUiTranslations';
+import useYear from '../hooks/useYear';
+import YearSwitcher from '../components/YearSwitcher';
+import { scoutYearOf, scoutYearLabel } from '../utils/scoutYear';
 import Button from '../components/Button';
 import SegmentedToggle from '../components/SegmentedToggle';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -27,10 +30,11 @@ const formatHours = (h) => {
 const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
   const { fetchJobs, fetchJob, deleteJob } = useJobs();
   const t = useT();
+  const { selectedYear, years, isLocked } = useYear();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
   const [view, setView] = useState(() => {
-    try { return localStorage.getItem('arbeiten_view') === 'calendar' ? 'calendar' : 'list'; } catch (_e) { return 'list'; }
+    try { return localStorage.getItem('arbeiten_view') === 'calendar' ? 'calendar' : 'list'; } catch { return 'list'; }
   }); // 'list' | 'calendar'
   const [newDate, setNewDate] = useState(null); // preset date for a new job (calendar day click)
   const [loading, setLoading] = useState(true);
@@ -60,23 +64,25 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
       setError(null);
       const data = await fetchJobs();
       setJobs(Array.isArray(data) ? data : []);
-    } catch (_err) {
+    } catch {
       setError(t('arbeiten_load_error', 'Arbeiten konnten nicht geladen werden. Bitte die App neu starten.'));
     } finally {
       setLoading(false);
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // The loader is async: its setState calls run after the await. The lint rule can't see that.
+  /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
   useEffect(() => { loadJobs(); }, []);
+  /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
   const changeView = (v) => {
     setView(v);
-    try { localStorage.setItem('arbeiten_view', v); } catch (_e) { /* storage unavailable: view just won't persist */ }
+    try { localStorage.setItem('arbeiten_view', v); } catch { /* storage unavailable: view just won't persist */ }
   };
-  const handleNew = () => { setEditingId(null); setNewDate(null); setShowModal(true); };
-  const handleNewOnDate = (iso) => { setEditingId(null); setNewDate(iso); setShowModal(true); };
-  const handleEdit = (job) => { setEditingId(job.id); setShowModal(true); };
+  const handleNew = () => { if (isLocked) return; setEditingId(null); setNewDate(null); setShowModal(true); };
+  const handleNewOnDate = (iso) => { if (isLocked) return; setEditingId(null); setNewDate(iso); setShowModal(true); };
+  const handleEdit = (job) => { if (isLocked) return; setEditingId(job.id); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditingId(null); setNewDate(null); };
   const handleModalSave = () => { closeModal(); loadJobs(); };
 
@@ -93,15 +99,17 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
       if (!job) return;
       const existingId = type === 'quote' ? job.quote_id : job.invoice_id;
       if (existingId) { await onOpenDoc?.(existingId); return; }
+      if (isLocked) return;
       if (type === 'invoice' && job.quote_id) { await onCreateDocFromJob?.(job.id, 'invoice'); return; }
       setDocDialog({ job, type });
-    } catch (_err) {
+    } catch {
       setError(t('jobdoc_err_failed', 'Dokument konnte nicht vorbereitet werden.'));
     }
   };
 
   const confirmDocDialog = async (params) => {
     const { job, type } = docDialog;
+    if (isLocked) { setDocDialog(null); return; }
     await onCreateDocFromJob?.(job.id, type, params);
     setDocDialog(null);
   };
@@ -110,9 +118,10 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
 
   const handleDeleteConfirmed = async () => {
     if (!confirm) return;
+    if (isLocked) { setConfirm(null); return; }
     try {
       await deleteJob(confirm.id);
-    } catch (_err) {
+    } catch {
       setError(t('arbeiten_delete_error', 'Löschen fehlgeschlagen.'));
     }
     setConfirm(null);
@@ -124,7 +133,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
     const today = todayISO();
     const match = (j) => !q || [j.title, j.client_name, j.notes, j.quote_number, j.invoice_number]
       .some((v) => v && String(v).toLowerCase().includes(q));
-    const filtered = jobs.filter(match);
+    const filtered = jobs.filter((j) => j.date && scoutYearOf(j.date) === selectedYear).filter(match);
     const byDateTime = (a, b) =>
       (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || '');
     return {
@@ -133,7 +142,11 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
       upcoming: filtered.filter((j) => (j.date || '') >= today).sort(byDateTime),
       past: filtered.filter((j) => (j.date || '') < today).sort((a, b) => byDateTime(b, a)),
     };
-  }, [jobs, search]);
+  }, [jobs, search, selectedYear]);
+
+  const countInYear = (year) => jobs.filter((j) => j.date && scoutYearOf(j.date) === year).length;
+  const prevYear = selectedYear - 1;
+  const hasPrevYear = years.some((y) => y.year === prevYear);
 
   // One merged list: what's coming up first (soonest first), then what's behind us (latest first).
   const rows = [...upcoming, ...past];
@@ -188,21 +201,37 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
             aria-label={t('arbeiten_search', 'Arbeiten suchen...')}
           />
         </div>
-        <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew}>
+        <Button ref={openBtnRef} variant="primary" icon={Plus} onClick={handleNew} disabled={isLocked}>
           {t('arbeiten_add', 'Auftrag/Arbeit hinzufügen')}
         </Button>
       </div>
 
-      <SegmentedToggle
-        className="seg-toggle-fill"
-        ariaLabel={t('arbeiten_view_label', 'Ansicht')}
-        value={view}
-        onChange={changeView}
-        options={[
-          { value: 'list', label: t('arbeiten_view_list', 'Liste'), icon: <LayoutList size={15} aria-hidden="true" />, count: filtered.length },
-          { value: 'calendar', label: t('arbeiten_view_calendar', 'Kalender'), icon: <CalendarDays size={15} aria-hidden="true" /> },
-        ]}
-      />
+      {isLocked && (
+        <div className="page-error" role="status">
+          <AlertCircle size={16} />
+          <span>{t('year_locked_banner', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
+        </div>
+      )}
+
+      <div className="arbeiten-toolbar">
+        <YearSwitcher />
+        <SegmentedToggle
+          className="seg-toggle-fill"
+          ariaLabel={t('arbeiten_view_label', 'Ansicht')}
+          value={view}
+          onChange={changeView}
+          options={[
+            { value: 'list', label: t('arbeiten_view_list', 'Liste'), icon: <LayoutList size={15} aria-hidden="true" />, count: filtered.length },
+            { value: 'calendar', label: t('arbeiten_view_calendar', 'Kalender'), icon: <CalendarDays size={15} aria-hidden="true" /> },
+          ]}
+        />
+        <div className="arbeiten-year-counts" role="status">
+          <span>{scoutYearLabel(selectedYear)}: {countInYear(selectedYear)} {t('arbeiten_jobs_count', 'Jobs')}</span>
+          {hasPrevYear && (
+            <span className="arbeiten-muted">{scoutYearLabel(prevYear)}: {countInYear(prevYear)} {t('arbeiten_jobs_count', 'Jobs')}</span>
+          )}
+        </div>
+      </div>
       {error && (
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
@@ -257,7 +286,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
                     </tr>
                   )}
                   <tr
-                    className={`arbeiten-row${cancelled ? ' arbeiten-row--cancelled' : ''}`}
+                    className={`arbeiten-row${cancelled ? ' arbeiten-row--cancelled' : ''}${isLocked ? ' arbeiten-row--locked' : ''}`}
                     onClick={() => handleEdit(job)}
                   >
                     <td className="arbeiten-date-cell">
@@ -333,6 +362,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
                                 className={`arbeiten-doc-action${hasQuote ? ' is-linked' : ''}`}
                                 title={qLabel}
                                 aria-label={`${qLabel} – ${job.title || date}`}
+                                disabled={isLocked && !hasQuote}
                                 onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'quote'); }}
                               >
                                 {hasQuote ? <FileText size={16} /> : <FilePlus size={16} />}
@@ -342,6 +372,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
                                 className={`arbeiten-doc-action${hasInvoice ? ' is-linked' : ''}`}
                                 title={iLabel}
                                 aria-label={`${iLabel} – ${job.title || date}`}
+                                disabled={isLocked && !hasInvoice}
                                 onClick={(e) => { e.stopPropagation(); requestDoc(job.id, 'invoice'); }}
                               >
                                 {hasInvoice ? <Receipt size={16} /> : <ReceiptText size={16} />}
@@ -353,6 +384,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
                           type="button"
                           title={t('btn_edit', 'Bearbeiten')}
                           aria-label={`${t('btn_edit', 'Bearbeiten')} ${job.title || ''}`}
+                          disabled={isLocked}
                           onClick={(e) => { e.stopPropagation(); handleEdit(job); }}
                         >
                           <Edit2 size={16} />
@@ -361,6 +393,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
                           type="button"
                           title={t('btn_delete', 'Löschen')}
                           aria-label={`${t('btn_delete', 'Löschen')} ${job.title || ''}`}
+                          disabled={isLocked}
                           onClick={(e) => { e.stopPropagation(); setConfirm({ id: job.id, title: job.title || date }); }}
                         >
                           <Trash2 size={16} />
@@ -377,7 +410,7 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
       </div>
       )}
 
-      {showModal && (
+      {showModal && !isLocked && (
         <JobModal
           jobId={editingId}
           defaultDate={newDate}

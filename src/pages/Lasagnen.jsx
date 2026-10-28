@@ -2,16 +2,18 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import useLasagnen from '../hooks/useLasagnen';
 import useSettings from '../hooks/useSettings';
 import useCurrency from '../hooks/useCurrency';
+import useYear from '../hooks/useYear';
 import { useT } from '../hooks/useUiTranslations';
 import DecimalInput from '../components/DecimalInput';
+import YearSwitcher from '../components/YearSwitcher';
 import SegmentedToggle from '../components/SegmentedToggle';
 import SettingsFieldsModal from '../components/SettingsFieldsModal';
 import SortableTh from '../components/SortableTh';
 import useTableSort from '../hooks/useTableSort';
 import { heatColor } from '../utils/heatColor';
-import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, ShoppingCart, Lock } from 'lucide-react';
+import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, ShoppingCart, Lock, ChevronDown, ChevronRight } from 'lucide-react';
 import { lasagnaShares, bonusReductionPct, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
-import { veggieShoppingTotals } from '../utils/lasagnaShoppingList';
+import { SHOP_STORES, shoppingList, itemToBuy, displayUnit, stockSettingKey } from '../utils/lasagnaShoppingList';
 import '../components/DataTable.css';
 import './Lasagnen.css';
 
@@ -48,28 +50,29 @@ const toRowState = (r) => {
 
 /* ── Einkaufsliste: ingredient totals for the Veggie lasagnes shown (per-container amounts × count) ── */
 
-const fmtShopAmount = (item, total, locale) => {
+// qty is in the item's base unit (see itemNeed / itemToBuy); shown in the row's display unit.
+const fmtShopAmount = (item, qty, locale, display) => {
   const fmt = (n, digits) => n.toLocaleString(locale, { maximumFractionDigits: digits });
-  if (item.unit === 'g') return total >= 1000 ? `${fmt(total / 1000, 2)} kg` : `${fmt(Math.ceil(total), 0)} g`;
-  if (item.unit === 'ml') return total >= 1000 ? `${fmt(total / 1000, 2)} l` : `${fmt(Math.ceil(total), 0)} ml`;
+  if (display.factor > 1) return `${fmt(qty / display.factor, 2)} ${display.unit}`;
   if (item.unit === 'TL') {
-    const tl = `${fmt(total, 2)} TL`;
-    return item.gramsPerTl ? `${tl} (${fmt(Math.round(total * item.gramsPerTl), 0)} g)` : tl;
+    const tl = `${fmt(qty, 2)} TL`;
+    return item.gramsPerTl ? `${tl} (${fmt(Math.round(qty * item.gramsPerTl), 0)} g)` : tl;
   }
-  if (item.packSize) return `${fmt(Math.ceil(total / item.packSize), 0)} ${item.unit}`; // whole packs
-  return `${fmt(Math.ceil(total), 0)} ${item.unit}`; // Stk., Bund: buy whole units
+  return `${fmt(qty, 0)} ${item.unit}`; // Stk., Bund, Packungen: whole units
 };
 
 /* ── Page ─────────────────────────────────────────────────── */
 
 const Lasagnen = () => {
   const { fetchOrders, saveOrder } = useLasagnen();
-  const { loadSettings } = useSettings();
+  const { loadYearSettings, saveYearSettings } = useSettings();
+  const { selectedYear, isLocked: yearLocked } = useYear();
   const t = useT();
 
   const [settings, setSettings] = useState(null);
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedYear, setLoadedYear] = useState(null);
+  const loading = loadedYear !== selectedYear;
   const [error, setError] = useState(null);
   const [view, setView] = useState('overview'); // 'overview' | 'shopping'
   const [search, setSearch] = useState('');
@@ -77,28 +80,29 @@ const Lasagnen = () => {
   // Shared table sort: none → asc → desc → none. Default: Name A→Z.
   const { sort, toggleSort, sortRows } = useTableSort({ key: 'name', dir: 'asc' });
   const [showPriceModal, setShowPriceModal] = useState(false);
+  const [collapsedStores, setCollapsedStores] = useState(() => new Set()); // Einkaufsliste sections folded away
   const priceBtnRef = useRef(null);
 
   const formatCurrency = useCurrency(settings);
 
-  // Initial load: all state updates happen after the await (no synchronous setState in the effect).
+  // Load per year: reruns when the selected year changes.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [s, o] = await Promise.all([loadSettings(), fetchOrders()]);
+        const [s, o] = await Promise.all([loadYearSettings(selectedYear), fetchOrders(selectedYear)]);
         if (cancelled) return;
         setSettings(s);
         setRows((o || []).map(toRowState));
       } catch {
         if (!cancelled) setError(t('lasagnen_load_error', 'Lasagnen konnten nicht geladen werden.'));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadedYear(selectedYear);
       }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedYear]);
 
   // One price per lasagne for all styles. Missing/empty keys (e.g. older data) simply read as 0.
   const price = num(settings?.lasagna_price);
@@ -144,11 +148,11 @@ const Lasagnen = () => {
   // Persists savedFinal (last parseable Betrag final). Values below Betrag min are saved too; they are only highlighted.
   const persist = useCallback(async (row) => {
     try {
-      await saveOrder({ ...row, final_amount: row.savedFinal });
+      await saveOrder(selectedYear, { ...row, final_amount: row.savedFinal });
     } catch {
       setError(t('lasagnen_save_error', 'Änderung konnte nicht gespeichert werden.'));
     }
-  }, [saveOrder, t]);
+  }, [saveOrder, selectedYear, t]);
 
   const updateRow = (horiId, patch) => {
     setRows((prev) => prev.map((r) => (r.hori_id === horiId ? { ...r, ...patch } : r)));
@@ -156,21 +160,21 @@ const Lasagnen = () => {
 
   // Paid rows are locked: their inputs are disabled, and these handlers ignore them as well.
   const handleCountChange = (row, field) => (e) => {
-    if (row.paid) return;
+    if (row.paid || yearLocked) return;
     updateRow(row.hori_id, { [field]: e.target.value.replace(/\D/g, '') });
   };
   const handleCountBlur = (row, field) => () => {
-    if (row.paid) return;
+    if (row.paid || yearLocked) return;
     const normalised = String(toCount(row[field]));
     updateRow(row.hori_id, { [field]: normalised });
     persist({ ...row, [field]: normalised });
   };
   const handleFinalChange = (row) => (e) => {
-    if (row.paid) return;
+    if (row.paid || yearLocked) return;
     updateRow(row.hori_id, { final: e.target.value });
   };
   const handleFinalBlur = (row) => () => {
-    if (row.paid) return;
+    if (row.paid || yearLocked) return;
     const v = parseFinal(row.final);
     if (Number.isNaN(v) || v < 0) return; // unparseable: keep the last saved value (DecimalInput already blocks this)
     const savedFinal = v === null ? null : round2(v);
@@ -178,6 +182,7 @@ const Lasagnen = () => {
     persist({ ...row, savedFinal });
   };
   const handlePaidChange = (row) => (e) => {
+    if (yearLocked) return;
     const paid = e.target.checked ? 1 : 0;
     // Locking drops any unsaved (invalid) Betrag final text back to the saved value.
     const patch = paid
@@ -224,7 +229,7 @@ const Lasagnen = () => {
         ref={priceBtnRef}
         className="lasagnen-summary-card lasagnen-summary-card-btn"
         onClick={() => setShowPriceModal(true)}
-        disabled={!settings}
+        disabled={!settings || yearLocked}
         title={t('lasagnen_price_edit', 'Preise bearbeiten')}
         aria-label={`${t('lasagnen_price_edit', 'Preise bearbeiten')}: ${formatCurrency(price)}, ${tierText}`}
       >
@@ -291,13 +296,15 @@ const Lasagnen = () => {
               const a = amountsFor(r);
               const name = fullName(r);
               const share = shares.get(r.hori_id); // undefined for inactive Horis
-              const locked = !!r.paid;
+              const locked = !!r.paid || yearLocked;
               const err = finalError(r, a.min); // below min: red highlight only, value is still saved
-              const lockTitle = locked ? t('lasagnen_paid_locked', 'Bezahlt – zum Bearbeiten Haken entfernen') : undefined;
+              const lockTitle = yearLocked
+                ? t('lasagnen_year_locked', 'Dieses Jahr ist gesperrt (nur Lesen).')
+                : locked ? t('lasagnen_paid_locked', 'Bezahlt – zum Bearbeiten Haken entfernen') : undefined;
               return (
                 <tr
                   key={r.hori_id}
-                  className={`lasagnen-row${isActive(r) ? '' : ' inactive'}${locked ? ' paid' : ''}`}
+                  className={`lasagnen-row${isActive(r) ? '' : ' inactive'}${r.paid ? ' paid' : ''}`}
                 >
                   <td className="lasagnen-name-cell">
                     <span>{name}</span>
@@ -379,7 +386,9 @@ const Lasagnen = () => {
                     <input
                       type="checkbox"
                       className="lasagnen-paid"
-                      checked={locked}
+                      checked={!!r.paid}
+                      disabled={yearLocked}
+                      title={yearLocked ? lockTitle : undefined}
                       onChange={handlePaidChange(r)}
                       aria-label={`${t('lasagnen_col_paid', 'Bezahlt')}: ${name}`}
                     />
@@ -405,10 +414,35 @@ const Lasagnen = () => {
     );
   };
 
-  // Einkaufsliste: Veggie only (no Bolo recipe yet). Same visible Horis as the Übersicht totals.
+  const toggleStore = (key) => {
+    setCollapsedStores((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // Stock on hand is saved as a setting per ingredient in the base unit; the box shows the row's display unit.
+  const stockInputValue = (raw, factor) => (raw === undefined || raw === null || raw === '' ? '' : String(num(raw) / factor));
+  const handleStockChange = (key, factor) => (e) => {
+    const typed = e.target.value;
+    const base = typed === '' ? '' : String(Math.round(num(typed) * factor * 1e4) / 1e4);
+    setSettings((prev) => ({ ...prev, [key]: base }));
+  };
+  const handleStockBlur = (key) => () => {
+    const n = Math.max(0, num(settings?.[key]));
+    setSettings((prev) => ({ ...prev, [key]: String(n) }));
+    if (yearLocked) return;
+    saveYearSettings(selectedYear, { [key]: n }).catch(() => {
+      setError(t('lasagnen_save_error', 'Änderung konnte nicht gespeichert werden.'));
+    });
+  };
+
+  // Einkaufsliste grouped by shop. Same visible Horis as the Übersicht totals.
   const renderShoppingList = () => {
     if (loading || visible.length === 0) return <div className="data-table-container">{emptyState()}</div>;
-    const items = veggieShoppingTotals(totals.veggie);
+    const items = shoppingList({ veggie: totals.veggie, bolo: totals.bolo });
     return (
       <div className="data-table-container">
         <table className="data-table lasagnen-shop-table">
@@ -416,20 +450,71 @@ const Lasagnen = () => {
             <tr>
               <th>{t('lasagnen_shop_col_item', 'Zutat')}</th>
               <th className="num">{t('lasagnen_shop_col_total', 'Menge gesamt')}</th>
+              <th className="num">{t('lasagnen_shop_col_stock', 'Vorrat')}</th>
+              <th className="lasagnen-shop-unit" aria-hidden="true" />
+              <th className="num">{t('lasagnen_shop_col_buy', 'Einkaufen')}</th>
             </tr>
           </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.key}>
-                <td>{t(`lasagnen_shop_${item.key}`, item.label)}</td>
-                <td className="num dt-mono">{fmtShopAmount(item, item.total, locale)}</td>
+          {SHOP_STORES.map((store) => {
+            const open = !collapsedStores.has(store.key);
+            return (
+            <tbody key={store.key}>
+              <tr className="lasagnen-shop-section">
+                <th colSpan={5}>
+                  <button
+                    type="button"
+                    className="lasagnen-shop-toggle"
+                    aria-expanded={open}
+                    onClick={() => toggleStore(store.key)}
+                  >
+                    {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    <span>{store.label}</span>
+                  </button>
+                </th>
               </tr>
-            ))}
-          </tbody>
+              {open && items.filter((item) => item.store === store.key).map((item) => {
+                const key = stockSettingKey(item);
+                const stock = num(settings?.[key]);
+                const display = displayUnit(item, item.need);
+                return (
+                  <tr key={item.key}>
+                    <td>{t(`lasagnen_shop_${item.key}`, item.label)}</td>
+                    <td className="num dt-mono">{fmtShopAmount(item, item.need, locale, display)}</td>
+                    <td className="num">
+                      <DecimalInput
+                        min="0"
+                        className="lasagnen-shop-stock-input"
+                        value={stockInputValue(settings?.[key], display.factor)}
+                        disabled={!settings || yearLocked}
+                        placeholder="0"
+                        onChange={handleStockChange(key, display.factor)}
+                        onBlur={handleStockBlur(key)}
+                        onFocus={(e) => e.target.select()}
+                        aria-label={`${t('lasagnen_shop_col_stock', 'Vorrat')}: ${t(`lasagnen_shop_${item.key}`, item.label)}`}
+                      />
+                    </td>
+                    <td className="lasagnen-shop-unit dt-mono dt-muted">{display.unit}</td>
+                    <td className="num dt-mono dt-strong">{fmtShopAmount(item, itemToBuy(item, item.need, stock), locale, display)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            );
+          })}
           <tfoot>
             <tr>
               <td>{t('lasagnen_shop_count', 'Veggie-Lasagnen')}</td>
               <td className="num dt-mono">{totals.veggie} {t('lasagnen_pieces', 'Stk.')}</td>
+              <td />
+              <td />
+              <td />
+            </tr>
+            <tr>
+              <td>{t('lasagnen_shop_count_bolo', 'Bolo-Lasagnen')}</td>
+              <td className="num dt-mono">{totals.bolo} {t('lasagnen_pieces', 'Stk.')}</td>
+              <td />
+              <td />
+              <td />
             </tr>
           </tfoot>
         </table>
@@ -460,6 +545,7 @@ const Lasagnen = () => {
       )}
 
       <div className="lasagnen-toolbar">
+        <YearSwitcher />
         <SegmentedToggle
           className="seg-toggle-fill"
           ariaLabel={t('horis_view_label', 'Ansicht')}
@@ -476,6 +562,13 @@ const Lasagnen = () => {
         </label>
       </div>
 
+      {yearLocked && (
+        <div className="lasagnen-year-banner" role="status">
+          <Lock size={16} />
+          <span>{t('lasagnen_year_locked', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
+        </div>
+      )}
+
       {view === 'overview' && (
         <>
           {renderSummary()}
@@ -485,11 +578,12 @@ const Lasagnen = () => {
 
       {view === 'shopping' && renderShoppingList()}
 
-      {showPriceModal && settings && (
+      {showPriceModal && settings && !yearLocked && (
         <SettingsFieldsModal
           title={t('lasagnen_price_card', 'Lasagnen-Preis')}
           description={t('lasagnen_price_modal_desc', 'Grundpreise pro Lasagne und optionaler Mengenrabatt pro Hori.')}
           values={settings}
+          saveFn={(patch) => saveYearSettings(selectedYear, patch)}
           triggerRef={priceBtnRef}
           onCancel={() => setShowPriceModal(false)}
           onSaved={(patch) => { setSettings((prev) => ({ ...prev, ...patch })); setShowPriceModal(false); }}

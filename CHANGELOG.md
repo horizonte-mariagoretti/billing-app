@@ -1,9 +1,25 @@
 # Changelog
 
+## [1.16.0] - 2026-10-28
+
+### Added
+- **Scout year (1 Sept – 31 Aug), labelled e.g. 2026/27.** A year switcher on Horis, Lasagnen and Arbeiten (same toolbar slot). The selected year is shared across pages.
+- **Locking:** the newest year is editable; older years are read-only. Past years can be unlocked, edited and locked again. Only the selected year changes.
+- **Start new year** (one action, whole database): creates the next year, locks the previous one, copies Horis roster and prices/fees, and freezes the previous year's amount settings. Stock starts at 0.
+- **Arbeiten:** filtered by the selected year, with the job count for the selected and previous year.
+- **Migration 28:** `app_years`, `year_settings`, `hori_years`; `lasagna_orders` gets a `year` column. Existing data moves to the current year, older years are locked.
+
+### Changed
+- Locked years never fall back to the shared amount settings (camp fee, lasagna prices, bonus), so changing them later does not change past years.
+- Deleting a Hori with lasagna orders is refused (set inactive instead).
+
 ## [1.15.0] - 2026-10-28
 
 ### Added
-- **Lasagnen: Einkaufsliste** replaces the Verteilung view. It totals the ingredients for the Veggie lasagnes of the Horis shown (same rows as the Übersicht): per-container amounts from the vegetarian recipe × Veggie count, rounded to buyable units (kg/l above 1000 g/ml, whole onions and bunches, Lasagneblätter in packs of 27). Salt, Italian herbs and nutmeg show grams next to TL. Changes agreed in the chat: zucchini fried briefly in oil, Emmental (56 g per container) instead of Fontina in the sauce, Parmesan 12.5 g and butter 5 g on top. Bolo is not included yet (no Bolo recipe).
+- **Lasagnen: Einkaufsliste** replaces the Verteilung view. It totals the ingredients for the Veggie lasagnes of the Horis shown (same rows as the Übersicht): per-container amounts from the vegetarian recipe × Veggie count, rounded to buyable units (kg/l above 1000 g/ml, whole onions and bunches, Lasagneblätter in packs of 27). Salt, Italian herbs and nutmeg show grams next to TL.
+- **Einkaufsliste grouped by shop:** Duysens (vegetables), Colruyt (rest), Gerkens (Aluschalen and Deckel, one per container) and Delhaize (Bolo: one 400 g lasagne per Bolo portion).
+- **Einkaufsliste sections are collapsible:** click a shop heading to fold or unfold it.
+- **Vorrat (stock) per ingredient:** enter what is already at home in the item's unit. Einkaufen = needed − stock (never below 0). Saved as `lasagna_stock_<item>` settings. Changes agreed in the chat: zucchini fried briefly in oil, Emmental (56 g per container) instead of Fontina in the sauce, Parmesan 12.5 g and butter 5 g on top. Bolo is not included yet (no Bolo recipe).
 - Constants live in `src/utils/lasagnaShoppingList.js`.
 
 ### Changed

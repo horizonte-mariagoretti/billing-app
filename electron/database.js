@@ -1380,6 +1380,78 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
   setVersion(26);
 }
 
+// Migration 27: Lasagnen Übersicht — show % in the Anteil column header.
+if (getVersion() < 27) {
+  try {
+    db.exec(`
+UPDATE ui_translations SET value_de = 'Anteil %', value_fr = 'Part %', value_en = 'Anteil %' WHERE key = 'lasagnen_col_share';
+    `);
+  } catch (e) {
+    console.error('Migration 27 failed:', e.message);
+  }
+  setVersion(27);
+}
+
+// Migration 28: Scout years (1 Sept – 31 Aug, keyed by start year) — app_years, year_settings, hori_years; lasagna_orders per year.
+if (getVersion() < 28) {
+  try {
+    db.transaction(() => {
+      db.exec(`
+CREATE TABLE IF NOT EXISTS app_years (
+  year INTEGER PRIMARY KEY,
+  locked INTEGER NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS year_settings (
+  year INTEGER NOT NULL,
+  key TEXT NOT NULL,
+  value TEXT,
+  PRIMARY KEY (year, key)
+);
+CREATE TABLE IF NOT EXISTS hori_years (
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (hori_id, year)
+);
+CREATE TABLE lasagna_orders_new (
+  id TEXT PRIMARY KEY,
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  bolo INTEGER DEFAULT 0,
+  veggie INTEGER DEFAULT 0,
+  paid INTEGER DEFAULT 0,
+  final_amount REAL,
+  year INTEGER NOT NULL,
+  UNIQUE(hori_id, year)
+);
+INSERT INTO lasagna_orders_new (id, hori_id, bolo, veggie, paid, final_amount, year)
+SELECT id, hori_id, bolo, veggie, paid, final_amount,
+  CAST(strftime('%Y','now') AS INTEGER) - (CAST(strftime('%m','now') AS INTEGER) < 9)
+FROM lasagna_orders;
+DROP TABLE lasagna_orders;
+ALTER TABLE lasagna_orders_new RENAME TO lasagna_orders;
+INSERT OR IGNORE INTO app_years (year, locked)
+SELECT y.year,
+  CASE WHEN y.year = CAST(strftime('%Y','now') AS INTEGER) - (CAST(strftime('%m','now') AS INTEGER) < 9) THEN 0 ELSE 1 END
+FROM (
+  SELECT DISTINCT CAST(strftime('%Y', date) AS INTEGER) - (CAST(strftime('%m', date) AS INTEGER) < 9) AS year
+  FROM jobs WHERE strftime('%Y', date) IS NOT NULL
+  UNION
+  SELECT CAST(strftime('%Y','now') AS INTEGER) - (CAST(strftime('%m','now') AS INTEGER) < 9)
+) y;
+INSERT OR IGNORE INTO hori_years (hori_id, year, active)
+SELECT h.id, y.year, COALESCE(h.active, 1) FROM horis h CROSS JOIN app_years y;
+INSERT OR IGNORE INTO year_settings (year, key, value)
+SELECT CAST(strftime('%Y','now') AS INTEGER) - (CAST(strftime('%m','now') AS INTEGER) < 9), key, value
+FROM settings WHERE key GLOB 'lasagna_*' OR key GLOB 'camp_*';
+      `);
+      setVersion(28);
+    })();
+  } catch (e) {
+    console.error('Migration 28 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

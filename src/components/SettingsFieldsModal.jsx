@@ -19,7 +19,7 @@ import './SettingsFieldsModal.css';
  * values: current settings object (only the field keys are read).
  * onSaved(patch): called with the saved { key: string } patch after a successful write.
  */
-const SettingsFieldsModal = ({ title, description, fields, values, onSaved, onCancel, triggerRef }) => {
+const SettingsFieldsModal = ({ title, description, fields, values, onSaved, onCancel, triggerRef, saveFn }) => {
   const { saveSettings } = useSettings();
   const t = useT();
   const [form, setForm] = useState(() =>
@@ -78,7 +78,7 @@ const SettingsFieldsModal = ({ title, description, fields, values, onSaved, onCa
     setSaving(true);
     setSaveError(null);
     try {
-      await saveSettings(patch);
+      await (saveFn ?? saveSettings)(patch);
       onSaved(patch);
     } catch {
       setSaveError(t('settings_modal_save_error', 'Einstellungen konnten nicht gespeichert werden.'));

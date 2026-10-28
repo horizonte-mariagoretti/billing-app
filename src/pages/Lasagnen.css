@@ -18,6 +18,20 @@
   flex-wrap: wrap;
 }
 
+/* Locked year: read-only notice above the table */
+.lasagnen-year-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background-color: var(--color-light-bg);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 .lasagnen-toggle {
   display: inline-flex;
   align-items: center;
@@ -186,6 +200,49 @@
 
 /* ── Einkaufsliste: uses the shared .data-table look (DataTable.css) ── */
 .lasagnen-shop-table td:first-child { font-weight: 600; color: var(--color-text-dark-primary); }
+.lasagnen-shop-table tbody + tbody { border-top: 1px solid var(--color-border-light-theme); }
+.lasagnen-shop-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.lasagnen-shop-toggle:focus-visible { outline: 2px solid var(--color-indigo); outline-offset: 2px; border-radius: 4px; }
+.lasagnen-shop-section th {
+  background: var(--color-light-bg);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.lasagnen-shop-table th.lasagnen-shop-unit,
+/* Vorrat column (header + stock boxes) sits right next to the unit column. */
+.lasagnen-shop-table th:has(+ .lasagnen-shop-unit),
+.lasagnen-shop-table td:has(> .lasagnen-shop-stock-input) {
+  padding-right: 4px;
+}
+
+.lasagnen-shop-table td.lasagnen-shop-unit {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 2px;
+}
+.lasagnen-shop-stock-input {
+  width: 84px;
+  padding: 4px 8px;
+  text-align: right;
+  font-family: var(--font-mono);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background: var(--color-light-surface);
+}
 
 /* ── Empty state ── */
 .lasagnen-empty {

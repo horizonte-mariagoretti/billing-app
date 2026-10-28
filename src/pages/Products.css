@@ -53,6 +53,8 @@
 }
 
 .product-rate-cell {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--color-text-dark-primary);
   white-space: nowrap;
