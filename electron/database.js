@@ -1485,6 +1485,136 @@ ALTER TABLE lasagna_expenses ADD COLUMN kind TEXT NOT NULL DEFAULT 'expense';
   }
 }
 
+// Migration 31: Glühwein catalog: items (drinks, add-ons, beers, ingredients), per-year terms (prices, packs, planned qty), recipes.
+if (getVersion() < 31) {
+  try {
+    db.exec(`
+CREATE TABLE IF NOT EXISTS gw_items (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('drink','addon','beer','beer_special','ingredient')),
+  unit TEXT NOT NULL DEFAULT 'Stk',
+  sort_order INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS gw_item_terms (
+  item_id TEXT NOT NULL REFERENCES gw_items(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  sell_price REAL,
+  buy_price REAL,
+  pack_type TEXT CHECK (pack_type IN ('none','kasten','flasche','paket')),
+  pack_size REAL DEFAULT 1,
+  planned_qty REAL DEFAULT 0,
+  PRIMARY KEY (item_id, year)
+);
+CREATE INDEX IF NOT EXISTS idx_gw_item_terms_year ON gw_item_terms(year);
+CREATE TABLE IF NOT EXISTS gw_recipe (
+  product_id TEXT NOT NULL REFERENCES gw_items(id) ON DELETE CASCADE,
+  ingredient_id TEXT NOT NULL REFERENCES gw_items(id),
+  qty_per_unit REAL NOT NULL,
+  PRIMARY KEY (product_id, ingredient_id)
+);
+INSERT OR IGNORE INTO gw_items (id, name, kind, sort_order) VALUES
+  ('gw-gluehwein-weiss', 'Glühwein weiß', 'drink', 1),
+  ('gw-gluehwein-rot', 'Glühwein rot', 'drink', 2),
+  ('gw-heisse-schokolade', 'Heiße Schokolade', 'drink', 3),
+  ('gw-gluehgin', 'Glühgin', 'drink', 4),
+  ('gw-baileys', 'Baileys', 'addon', 10),
+  ('gw-amaretto', 'Amaretto', 'addon', 11),
+  ('gw-stella', 'Stella', 'beer', 20),
+  ('gw-stella-00', 'Stella 0,0%', 'beer', 21),
+  ('gw-jupiler', 'Jupiler', 'beer', 22),
+  ('gw-tongerlo-christmas', 'Tongerlo Christmas', 'beer_special', 30),
+  ('gw-chouffe-nice', 'Chouffe N''ice', 'beer_special', 31),
+  ('gw-leffe-christmas', 'Leffe Christmas', 'beer_special', 32),
+  ('gw-leffe-blonde', 'Leffe Blonde', 'beer_special', 33),
+  ('gw-leffe-brune', 'Leffe Brune', 'beer_special', 34),
+  ('gw-fourchette', 'Fourchette', 'beer_special', 35);
+INSERT OR IGNORE INTO settings (key, value) VALUES ('gluehwein_mandatory_shifts', '0');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('gluehwein_bonus_enabled', '0');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('gluehwein_bonus_factor', '100');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('gluehwein_shift_templates', '["16:00-19:00","19:00-22:00"]');
+    `);
+    setVersion(31);
+  } catch (e) {
+    console.error('Migration 31 failed:', e.message);
+  }
+}
+
+// Migration 32: Verkaufsaktionen: generic entries (expense/income), sale days, Kasse (cash count) + Kasse lines per action and scout year.
+if (getVersion() < 32) {
+  try {
+    db.exec(`
+CREATE TABLE IF NOT EXISTS sales_entries (
+  id TEXT PRIMARY KEY,
+  action TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'expense' CHECK (kind IN ('expense','income')),
+  description TEXT NOT NULL,
+  category TEXT,
+  amount REAL NOT NULL DEFAULT 0,
+  source_kasse_id TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_sales_entries_action_year ON sales_entries(action, year);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_sales_entries_kasse ON sales_entries(source_kasse_id) WHERE source_kasse_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS sales_days (
+  id TEXT PRIMARY KEY,
+  action TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  date TEXT NOT NULL,
+  UNIQUE(action, year, date)
+);
+CREATE INDEX IF NOT EXISTS idx_sales_days_action_year ON sales_days(action, year);
+CREATE TABLE IF NOT EXISTS sales_kasse (
+  id TEXT PRIMARY KEY,
+  action TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  start_cash REAL DEFAULT 0,
+  counted_cash REAL,
+  wechselgeld REAL DEFAULT 0,
+  entry_id TEXT REFERENCES sales_entries(id) ON DELETE SET NULL,
+  UNIQUE(action, year)
+);
+CREATE TABLE IF NOT EXISTS sales_kasse_lines (
+  kasse_id TEXT NOT NULL REFERENCES sales_kasse(id) ON DELETE CASCADE,
+  item_id TEXT NOT NULL,
+  item_name TEXT NOT NULL,
+  qty INTEGER NOT NULL DEFAULT 0,
+  unit_price REAL NOT NULL,
+  PRIMARY KEY (kasse_id, item_id)
+);
+    `);
+    setVersion(32);
+  } catch (e) {
+    console.error('Migration 32 failed:', e.message);
+  }
+}
+
+// Migration 33: Glühwein shifts per sale day + Hori assignments.
+if (getVersion() < 33) {
+  try {
+    db.exec(`
+CREATE TABLE IF NOT EXISTS gw_shifts (
+  id TEXT PRIMARY KEY,
+  day_id TEXT NOT NULL REFERENCES sales_days(id) ON DELETE CASCADE,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  UNIQUE(day_id, start_time)
+);
+CREATE TABLE IF NOT EXISTS gw_shift_assignments (
+  shift_id TEXT NOT NULL REFERENCES gw_shifts(id) ON DELETE CASCADE,
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  PRIMARY KEY (shift_id, hori_id)
+);
+    `);
+    setVersion(33);
+  } catch (e) {
+    console.error('Migration 33 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

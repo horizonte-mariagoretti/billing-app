@@ -12,6 +12,10 @@ const AMOUNT_SETTING_KEYS = [
   'lasagna_discount_price',
   'lasagna_bonus_enabled',
   'lasagna_bonus_factor',
+  'gluehwein_mandatory_shifts',
+  'gluehwein_bonus_enabled',
+  'gluehwein_bonus_factor',
+  'gluehwein_shift_templates',
 ];
 
 const readStoredYear = () => {
@@ -118,7 +122,7 @@ const useYear = () => {
         sql: `INSERT OR IGNORE INTO year_settings (year, key, value)
               SELECT ?, key, value FROM year_settings
               WHERE year = ?
-                AND (key GLOB 'lasagna_*' OR key GLOB 'camp_*')
+                AND (key GLOB 'lasagna_*' OR key GLOB 'camp_*' OR key GLOB 'gluehwein_*')
                 AND NOT key GLOB 'lasagna_stock_*'
                 AND NOT key GLOB '*_action_date'`,
         params: [newYear, currentYear],
