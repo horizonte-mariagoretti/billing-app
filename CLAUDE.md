@@ -1,6 +1,6 @@
 # Hori-Admin — Project Reference
 
-**Version:** 1.17.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.18.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -61,7 +61,14 @@ Billing_App/
 │   │   ├── JobDocumentDialog.jsx / .css # Wage source + preview before creating an offer/invoice from a job (one line per distinct Hori-hours value)
 │   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
 │   │   ├── ActionDateField.jsx / .css  # Date picker of a Verkaufsaktion (no visible label, tooltip only) next to the year switcher (shared `DatePicker`, `initialView` = month opened first); its month decides where the action's Saldo counts in the Dashboard Umsatz
-│   │   ├── FinanceEntryModal.jsx       # Add/edit popup for one manual Lasagnen entry (kind 'expense' | 'income': description, category, amount); onSave throws to show a save error
+│   │   ├── FinanceEntryModal.jsx       # Add/edit popup for one manual Lasagnen entry (kind 'expense' | 'income': description, category, amount); optional `categories` ([{value,label}]) overrides the Lasagnen list (Glühwein Finanzen); onSave throws to show a save error
+│   │   ├── GluehweinCatalog.jsx / .css  # Glühwein tab "Katalog": items (drink, addon, beer, beer_special, ingredient) with per-year terms (sell/buy price, pack, planned qty), archive/restore, opens `RecipeEditor`
+│   │   ├── RecipeEditor.jsx / .css      # Popup: ingredients + qty per unit of one Glühwein product (`gw_recipe`)
+│   │   ├── GluehweinKasse.jsx / .css    # Glühwein tab "Kasse": one counted cash total per event; "Kasse übernehmen" books it once as an Einnahme, then read-only
+│   │   ├── GluehweinSchichten.jsx / .css # Glühwein tab "Schichten": sale days, shift slots, Hori assignments, shift counts + bonus %
+│   │   ├── GluehweinShiftSettingsModal.jsx / .css # Popup: `gluehwein_mandatory_shifts`, bonus on/factor, `gluehwein_shift_templates`
+│   │   ├── GluehweinEinkaufsliste.jsx / .css # Glühwein tab "Einkaufsliste": read-only, planned qty through recipes, whole packs, cost (`utils/gluehweinShoppingList.js`)
+│   │   ├── GluehweinFinanzen.jsx / .css # Glühwein tab "Finanzen": `sales_entries` (Einnahmen/Ausgaben, own categories incl. Standmiete) + Saldo, via `FinanceEntryModal`
 │   │   ├── LasagnenFinance.jsx / .css  # Lasagnen tab "Finanzen": summary cards (Einnahmen, Ausgaben, Saldo) + "Einnahme hinzufügen" (secondary) / "Ausgabe hinzufügen" (primary) buttons (open `FinanceEntryModal`) + one list of all Einnahmen (per Hori from the Übersicht, read-only; manual) and Ausgaben, filter Alle/Einnahmen/Ausgaben, fixed column widths. Props: year, yearLocked, income{total}, incomeEntries, formatCurrency, locale, search, onError
 │   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
 │   │   ├── Input.css
@@ -84,10 +91,11 @@ Billing_App/
 │   │   ├── Clients.jsx / .css        # Client CRUD table + modal (live validation)
 │   │   ├── Products.jsx / .css       # Product cards + category chips + modal
 │   │   ├── Arbeiten.jsx / .css       # Work dates (times/open end), assigned Horis, planned vs actual hours, links to client/quote/invoice
-│   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share, matrix view
+│   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share and the Lasagnen + Glühwein bonus (added up, max 100 %; tooltip shows each %), matrix view
 │   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`) / Finanzen (`LasagnenFinance`)
 │   │   ├── SalesActionPage.jsx / .css # Base page of a Verkaufsaktion: search bar, action date picker (`ActionDateField`), year switcher; content still empty. Prop: action (entry of `SALES_ACTIONS`)
-│   │   ├── Gluehwein.jsx / Baseball.jsx # Glühwein / Baseball: thin wrappers around `SalesActionPage` (blank for now)
+│   │   ├── Gluehwein.jsx / .css      # Glühweinbude: search bar (Katalog, Finanzen), year switcher, tabs Übersicht (Verkaufstage, Kasse, Saldo) / Katalog / Kasse / Schichten / Einkaufsliste / Finanzen
+│   │   ├── Baseball.jsx              # Baseballturnier: thin wrapper around `SalesActionPage` (blank for now)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])
@@ -95,18 +103,23 @@ Billing_App/
 │   │   ├── useSettings.js      # loadSettings, saveSettings, getNextDocumentNumber, incrementDocumentNumber
 │   │   ├── useJobs.js          # CRUD for jobs (Arbeiten) + job_assignments
 │   │   ├── useJobRateSource.js # Products + "Aus Produkt | Manuell" wage state for JobRateSource (resolved name/rate/productId)
-│   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
+│   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation; fetchGluehweinShifts(year) (Glühwein shift count per Hori, for the bonus)
 │   │   ├── useTableSort.js     # Shared sort state: cycle none → asc → desc → none, sortRows(rows, accessors, {tieBreak, locale})
 │   │   ├── useDashboard2.js    # loadDashboard(year): one load for Dashboard 2.0 (invoices by month/open/overdue, open quotes, Verkaufsaktionen incl. `lasagnaSummary`, Arbeiten incl. dates, Horis, and `prev` = the Vorjahr's Umsatz per month); scoutMonthKeys(year)
 │   │   ├── useActionDate.js    # useActionDate(dateKey): date of a Verkaufsaktion for the selected scout year (year_settings), setDate(value) with scout-year range check + lock
-│   │   ├── useSalesActions.js  # fetchSalesActionSaldi(): Saldo of every Verkaufsaktion per scout year + the month it counts in (for the Dashboard)
+│   │   ├── useSalesActions.js  # fetchSalesActionSaldi(): Saldo of every Verkaufsaktion per scout year + the month it counts in (for the Dashboard); fetchActionSaldo(action,year,settings); hasSaldoSource(action) (Lasagnen, Glühwein)
 │   │   ├── useLasagnenExpenses.js # fetchExpenses(year), saveExpense(year, exp) (insert/update, YEAR_LOCKED check), deleteExpense(year, id)
+│   │   ├── useGluehweinCatalog.js # fetchItems(year) (items + that year's terms + recipe), saveItem, deleteItem (soft, refused while used in a recipe), saveTerms(year,itemId,terms), saveRecipe(productId,rows)
+│   │   ├── useSalesDays.js     # useSalesDays(action): fetchDays(year), addDay(year,date), deleteDay(id)
+│   │   ├── useSalesKasse.js    # useSalesKasse(action): fetchKasse(year), saveKasse(year,countedCash), takeOverKasse(year) (one-time income entry)
+│   │   ├── useSalesEntries.js  # useSalesEntries(action): fetchEntries(year), saveEntry(year,entry), deleteEntry(id)
+│   │   ├── useGluehweinShifts.js # useGluehweinShifts(action): fetchShifts(year), addSlots(dayId,templates), removeSlot, assign/unassign(shiftId,horiId)
 │   │   ├── useLasagnen.js      # fetchOrders (all Horis LEFT JOIN lasagna_orders), saveOrder (upsert by hori_id)
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–30 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–33 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -124,6 +137,9 @@ Billing_App/
 │       ├── heatColor.js          # Shared red→yellow→green heat scale for share bars
 │       ├── lasagnaFinance.js     # Pure: lasagnaAmounts(row,settings), lasagnaSummary({orders,settings,manual}), lasagnaSaldo(...), SALES_ACTIONS, salesActionMonthKey(action,year,date), EXPENSE_CATEGORIES, incomeFor(row,min), INCOME_CATEGORIES, categoriesFor(kind), incomeTotals(rows,minFor), incomeEntries(rows,minFor,nameFor), expenseTotal(list)
 │       ├── lasagnaBonus.js       # Pure: lasagnaShares(rows), bonusReductionPct({sharePct,enabled,factor}), applyBonus(contribution,pct), lasagnaBonusFromSettings(settings)
+│       ├── gluehweinFinance.js   # Pure: saldo(entries) → {income,expense,saldo}, saldoMonthKey(days,action,year) (month of the first sale day)
+│       ├── gluehweinShoppingList.js # Pure: buildShoppingList({items,terms,recipe}) → {rows:[{item,need,packs,cost}],total}
+│       ├── gluehweinBonus.js     # Pure: gluehweinShares(rows) (extra shifts above mandatory / all extra shifts), gluehweinBonusFromSettings(settings); re-exports bonusReductionPct, applyBonus
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
 ├── CLAUDE.md            # ← this file
@@ -236,7 +252,51 @@ id, year, kind (expense|income), date (unused, always NULL), description, catego
 ```
 Lasagnen tab "Finanzen": Einnahmen = manual income entries + sum over the Übersicht Horis (active, or all with "Inaktive anzeigen"; name search ignored) of Betrag final, or Betrag min while Betrag final is empty; "bezahlt" = rows ticked Bezahlt, "offen" = rest. Saldo = Einnahmen − Ausgaben. Per-Hori income lines are read-only (edit them in the Übersicht). Locked year: expenses read-only (`saveExpense`/`deleteExpense` throw `YEAR_LOCKED`).
 
-**Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (now only Lasagnen counts; Glühwein and Baseball are already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, their Saldo is added once they track money) counts into the Dashboard Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). The Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
+**`gw_items`** (migration 31) — Glühwein catalog, 15 seeded items (drinks, add-ons, beers, special beers)
+```
+id, name, kind (drink|addon|beer|beer_special|ingredient), unit (default 'Stk'), sort_order, active(0/1), created_at
+```
+
+**`gw_item_terms`** (migration 31) — per item and scout year
+```
+item_id(FK), year, sell_price, buy_price, pack_type (none|kasten|flasche|paket), pack_size, planned_qty; PK (item_id, year)
+```
+"Start new year" copies the terms to the new year with `planned_qty` 0. Days, shifts, Kasse and entries are not copied.
+
+**`gw_recipe`** (migration 31)
+```
+product_id(FK gw_items), ingredient_id(FK gw_items), qty_per_unit; PK (product_id, ingredient_id)
+```
+Einkaufsliste: planned_qty × qty_per_unit per ingredient (a product without recipe is bought itself), rounded up to whole packs; no stock.
+
+**`sales_entries`** (migration 32) — Einnahmen/Ausgaben of a Verkaufsaktion (now Glühwein)
+```
+id, action, year, kind (expense|income), description, category, amount, source_kasse_id (UNIQUE when set), created_at
+```
+
+**`sales_days`** (migration 32)
+```
+id, action, year, date; UNIQUE (action, year, date)
+```
+
+**`sales_kasse`** (migration 32) — one Kasse per event, cash total only
+```
+id, action, year, counted_cash, entry_id(FK sales_entries, ON DELETE SET NULL); UNIQUE (action, year)
+```
+"Kasse übernehmen" is a one-time booking: it creates one income entry and sets `entry_id`; the Kasse is then read-only. Deleting that entry unlocks it.
+
+**`gw_shifts`** (migration 33)
+```
+id, day_id(FK sales_days, CASCADE), start_time, end_time; UNIQUE (day_id, start_time)
+```
+
+**`gw_shift_assignments`** (migration 33)
+```
+shift_id(FK, CASCADE), hori_id(FK, CASCADE); PK (shift_id, hori_id)
+```
+Settings (year-locked like the Lasagnen amounts, edited in `GluehweinShiftSettingsModal`): `gluehwein_mandatory_shifts` (whole number, default 0), `gluehwein_bonus_enabled` ('0'/'1'), `gluehwein_bonus_factor` (default 100), `gluehwein_shift_templates` (JSON array, default `["16:00-19:00","19:00-22:00"]`). Bonus: extra shifts = max(0, shifts − mandatory); share = Hori's extra shifts / extra shifts of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (`utils/gluehweinBonus.js`). On the Horis page the Lasagnen and Glühwein % are added up, max 100 %.
+
+**Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (Lasagnen and Glühwein count; Baseball is already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, its Saldo is added once it tracks money; sources in `SALDO_SOURCE` of `hooks/useSalesActions.js`) counts into the Dashboard and Dashboard 2.0 Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). Lasagnen: the Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Glühwein: Saldo = `sales_entries` income − expense; it lands in the month of the first sale day (`sales_days`), else of `gluehwein_action_date`, else the default month. The Kasse counts only through its taken-over income entry. Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. A Glühwein load error (e.g. older DB) only drops its numbers; Lasagnen errors still propagate. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
 
 **`document_events`** — append-only audit log
 ```
