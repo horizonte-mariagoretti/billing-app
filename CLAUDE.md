@@ -119,7 +119,7 @@ Billing_App/
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–33 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–34 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -294,7 +294,7 @@ id, day_id(FK sales_days, CASCADE), start_time, end_time; UNIQUE (day_id, start_
 ```
 shift_id(FK, CASCADE), hori_id(FK, CASCADE); PK (shift_id, hori_id)
 ```
-Settings (year-locked like the Lasagnen amounts, edited in `GluehweinShiftSettingsModal`): `gluehwein_mandatory_shifts` (whole number, default 0), `gluehwein_bonus_enabled` ('0'/'1'), `gluehwein_bonus_factor` (default 100), `gluehwein_shift_templates` (JSON array, default `["16:00-19:00","19:00-22:00"]`). Bonus: extra shifts = max(0, shifts − mandatory); share = Hori's extra shifts / extra shifts of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (`utils/gluehweinBonus.js`). On the Horis page the Lasagnen and Glühwein % are added up, max 100 %.
+Settings (saved per scout year in `year_settings` via `useSettings.saveYearSettings`, read via `loadYearSettings`, year-locked like the Lasagnen amounts, edited in `GluehweinShiftSettingsModal`): `gluehwein_mandatory_shifts` (whole number, default 0), `gluehwein_bonus_enabled` ('0'/'1'), `gluehwein_bonus_factor` (default 100), `gluehwein_shift_templates` (JSON array, default `["16:00-19:00","19:00-22:00"]`). Bonus: extra shifts = max(0, shifts − mandatory); share = Hori's extra shifts / extra shifts of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (`utils/gluehweinBonus.js`). On the Horis page the Lasagnen and Glühwein % are added up, max 100 %.
 
 **Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (Lasagnen and Glühwein count; Baseball is already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, its Saldo is added once it tracks money; sources in `SALDO_SOURCE` of `hooks/useSalesActions.js`) counts into the Dashboard and Dashboard 2.0 Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). Lasagnen: the Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Glühwein: Saldo = `sales_entries` income − expense; it lands in the month of the first sale day (`sales_days`), else of `gluehwein_action_date`, else the default month. The Kasse counts only through its taken-over income entry. Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. A Glühwein load error (e.g. older DB) only drops its numbers; Lasagnen errors still propagate. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
 

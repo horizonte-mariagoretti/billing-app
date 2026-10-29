@@ -47,7 +47,7 @@ const fmtTime = (t) => String(t ?? '').slice(0, 5);
 /**
  * Shift planning of a Verkaufsaktion: event days, shift slots per day with assigned Horis,
  * and a per-Hori table (Schichten, Pflicht, Extra, Anteil %, Bonus %).
- * Props: action (SALES_ACTIONS entry), year, yearLocked, settings (global settings object), onError(text).
+ * Props: action (SALES_ACTIONS entry), year, yearLocked, settings (year settings from loadYearSettings), onError(text).
  */
 const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => {
   const actionKey = action?.key ?? action;

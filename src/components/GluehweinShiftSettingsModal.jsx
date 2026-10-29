@@ -36,12 +36,12 @@ const toTimeRow = (s) => {
 };
 
 /**
- * Popup for the Glühwein shift settings (global `settings` keys):
+ * Popup for the Glühwein shift settings, saved per scout year (`year_settings`, like the Lasagnen prices):
  * gluehwein_shift_templates, gluehwein_mandatory_shifts, gluehwein_bonus_enabled, gluehwein_bonus_factor.
  * onSaved(patch) gets the saved { key: string } patch.
  */
 const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSaved }) => {
-  const { saveSettings } = useSettings();
+  const { saveYearSettings } = useSettings();
   const [rows, setRows] = useState(() => parseShiftTemplates(settings?.gluehwein_shift_templates).map(toTimeRow));
   const [mandatory, setMandatory] = useState(() => String(settings?.gluehwein_mandatory_shifts ?? '0'));
   const [bonusEnabled, setBonusEnabled] = useState(() => String(settings?.gluehwein_bonus_enabled ?? '0') === '1');
@@ -115,10 +115,12 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
     setSaving(true);
     setSaveError(null);
     try {
-      await saveSettings(patch);
+      await saveYearSettings(year, patch);
       onSaved?.(patch);
-    } catch {
-      setSaveError('Einstellungen konnten nicht gespeichert werden.');
+    } catch (err) {
+      setSaveError(err?.message === 'YEAR_LOCKED'
+        ? 'Dieses Jahr ist abgeschlossen. Die Einstellungen können hier nicht geändert werden.'
+        : 'Einstellungen konnten nicht gespeichert werden.');
       setSaving(false);
     }
   };
@@ -129,7 +131,7 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
         <h2 id="gw-shift-settings-title">Schicht-Einstellungen</h2>
         <p className="settings-fields-modal-desc">
           Schichtzeiten, Pflichtschichten pro Hori und Bonus für Extra-Schichten
-          {year != null ? ` (gelten für alle Jahre, aktuell ${year}/${String((Number(year) + 1) % 100).padStart(2, '0')})` : ''}.
+          {year != null ? ` (gelten für ${year}/${String((Number(year) + 1) % 100).padStart(2, '0')})` : ''}.
         </p>
         <form onSubmit={handleSubmit} noValidate>
           {yearLocked && (
