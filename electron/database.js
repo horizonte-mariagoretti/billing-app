@@ -1609,10 +1609,10 @@ CREATE TABLE IF NOT EXISTS gw_shift_assignments (
 if (getVersion() < 34) {
   try {
     db.exec(`
-INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
-('d2_sales_days','Verkaufstage','jours de vente','sale days'),
-('d2_counts_in','zählt im','compte en','counts in'),
-('horis_gluehwein_bonus_tooltip','Reduziert durch Glühwein-Bonus','Réduit par le bonus vin chaud','Reduced by Glühwein bonus');
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr) VALUES
+('d2_sales_days','Verkaufstage','jours de vente'),
+('d2_counts_in','zählt im','compte en'),
+('horis_gluehwein_bonus_tooltip','Reduziert durch Glühwein-Bonus','Réduit par le bonus vin chaud');
     `);
     setVersion(34);
   } catch (e) {
