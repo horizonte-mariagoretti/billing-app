@@ -11,7 +11,6 @@ contextBridge.exposeInMainWorld('electron', {
     transaction: (operations) => ipcRenderer.invoke('db-transaction', operations),
   },
   pdf: {
-    generate: (options) => ipcRenderer.invoke('generate-pdf', options),
     save:     (options) => ipcRenderer.invoke('save-pdf-bytes', options),
   },
   versions: {

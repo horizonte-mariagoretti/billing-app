@@ -15,6 +15,13 @@
 - Lasagnen search follows the tab: Horis (Übersicht), Zutaten (Einkaufsliste), Finanzen list by name, category, status, date or amount. Each tab keeps its own query. Einkaufsliste totals no longer depend on the Hori search.
 - Finanzen table has fixed column widths, so the columns no longer jump when the filter or search changes the rows.
 
+## [1.16.2] - 2026-10-29
+
+### Changed
+- Electron main window denies new windows and off-app navigation.
+- Removed unused `generate-pdf` IPC handler; `save-pdf-bytes` validates its payload.
+- `setYearLocked` and the year-amount snapshot moved into the `useYear` hook (no direct `window.electron.db` access).
+
 ## [1.16.1] - 2026-10-29
 
 ### Changed
