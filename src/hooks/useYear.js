@@ -120,7 +120,8 @@ const useYear = () => {
               SELECT ?, key, value FROM year_settings
               WHERE year = ?
                 AND (key GLOB 'lasagna_*' OR key GLOB 'camp_*')
-                AND NOT key GLOB 'lasagna_stock_*'`,
+                AND NOT key GLOB 'lasagna_stock_*'
+                AND NOT key GLOB '*_action_date'`,
         params: [newYear, currentYear],
       },
     ]);

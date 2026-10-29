@@ -690,3 +690,21 @@
     display: none;
   }
 }
+
+/* Switch: count the Saldo of the Verkaufsaktionen into the Umsatz (card + chart) */
+.chart-include {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.chart-include input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}

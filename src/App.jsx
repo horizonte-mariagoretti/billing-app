@@ -6,7 +6,10 @@ import Products from './pages/Products';
 import Settings from './pages/Settings';
 import Arbeiten from './pages/Arbeiten';
 import Horis from './pages/Horis';
+import Dashboard2 from './pages/Dashboard2';
 import Lasagnen from './pages/Lasagnen';
+import Gluehwein from './pages/Gluehwein';
+import Baseball from './pages/Baseball';
 import DocumentList from './pages/DocumentList';
 import DocumentEditor from './pages/DocumentEditor';
 import useDocuments from './hooks/useDocuments';
@@ -226,6 +229,8 @@ function AppInner() {
     switch (view) {
       case 'dashboard':
         return <Dashboard settings={appSettings} onNewDoc={handleNewDoc} onEditDoc={handleEditDoc} />;
+      case 'dashboard2':
+        return <Dashboard2 settings={appSettings} onNavigate={(v) => { setView(v); setIsEditing(false); }} />;
       case 'quotes':
         return <DocumentList type="quote" onEdit={handleEditDoc} onNew={() => handleNewDoc('quote')} />;
       case 'invoices':
@@ -240,6 +245,10 @@ function AppInner() {
         return <Horis />;
       case 'lasagnen':
         return <Lasagnen />;
+      case 'gluehwein':
+        return <Gluehwein />;
+      case 'baseball':
+        return <Baseball />;
       case 'settings':
         return <Settings />;
       default:

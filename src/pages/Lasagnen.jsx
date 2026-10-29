@@ -9,9 +9,12 @@ import YearSwitcher from '../components/YearSwitcher';
 import SegmentedToggle from '../components/SegmentedToggle';
 import SettingsFieldsModal from '../components/SettingsFieldsModal';
 import SortableTh from '../components/SortableTh';
+import LasagnenFinance from '../components/LasagnenFinance';
+import ActionDateField from '../components/ActionDateField';
 import useTableSort from '../hooks/useTableSort';
 import { heatColor } from '../utils/heatColor';
-import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, ShoppingCart, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, AlertCircle, UtensilsCrossed, Tag, Beef, Leaf, LayoutList, ShoppingCart, Wallet, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import { incomeTotals, incomeEntries, lasagnaAmounts, isoDate } from '../utils/lasagnaFinance';
 import { lasagnaShares, bonusReductionPct, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
 import { SHOP_STORES, shoppingList, itemToBuy, displayUnit, stockSettingKey } from '../utils/lasagnaShoppingList';
 import '../components/DataTable.css';
@@ -74,8 +77,11 @@ const Lasagnen = () => {
   const [loadedYear, setLoadedYear] = useState(null);
   const loading = loadedYear !== selectedYear;
   const [error, setError] = useState(null);
-  const [view, setView] = useState('overview'); // 'overview' | 'shopping'
+  const [view, setView] = useState('overview'); // 'overview' | 'shopping' | 'finance'
+  // One search box, one query per tab: Horis (Übersicht), Zutaten (Einkaufsliste), Finanzen (income/expense list).
   const [search, setSearch] = useState('');
+  const [shopSearch, setShopSearch] = useState('');
+  const [expSearch, setExpSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   // Shared table sort: none → asc → desc → none. Default: Name A→Z.
   const { sort, toggleSort, sortRows } = useTableSort({ key: 'name', dir: 'asc' });
@@ -115,10 +121,23 @@ const Lasagnen = () => {
 
   // Betrag min = (Bolo + Veggie) × applicable price (discounted once the threshold is reached).
   // Betrag final is entered by the user; below Betrag min it is only highlighted.
-  const amountsFor = (r) => {
-    const n = toCount(r.bolo) + toCount(r.veggie);
-    const discounted = hasDiscount && n >= discountFrom;
-    return { min: round2(n * (discounted ? discountPrice : price)), discounted };
+  const amountsFor = (r) => lasagnaAmounts(r, settings);
+
+  // Date of the Lasagnen Verkaufsaktion (per scout year): its month decides where the Saldo counts in the Dashboard Umsatz.
+  const actionDate = isoDate(settings?.lasagna_action_date);
+  const handleActionDate = async (value) => {
+    if (yearLocked || !settings) return;
+    if (value && (value < `${selectedYear}-09-01` || value > `${selectedYear + 1}-08-31`)) {
+      setError(t('lasagnen_action_date_range', 'Das Datum muss im gewählten Pfadfinderjahr liegen.'));
+      return;
+    }
+    setError(null);
+    setSettings((prev) => ({ ...prev, lasagna_action_date: value }));
+    try {
+      await saveYearSettings(selectedYear, { lasagna_action_date: value });
+    } catch {
+      setError(t('lasagnen_save_error', 'Änderung konnte nicht gespeichert werden.'));
+    }
   };
 
   // Lasagnen bonus: share over ALL active Horis (independent of search / "Inaktive anzeigen").
@@ -201,6 +220,16 @@ const Lasagnen = () => {
     if (r.paid) acc.paid += 1;
     return acc;
   }, { bolo: 0, veggie: 0, amountMin: 0, amountFinal: 0, paid: 0 });
+
+  // Einnahmen and Einkaufsliste: same Horis as the Übersicht totals, but independent of the Hori name search.
+  const countedRows = rows.filter((r) => showInactive || isActive(r));
+  const income = incomeTotals(countedRows, (r) => amountsFor(r).min);
+  const incomeList = incomeEntries(countedRows, (r) => amountsFor(r).min, fullName);
+  const shopTotals = countedRows.reduce((acc, r) => {
+    acc.bolo += toCount(r.bolo);
+    acc.veggie += toCount(r.veggie);
+    return acc;
+  }, { bolo: 0, veggie: 0 });
 
   const tierText = hasDiscount
     ? `${t('lasagnen_discount_from', 'ab')} ${discountFrom} ${t('lasagnen_pieces', 'Stk.')}: ${formatCurrency(discountPrice)}`
@@ -441,8 +470,20 @@ const Lasagnen = () => {
 
   // Einkaufsliste grouped by shop. Same visible Horis as the Übersicht totals.
   const renderShoppingList = () => {
-    if (loading || visible.length === 0) return <div className="data-table-container">{emptyState()}</div>;
-    const items = shoppingList({ veggie: totals.veggie, bolo: totals.bolo });
+    if (loading || countedRows.length === 0) {
+      return <div className="data-table-container">{renderEmpty(loading ? t('loading', 'Laden…') : t('lasagnen_no_horis', 'Noch keine aktiven Horis'))}</div>;
+    }
+    const q = shopSearch.trim().toLowerCase();
+    const itemName = (item) => t(`lasagnen_shop_${item.key}`, item.label);
+    const items = shoppingList({ veggie: shopTotals.veggie, bolo: shopTotals.bolo })
+      .filter((item) => !q || itemName(item).toLowerCase().includes(q));
+    if (q && items.length === 0) {
+      return (
+        <div className="data-table-container">
+          {renderEmpty(`${t('lasagnen_shop_no_match', 'Keine Zutaten gefunden für')} "${shopSearch.trim()}"`, t('try_different_search', 'Versuche einen anderen Suchbegriff.'))}
+        </div>
+      );
+    }
     return (
       <div className="data-table-container">
         <table className="data-table lasagnen-shop-table">
@@ -456,7 +497,9 @@ const Lasagnen = () => {
             </tr>
           </thead>
           {SHOP_STORES.map((store) => {
-            const open = !collapsedStores.has(store.key);
+            const storeItems = items.filter((item) => item.store === store.key);
+            if (q && storeItems.length === 0) return null; // searching: only shops with a match
+            const open = q ? true : !collapsedStores.has(store.key); // searching: matches are always shown
             return (
             <tbody key={store.key}>
               <tr className="lasagnen-shop-section">
@@ -472,13 +515,13 @@ const Lasagnen = () => {
                   </button>
                 </th>
               </tr>
-              {open && items.filter((item) => item.store === store.key).map((item) => {
+              {open && storeItems.map((item) => {
                 const key = stockSettingKey(item);
                 const stock = num(settings?.[key]);
                 const display = displayUnit(item, item.need);
                 return (
                   <tr key={item.key}>
-                    <td>{t(`lasagnen_shop_${item.key}`, item.label)}</td>
+                    <td>{itemName(item)}</td>
                     <td className="num dt-mono">{fmtShopAmount(item, item.need, locale, display)}</td>
                     <td className="num">
                       <DecimalInput
@@ -490,7 +533,7 @@ const Lasagnen = () => {
                         onChange={handleStockChange(key, display.factor)}
                         onBlur={handleStockBlur(key)}
                         onFocus={(e) => e.target.select()}
-                        aria-label={`${t('lasagnen_shop_col_stock', 'Vorrat')}: ${t(`lasagnen_shop_${item.key}`, item.label)}`}
+                        aria-label={`${t('lasagnen_shop_col_stock', 'Vorrat')}: ${itemName(item)}`}
                       />
                     </td>
                     <td className="lasagnen-shop-unit dt-mono dt-muted">{display.unit}</td>
@@ -504,14 +547,14 @@ const Lasagnen = () => {
           <tfoot>
             <tr>
               <td>{t('lasagnen_shop_count', 'Veggie-Lasagnen')}</td>
-              <td className="num dt-mono">{totals.veggie} {t('lasagnen_pieces', 'Stk.')}</td>
+              <td className="num dt-mono">{shopTotals.veggie} {t('lasagnen_pieces', 'Stk.')}</td>
               <td />
               <td />
               <td />
             </tr>
             <tr>
               <td>{t('lasagnen_shop_count_bolo', 'Bolo-Lasagnen')}</td>
-              <td className="num dt-mono">{totals.bolo} {t('lasagnen_pieces', 'Stk.')}</td>
+              <td className="num dt-mono">{shopTotals.bolo} {t('lasagnen_pieces', 'Stk.')}</td>
               <td />
               <td />
               <td />
@@ -522,6 +565,14 @@ const Lasagnen = () => {
     );
   };
 
+  const searchPlaceholder = view === 'shopping'
+    ? t('lasagnen_search_items', 'Zutaten suchen…')
+    : view === 'finance'
+      ? t('lasagnen_search_expenses', 'Finanzen suchen…')
+      : t('lasagnen_search', 'Horis suchen…');
+  const searchValue = view === 'shopping' ? shopSearch : view === 'finance' ? expSearch : search;
+  const setSearchValue = view === 'shopping' ? setShopSearch : view === 'finance' ? setExpSearch : setSearch;
+
   return (
     <div className="lasagnen-page">
       <div className="page-header">
@@ -529,13 +580,22 @@ const Lasagnen = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder={t('lasagnen_search', 'Horis suchen…')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label={t('lasagnen_search', 'Horis suchen…')}
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            aria-label={searchPlaceholder}
           />
         </div>
-        <YearSwitcher />
+        <div className="page-header-end">
+          <ActionDateField
+            title={t('lasagnen_action_date_hint', 'Datum der Lasagnen-Aktion (bestimmt den Monat im Umsatz auf dem Dashboard)')}
+            value={actionDate}
+            initialView={`${selectedYear}-12-01`}
+            disabled={!settings || yearLocked}
+            onChange={handleActionDate}
+          />
+          <YearSwitcher />
+        </div>
       </div>
 
       {error && (
@@ -554,6 +614,7 @@ const Lasagnen = () => {
           options={[
             { value: 'overview', label: t('horis_view_overview', 'Übersicht'), icon: <LayoutList size={15} /> },
             { value: 'shopping', label: t('lasagnen_view_shopping', 'Einkaufsliste'), icon: <ShoppingCart size={15} /> },
+            { value: 'finance', label: t('lasagnen_view_finance', 'Finanzen'), icon: <Wallet size={15} /> },
           ]}
         />
         <label className="lasagnen-toggle">
@@ -570,6 +631,20 @@ const Lasagnen = () => {
       )}
 
       {view === 'shopping' && renderShoppingList()}
+
+      {view === 'finance' && (
+        <LasagnenFinance
+          key={selectedYear} // remount per year: drops any half-typed expense
+          year={selectedYear}
+          yearLocked={yearLocked}
+          income={income}
+          incomeEntries={incomeList}
+          formatCurrency={formatCurrency}
+          locale={locale}
+          search={expSearch}
+          onError={setError}
+        />
+      )}
 
       {showPriceModal && settings && !yearLocked && (
         <SettingsFieldsModal

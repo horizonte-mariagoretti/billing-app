@@ -1,0 +1,8 @@
+/* Verkaufsaktion date next to the year switcher (ActionDateField.jsx). The picker itself is the shared DatePicker. */
+.action-date {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.action-date .datepicker-wrap { width: 160px; }

@@ -20,6 +20,7 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
   // regardless of app language).
   const VIEW_TITLE_KEYS = {
     dashboard: ['nav_dashboard', 'Dashboard'],
+    dashboard2: ['nav_dashboard2', 'Dashboard 2.0'],
     invoices: ['nav_invoices', 'Invoices'],
     quotes: ['nav_quotes', 'Quotes'],
     clients: ['nav_clients', 'Clients'],
@@ -27,6 +28,8 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
     arbeiten: ['nav_arbeiten', 'Arbeiten'],
     horis: ['nav_horis', 'Horis'],
     lasagnen: ['nav_lasagnen', 'Lasagnen'],
+    gluehwein: ['nav_gluehwein', 'Glühweinbude'],
+    baseball: ['nav_baseball', 'Baseballturnier'],
     settings: ['nav_settings', 'Settings'],
   };
   const [fallbackKey, fallbackText] = VIEW_TITLE_KEYS[currentView] || [null, currentView];

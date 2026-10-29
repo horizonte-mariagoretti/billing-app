@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.17.0] - 2026-10-29
+
+### Added
+- **Dashboard 2.0** (sidebar: Übersicht, below the classic Dashboard, which stays unchanged). Scout-year cockpit for the selected year (header with the year, its progress and the year switcher), built from the classic Dashboard's elements and structured around "how are we doing, and what needs me?": a hero with the Umsatz (paid Rechnungen + Verkaufsaktionen Saldo, same "Verkaufsaktionen einrechnen" switch), the change against the Vorjahr for the same period, the Umsatz per month as stacked columns with the Vorjahr as a tick on each column, and a Jahresplan strip (today, the Verkaufsaktionen with their dates, the Arbeiten as dots); next to it the red "Offene Posten" card and "Braucht Aufmerksamkeit" (überfällige Rechnungen, offene Angebote, Lasagnen noch nicht bezahlt, Arbeiten ohne Rechnung), each opening the right page; three stat cards (Rechnungen bezahlt, Aktionen-Saldo, Arbeitsstunden); one card per Verkaufsaktion (Lasagnen: Saldo, Einnahmen/Ausgaben, bezahlt progress; Glühweinbude and Baseballturnier: date only); Nächste Arbeiten and Aktivste Horis.
+- **Lasagnen: Finanzen tab = overview of all Lasagnen finances.** Cards for Einnahmen, Ausgaben (Rechnungen icon) and Saldo, plus one list with the Einnahmen (one line per Hori from the Übersicht: Betrag final, or Betrag min while empty) and manually entered Einnahmen and Ausgaben (description, category, amount; no date). "Einnahme hinzufügen" (secondary) and "Ausgabe hinzufügen" (primary) open a popup; edit and delete with confirmation. Filter Alle / Einnahmen / Ausgaben, sortable columns, Saldo in the footer. Per scout year; locked years are read-only.
+- **Migrations 29 + 30:** `lasagna_expenses` with a `kind` column (expense | income), in both the Electron and the web migration chain.
+
+- **Glühwein and Baseball pages (base structure).** New sidebar entries below Lasagnen. The pages are blank for now and only have the search bar, the action date picker (no label; stored per scout year: `gluehwein_action_date`, `baseball_action_date`) and the year switcher.
+
+### Changed
+- **Sidebar grouped into sections:** Übersicht (Dashboard), Finanzen (Rechnungen, Angebote, Kunden, Produkte), Arbeiten (Horis, Arbeiten), Aktionen (Lasagnen, Glühweinbude, Baseballturnier), Allgemein (Einstellungen). The new pages are named Glühweinbude (snowflake icon) and Baseballturnier.
+- **Dashboard Umsatz includes the Saldo of the Verkaufsaktionen** (Lasagnen now; Glühweinbude and Baseball later), switchable with "Verkaufsaktionen einrechnen" next to the chart (remembered, default on). The Saldo counts in the month of the action's date, set with the date picker next to the year switcher on the Lasagnen page (shared date picker); without a date it counts in December of the scout year.
+- Lasagnen search follows the tab: Horis (Übersicht), Zutaten (Einkaufsliste), Finanzen list by name, category, status, date or amount. Each tab keeps its own query. Einkaufsliste totals no longer depend on the Hori search.
+- Finanzen table has fixed column widths, so the columns no longer jump when the filter or search changes the rows.
+
 ## [1.16.1] - 2026-10-29
 
 ### Changed

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Gauge,
   FileText,
   Users,
   Settings,
@@ -8,6 +9,8 @@ import {
   Briefcase,
   Baby,
   UtensilsCrossed,
+  Snowflake,
+  Trophy,
   ReceiptEuro,
   PanelLeftClose,
   PanelLeftOpen,
@@ -19,19 +22,50 @@ import './Sidebar.css';
 const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const t = useT();
 
-  const mainNav = [
-    { id: 'dashboard', label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'invoices',  label: t('nav_invoices', 'Invoices'),   icon: ReceiptEuro },
-    { id: 'quotes',    label: t('nav_quotes', 'Quotes'),       icon: FileText },
-    { id: 'clients',   label: t('nav_clients', 'Clients'),     icon: Users },
-    { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
-    { id: 'arbeiten',  label: t('nav_arbeiten', 'Arbeiten'),  icon: Briefcase },
-    { id: 'horis',     label: t('nav_horis', 'Horis'),         icon: Baby },
-    { id: 'lasagnen',  label: t('nav_lasagnen', 'Lasagnen'),   icon: UtensilsCrossed },
-  ];
-
-  const generalNav = [
-    { id: 'settings', label: t('nav_settings', 'Settings'), icon: Settings },
+  // Sidebar sections: Übersicht, Finanzen, Arbeiten, Aktionen, Allgemein.
+  const navSections = [
+    {
+      key: 'overview',
+      label: t('nav_section_overview', 'Übersicht'),
+      items: [
+        { id: 'dashboard', label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
+        { id: 'dashboard2', label: t('nav_dashboard2', 'Dashboard 2.0'), icon: Gauge },
+      ],
+    },
+    {
+      key: 'finance',
+      label: t('nav_section_finance', 'Finanzen'),
+      items: [
+        { id: 'invoices',  label: t('nav_invoices', 'Invoices'),   icon: ReceiptEuro },
+        { id: 'quotes',    label: t('nav_quotes', 'Quotes'),       icon: FileText },
+        { id: 'clients',   label: t('nav_clients', 'Clients'),     icon: Users },
+        { id: 'products',  label: t('nav_products', 'Products'),   icon: Package },
+      ],
+    },
+    {
+      key: 'work',
+      label: t('nav_section_work', 'Arbeiten'),
+      items: [
+        { id: 'horis',     label: t('nav_horis', 'Horis'),         icon: Baby },
+        { id: 'arbeiten',  label: t('nav_arbeiten', 'Arbeiten'),   icon: Briefcase },
+      ],
+    },
+    {
+      key: 'actions',
+      label: t('nav_section_actions', 'Aktionen'),
+      items: [
+        { id: 'lasagnen',  label: t('nav_lasagnen', 'Lasagnen'),           icon: UtensilsCrossed },
+        { id: 'gluehwein', label: t('nav_gluehwein', 'Glühweinbude'),      icon: Snowflake },
+        { id: 'baseball',  label: t('nav_baseball', 'Baseballturnier'),    icon: Trophy },
+      ],
+    },
+    {
+      key: 'general',
+      label: t('nav_general', 'General'),
+      items: [
+        { id: 'settings', label: t('nav_settings', 'Settings'), icon: Settings },
+      ],
+    },
   ];
 
   const renderItem = (item) => {
@@ -85,19 +119,14 @@ const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggle
         {!collapsed && <span>{t('nav_new_invoice', 'New Invoice')}</span>}
       </button>
 
-      <div className="nav-section">
-        {!collapsed && <span className="nav-section-label">{t('nav_main_menu', 'Main menu')}</span>}
-        <nav className="sidebar-nav">
-          {mainNav.map(renderItem)}
-        </nav>
-      </div>
-
-      <div className="nav-section">
-        {!collapsed && <span className="nav-section-label">{t('nav_general', 'General')}</span>}
-        <nav className="sidebar-nav">
-          {generalNav.map(renderItem)}
-        </nav>
-      </div>
+      {navSections.map((section) => (
+        <div className="nav-section" key={section.key}>
+          {!collapsed && <span className="nav-section-label">{section.label}</span>}
+          <nav className="sidebar-nav" aria-label={section.label}>
+            {section.items.map(renderItem)}
+          </nav>
+        </div>
+      ))}
 
     </aside>
   );

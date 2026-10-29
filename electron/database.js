@@ -1452,6 +1452,39 @@ FROM settings WHERE key GLOB 'lasagna_*' OR key GLOB 'camp_*';
   }
 }
 
+// Migration 29: Lasagnen Einnahmen & Ausgaben — manually entered expenses per scout year (income is derived from the Übersicht).
+if (getVersion() < 29) {
+  try {
+    db.exec(`
+CREATE TABLE IF NOT EXISTS lasagna_expenses (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  date TEXT,
+  description TEXT NOT NULL,
+  category TEXT,
+  amount REAL NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_lasagna_expenses_year ON lasagna_expenses(year);
+    `);
+    setVersion(29);
+  } catch (e) {
+    console.error('Migration 29 failed:', e.message);
+  }
+}
+
+// Migration 30: Lasagnen finances — lasagna_expenses also holds manually entered extra income (kind = 'income', e.g. donations).
+if (getVersion() < 30) {
+  try {
+    db.exec(`
+ALTER TABLE lasagna_expenses ADD COLUMN kind TEXT NOT NULL DEFAULT 'expense';
+    `);
+    setVersion(30);
+  } catch (e) {
+    console.error('Migration 30 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 
