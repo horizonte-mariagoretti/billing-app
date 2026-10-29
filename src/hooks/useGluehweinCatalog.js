@@ -71,15 +71,9 @@ export function useGluehweinCatalog() {
     return id;
   }, [run]);
 
-  // Soft delete: refuses while the item is a recipe ingredient or was sold in a Kasse, else deactivates it.
+  // Soft delete: refuses while the item is a recipe ingredient, else deactivates it.
   const deleteItem = useCallback(async (id) => {
-    const used = await query(
-      `SELECT 1 FROM gw_recipe WHERE ingredient_id = ?
-       UNION ALL
-       SELECT 1 FROM sales_kasse_lines WHERE item_id = ?
-       LIMIT 1`,
-      [id, id]
-    );
+    const used = await query('SELECT 1 FROM gw_recipe WHERE ingredient_id = ? LIMIT 1', [id]);
     if (used.length) throw new Error('ITEM_IN_USE');
     const rows = await query('SELECT id, name, kind, unit, sort_order FROM gw_items WHERE id = ?', [id]);
     if (!rows[0]) return;

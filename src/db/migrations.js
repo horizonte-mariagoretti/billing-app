@@ -1561,7 +1561,7 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('gluehwein_shift_templates',
   {
     version: 32,
     up: (exec) => {
-      // Verkaufsaktionen: generic entries (expense/income), sale days, Kasse (cash count) + Kasse lines per action and scout year.
+      // Verkaufsaktionen: generic entries (expense/income), sale days, Kasse (one counted cash total) per action and scout year.
       try {
         exec(`
 CREATE TABLE IF NOT EXISTS sales_entries (
@@ -1589,19 +1589,9 @@ CREATE TABLE IF NOT EXISTS sales_kasse (
   id TEXT PRIMARY KEY,
   action TEXT NOT NULL,
   year INTEGER NOT NULL,
-  start_cash REAL DEFAULT 0,
   counted_cash REAL,
-  wechselgeld REAL DEFAULT 0,
   entry_id TEXT REFERENCES sales_entries(id) ON DELETE SET NULL,
   UNIQUE(action, year)
-);
-CREATE TABLE IF NOT EXISTS sales_kasse_lines (
-  kasse_id TEXT NOT NULL REFERENCES sales_kasse(id) ON DELETE CASCADE,
-  item_id TEXT NOT NULL,
-  item_name TEXT NOT NULL,
-  qty INTEGER NOT NULL DEFAULT 0,
-  unit_price REAL NOT NULL,
-  PRIMARY KEY (kasse_id, item_id)
 );
         `);
       } catch (e) {
