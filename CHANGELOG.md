@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.1] - 2026-10-29
+
+### Added
+- **Migration 36:** adds the scout years 2024/25 and 2025/26 to `app_years` (locked) with every existing Hori active in them, in both the Electron and the web migration chain. Previous years can't be added manually in the app.
+
+### Changed
+- **Glühweinbude Übersicht:** removed the grey sub-lines from the three summary cards; the cards now use the same value font as the Lasagnen summary cards.
+
 ## [1.18.0] - 2026-10-29
 
 ### Added
