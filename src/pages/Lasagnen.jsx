@@ -562,13 +562,6 @@ const Lasagnen = () => {
         </label>
       </div>
 
-      {yearLocked && (
-        <div className="lasagnen-year-banner" role="status">
-          <Lock size={16} />
-          <span>{t('lasagnen_year_locked', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
-        </div>
-      )}
-
       {view === 'overview' && (
         <>
           {renderSummary()}

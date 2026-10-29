@@ -647,9 +647,9 @@ const Horis = () => {
           <Button
             ref={bulkBtnRef}
             variant="outline"
-            size="sm"
+            size="md"
             icon={ListPlus}
-            className="horis-icon-btn"
+            className="horis-header-icon-btn"
             onClick={() => setShowBulk(true)}
             disabled={yearLocked}
             aria-label={t('horis_bulk_add', 'Mehrere hinzufügen')}
@@ -658,9 +658,9 @@ const Horis = () => {
           <Button
             ref={openBtnRef}
             variant="primary"
-            size="sm"
+            size="md"
             icon={Plus}
-            className="horis-icon-btn"
+            className="horis-header-icon-btn"
             onClick={handleNew}
             disabled={yearLocked}
             aria-label={t('horis_add', 'Hori hinzufügen')}
@@ -674,13 +674,6 @@ const Horis = () => {
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
           <span>{error}</span>
-        </div>
-      )}
-
-      {yearLocked && (
-        <div className="page-error" role="status">
-          <AlertCircle size={16} />
-          <span>{t('year_locked_banner', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
         </div>
       )}
 
