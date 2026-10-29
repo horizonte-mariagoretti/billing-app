@@ -1,0 +1,166 @@
+/* Catalog of a Verkaufsaktion (GluehweinCatalog.jsx). Table uses the shared .data-table look (DataTable.css),
+   the item popup the shared modal + .settings-fields-modal-* styles. */
+.gw-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.gw-catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.gw-catalog-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.gw-catalog-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: 0.85rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.gw-catalog-inactive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+}
+.gw-catalog-inactive-toggle input { accent-color: var(--color-primary); cursor: pointer; }
+
+/* ── Table ── */
+/* Fixed column widths: columns must not jump when search or filter changes the rows. */
+.gw-catalog-table { table-layout: fixed; min-width: 1040px; }
+.gw-catalog-table th:first-child { min-width: 0; }
+.gw-col-kind      { width: 130px; }
+.gw-col-money     { width: 140px; }
+.gw-col-pack      { width: 110px; }
+.gw-col-pack-size { width: 140px; }
+.gw-col-planned   { width: 120px; }
+.gw-col-actions   { width: 190px; }
+
+.gw-name-cell {
+  font-weight: 600;
+  color: var(--color-text-dark-primary) !important;
+  white-space: normal;
+}
+
+.gw-row-inactive td { opacity: 0.6; }
+
+.gw-badge-inactive {
+  margin-left: var(--space-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-light-bg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+}
+
+.gw-kind {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  background-color: var(--color-light-bg);
+  color: var(--color-text-dark-secondary);
+}
+.gw-kind-drink        { background: var(--stat-pink-bg);   color: var(--stat-pink-icon); }
+.gw-kind-addon        { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
+.gw-kind-beer,
+.gw-kind-beer_special { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+
+.gw-row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.gw-row-actions button {
+  background: transparent;
+  border: none;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all var(--transition-fast);
+}
+
+.gw-row-actions button:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+.gw-row-actions .gw-recipe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: var(--space-xs);
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--color-border-light-theme);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+
+/* ── Empty state ── */
+.gw-catalog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-text-dark-tertiary);
+  text-align: center;
+}
+.gw-catalog-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+.gw-catalog-empty-desc { font-size: 0.875rem; max-width: 340px; }
+
+/* ── Item popup: terms section ── */
+.gw-item-terms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--space-lg) 0 var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light-theme);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+}
+
+.gw-item-terms-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.gw-item-terms {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.gw-item-terms:disabled .input-field { opacity: 0.7; cursor: not-allowed; }

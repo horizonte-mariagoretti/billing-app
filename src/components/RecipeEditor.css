@@ -1,0 +1,74 @@
+/* Recipe popup of a catalog product (RecipeEditor.jsx). Overlay/content/actions from ClientModal.css. */
+.recipe-editor { max-width: 560px; }
+
+.modal-content.recipe-editor h2 { margin-bottom: var(--space-xs); }
+
+.recipe-editor-desc {
+  margin: 0 0 var(--space-lg);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.recipe-editor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.recipe-editor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px 36px;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.recipe-editor-head span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+}
+
+.recipe-editor-row .input-field { width: 100%; min-width: 0; }
+
+.recipe-editor-qty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.recipe-editor-qty .input-field { flex: 1; text-align: right; font-family: var(--font-mono); }
+.recipe-editor-unit {
+  min-width: 28px;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}
+
+.recipe-editor-remove {
+  background: transparent;
+  border: none;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.recipe-editor-remove:hover {
+  color: var(--color-danger);
+  background-color: var(--color-light-bg);
+}
+
+.recipe-editor-add { margin-top: var(--space-md); }
+
+.recipe-editor-empty {
+  padding: var(--space-md);
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-tertiary);
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .recipe-editor-row { grid-template-columns: minmax(0, 1fr) 120px 36px; }
+}
