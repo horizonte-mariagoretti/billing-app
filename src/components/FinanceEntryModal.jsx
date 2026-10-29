@@ -14,10 +14,11 @@ import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal
  * entry: null for a new one, else { id, description, category, amount }.
  * onSave({ id?, kind, description, category, amount:number }): async; throw to show the save error.
  */
-const FinanceEntryModal = ({ kind = 'expense', entry, onSave, onCancel, triggerRef }) => {
+const FinanceEntryModal = ({ kind = 'expense', entry, categories: categoriesProp, onSave, onCancel, triggerRef }) => {
   const t = useT();
   const isIncome = kind === 'income';
-  const categories = categoriesFor(kind);
+  // Optional categories ([{ value, label }]) override the Lasagnen list; without it Lasagnen behaves as before.
+  const categories = categoriesProp?.length ? categoriesProp : categoriesFor(kind);
   const [form, setForm] = useState(() => ({
     description: entry?.description || '',
     category: entry?.category || categories[0].value,
