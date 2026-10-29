@@ -209,13 +209,6 @@ const Arbeiten = ({ onCreateDocFromJob, onOpenDoc }) => {
         </div>
       </div>
 
-      {isLocked && (
-        <div className="page-error" role="status">
-          <AlertCircle size={16} />
-          <span>{t('year_locked_banner', 'Dieses Jahr ist gesperrt (nur Lesen).')}</span>
-        </div>
-      )}
-
       <div className="arbeiten-toolbar">
         <SegmentedToggle
           className="seg-toggle-fill"

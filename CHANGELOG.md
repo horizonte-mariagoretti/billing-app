@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.16.1] - 2026-10-29
+
+### Changed
+- Year switcher is now 40px high (44px on mobile), matching the search input and medium buttons. Horis header buttons switched from small to medium.
+- Year switcher dropdown is now exactly as wide as its button ("Neues Jahr starten" shortened to "Neues Jahr", full text as tooltip).
+- Horis header icon buttons (bulk add, add) regain their outline/primary styling; they shared a class with the transparent row icon buttons.
+- Locked year: dropped the redundant "Nur Lesen" badge next to the year switcher (the lock icon and page banner already say it).
+- Locked year: removed the red "gesperrt" banner on Horis and Arbeiten; Sperren/Entsperren is now an icon-only button (tooltip) next to the year switcher.
+- Lock icon now sits after the year in the switcher.
+
 ## [1.16.0] - 2026-10-28
 
 ### Added

@@ -71,6 +71,7 @@ const YearSwitcher = () => {
 
   return (
     <div className="year-switcher" ref={wrapRef}>
+      <div className="year-switcher-picker">
       <button
         type="button"
         className="year-switcher-trigger"
@@ -79,8 +80,8 @@ const YearSwitcher = () => {
         aria-label="Jahr"
         onClick={() => setOpen(o => !o)}
       >
-        {isLocked && <Lock size={14} className="year-switcher-lock" aria-hidden="true" />}
         <span>{label}</span>
+        {isLocked && <Lock size={14} className="year-switcher-lock" aria-hidden="true" />}
         <ChevronDown size={16} aria-hidden="true" />
       </button>
 
@@ -107,21 +108,22 @@ const YearSwitcher = () => {
               role="option"
               aria-selected={false}
               className="year-switcher-option year-switcher-option--create"
+              title="Neues Jahr starten"
               onClick={() => { setOpen(false); setConfirm('new'); }}
             >
               <Plus size={13} aria-hidden="true" />
-              <span>Neues Jahr starten</span>
+              <span>Neues Jahr</span>
             </li>
           )}
         </ul>
       )}
+      </div>
 
-      {isLocked && <span className="year-switcher-badge">Nur Lesen</span>}
       {isLocked && selectedYear !== currentYear && (
-        <Button variant="ghost" size="sm" icon={Unlock} onClick={() => setConfirm('unlock')}>Entsperren</Button>
+        <Button variant="ghost" size="md" icon={Unlock} className="year-switcher-lockbtn" onClick={() => setConfirm('unlock')} aria-label="Entsperren" title="Entsperren" />
       )}
       {!isLocked && selectedYear !== currentYear && (
-        <Button variant="ghost" size="sm" icon={Lock} onClick={() => setConfirm('lock')}>Sperren</Button>
+        <Button variant="ghost" size="md" icon={Lock} className="year-switcher-lockbtn" onClick={() => setConfirm('lock')} aria-label="Sperren" title="Sperren" />
       )}
       {error && <span className="year-switcher-error" role="alert">{error}</span>}
       {dialog && (
