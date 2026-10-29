@@ -121,8 +121,22 @@ const useHoris = () => {
     return { jobs, horis, assignments };
   }, [query]);
 
+  // Glühwein shifts per Hori of a scout year (for the Glühwein bonus): [{ hori_id, active, shifts }].
+  const fetchGluehweinShifts = useCallback(async (year) => {
+    return await query(`
+      SELECT h.id AS hori_id, hy.active AS active,
+        (SELECT COUNT(*) FROM gw_shift_assignments sa
+           JOIN gw_shifts s ON s.id = sa.shift_id
+           JOIN sales_days d ON d.id = s.day_id
+          WHERE sa.hori_id = h.id AND d.action = 'gluehwein' AND d.year = ?) AS shifts
+      FROM horis h
+      INNER JOIN hori_years hy ON hy.hori_id = h.id AND hy.year = ?
+    `, [year, year]);
+  }, [query]);
+
   return {
     fetchHoris,
+    fetchGluehweinShifts,
     saveHori,
     saveHorisBulk,
     deleteHori,

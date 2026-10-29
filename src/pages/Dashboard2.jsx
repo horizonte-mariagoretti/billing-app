@@ -258,7 +258,7 @@ const Dashboard2 = ({ settings, onNavigate }) => {
                 {includeActions && <span><i className="act" />{t('d2_actions', 'Aktionen')}</span>}
                 <span><i className="prev" />{t('d2_prev_year', 'Vorjahr')}</span>
               </div>
-              <label className="chart-include" title={t('dashboard_include_actions_hint', 'Saldo der Verkaufsaktionen (Lasagnen, später Glühweinbude und Baseball) zum Umsatz zählen')}>
+              <label className="chart-include" title={t('dashboard_include_actions_hint', 'Saldo der Verkaufsaktionen (Lasagnen, Glühweinbude, später Baseball) zum Umsatz zählen')}>
                 <input type="checkbox" checked={includeActions} onChange={(e) => setIncludeActions(e.target.checked)} />
                 <span>{t('dashboard_include_actions', 'Verkaufsaktionen einrechnen')}</span>
               </label>
@@ -410,12 +410,20 @@ const Dashboard2 = ({ settings, onNavigate }) => {
                   <span className="recent-client">
                     {t('d2_income', 'Einnahmen')} {fmt(s.income)} · {t('d2_expenses', 'Ausgaben')} {fmt(s.expenses)}
                   </span>
-                  <div className="d2-action-progress" title={`${s.paidHoris}/${s.orderingHoris} ${t('d2_paid', 'bezahlt')}`}>
-                    <i style={{ width: `${s.orderingHoris ? (s.paidHoris / s.orderingHoris) * 100 : 0}%` }} />
-                  </div>
-                  <span className="recent-date">
-                    Bolo {s.bolo} · Veggie {s.veggie} · {s.paidHoris}/{s.orderingHoris} {t('d2_paid', 'bezahlt')}
-                  </span>
+                  {a.key === 'lasagnen' ? (
+                    <>
+                      <div className="d2-action-progress" title={`${s.paidHoris}/${s.orderingHoris} ${t('d2_paid', 'bezahlt')}`}>
+                        <i style={{ width: `${s.orderingHoris ? (s.paidHoris / s.orderingHoris) * 100 : 0}%` }} />
+                      </div>
+                      <span className="recent-date">
+                        Bolo {s.bolo} · Veggie {s.veggie} · {s.paidHoris}/{s.orderingHoris} {t('d2_paid', 'bezahlt')}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="recent-date">
+                      {s.days} {t('d2_sales_days', 'Verkaufstage')} · {t('d2_counts_in', 'zählt im')} {MONTHS[parseInt(a.monthKey.slice(5, 7), 10) - 1]} {a.monthKey.slice(0, 4)}
+                    </span>
+                  )}
                 </>
               ) : (
                 <span className="recent-client">{t('d2_no_numbers', 'Noch keine Zahlen erfasst')}</span>

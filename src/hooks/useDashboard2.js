@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
-import useLasagnen from './useLasagnen';
 import useSettings from './useSettings';
 import useHoris from './useHoris';
+import useSalesActions, { hasSaldoSource } from './useSalesActions';
 import { calcTotalsFromSubtotal } from '../utils/documentCalc';
-import { SALES_ACTIONS, lasagnaSummary, salesActionMonthKey, isoDate } from '../utils/lasagnaFinance';
+import { SALES_ACTIONS, salesActionMonthKey, isoDate } from '../utils/lasagnaFinance';
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -22,13 +22,28 @@ export const scoutMonthKeys = (year) => Array.from({ length: 12 }, (_, i) => {
 // Everything Dashboard 2.0 shows for one scout year (start year), in one load.
 const useDashboard2 = () => {
   const { query } = useDatabase();
-  const { fetchOrders } = useLasagnen();
   const { loadYearSettings } = useSettings();
   const { fetchHoriStats } = useHoris();
+  const { fetchActionSaldo } = useSalesActions();
+
+  // Money of every Verkaufsaktion with a saldo source (Lasagnen, Glühwein) for one scout year, keyed by action.
+  // Lasagnen errors propagate as before; a Glühwein failure (e.g. older DB) only drops its numbers.
+  const loadActionSaldi = useCallback(async (year, settings) => {
+    const entries = await Promise.all(SALES_ACTIONS.filter(hasSaldoSource).map(async (a) => {
+      try {
+        return [a.key, await fetchActionSaldo(a, year, settings)];
+      } catch (err) {
+        if (a.key === 'lasagnen') throw err;
+        console.warn(`Saldo ${a.key} ${year} übersprungen:`, err);
+        return [a.key, null];
+      }
+    }));
+    return Object.fromEntries(entries);
+  }, [fetchActionSaldo]);
 
   // Paid Rechnungen and Verkaufsaktionen Saldo per month of one scout year (used for the Vorjahr comparison).
   const loadRevenueByMonth = useCallback(async (year) => {
-    const [invoiceRows, settings, orders, manual] = await Promise.all([
+    const [invoiceRows, settings] = await Promise.all([
       query(`
         SELECT
           d.date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
@@ -39,29 +54,25 @@ const useDashboard2 = () => {
         GROUP BY d.id
       `, [`${year}-09-01`, `${year + 1}-08-31`]),
       loadYearSettings(year),
-      fetchOrders(year),
-      query('SELECT kind, amount FROM lasagna_expenses WHERE year = ?', [year]),
     ]);
+    const saldi = await loadActionSaldi(year, settings);
     const paidByMonth = {};
     for (const inv of invoiceRows) {
       const { total } = calcTotalsFromSubtotal(inv, inv.items_subtotal);
       if (inv.date) paidByMonth[inv.date.slice(0, 7)] = (paidByMonth[inv.date.slice(0, 7)] || 0) + total;
     }
     const actionSaldi = SALES_ACTIONS
-      .filter((a) => a.key === 'lasagnen')
-      .map((a) => ({
-        monthKey: salesActionMonthKey(a, year, settings[a.dateKey]),
-        saldo: lasagnaSummary({ orders, settings, manual }).saldo,
-      }));
+      .filter((a) => saldi[a.key])
+      .map((a) => ({ monthKey: saldi[a.key].monthKey, saldo: saldi[a.key].saldo }));
     return { paidByMonth, actionSaldi };
-  }, [query, fetchOrders, loadYearSettings]);
+  }, [query, loadYearSettings, loadActionSaldi]);
 
   const loadDashboard = useCallback(async (year) => {
     const from = `${year}-09-01`;
     const to = `${year + 1}-08-31`;
     const today = localIso();
 
-    const [invoiceRows, quoteRows, jobRows, settings, orders, manual, horiStats, prev] = await Promise.all([
+    const [invoiceRows, quoteRows, jobRows, settings, horiStats, prev] = await Promise.all([
       query(`
         SELECT
           d.id, d.status, d.date, d.due_date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
@@ -84,8 +95,6 @@ const useDashboard2 = () => {
         ORDER BY j.date ASC, j.start_time ASC
       `, [from, to]),
       loadYearSettings(year),
-      fetchOrders(year),
-      query('SELECT kind, amount FROM lasagna_expenses WHERE year = ?', [year]),
       fetchHoriStats(year),
       loadRevenueByMonth(year - 1),
     ]);
@@ -114,13 +123,14 @@ const useDashboard2 = () => {
       }
     }
 
-    // Verkaufsaktionen: only Lasagnen tracks money so far; the others just carry their date.
+    // Verkaufsaktionen: Lasagnen and Glühwein track money; the others just carry their date.
+    const saldi = await loadActionSaldi(year, settings);
     const actions = SALES_ACTIONS.map((a) => ({
       key: a.key,
       label: a.label,
       date: isoDate(settings[a.dateKey]),
-      monthKey: salesActionMonthKey(a, year, settings[a.dateKey]),
-      summary: a.key === 'lasagnen' ? lasagnaSummary({ orders, settings, manual }) : null,
+      monthKey: saldi[a.key]?.monthKey ?? salesActionMonthKey(a, year, settings[a.dateKey]),
+      summary: saldi[a.key]?.summary ?? null,
     }));
 
     // Arbeiten.
@@ -158,7 +168,7 @@ const useDashboard2 = () => {
       jobs,
       horis,
     };
-  }, [query, fetchOrders, loadYearSettings, fetchHoriStats, loadRevenueByMonth]);
+  }, [query, loadYearSettings, fetchHoriStats, loadRevenueByMonth, loadActionSaldi]);
 
   return { loadDashboard };
 };
