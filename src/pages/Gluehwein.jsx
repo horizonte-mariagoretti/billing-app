@@ -62,10 +62,6 @@ const GluehweinOverview = ({ year, onError }) => {
   const totals = ready ? data.totals : { income: 0, expense: 0, saldo: 0 };
   const counted = kasse?.counted_cash != null ? Number(kasse.counted_cash) : null;
   const booked = !!kasse?.entry_id;
-  const fmtDate = (d) => {
-    const [y, m, day] = String(d).split('-');
-    return y && m && day ? `${day}.${m}.${y}` : d;
-  };
 
   return (
     <div className="gw-overview">
@@ -75,9 +71,6 @@ const GluehweinOverview = ({ year, onError }) => {
           <div className="gw-summary-body">
             <div className="gw-summary-label">Verkaufstage</div>
             <div className="gw-summary-value">{ready ? days.length : '–'}</div>
-            <div className="gw-summary-sub">
-              {days.length ? `ab ${fmtDate(days[0].date)}` : 'Noch keine Tage eingetragen'}
-            </div>
           </div>
         </div>
         <div className="gw-summary-card">
@@ -85,7 +78,6 @@ const GluehweinOverview = ({ year, onError }) => {
           <div className="gw-summary-body">
             <div className="gw-summary-label">Kasse</div>
             <div className="gw-summary-value">{counted != null ? formatCurrency(counted) : '–'}</div>
-            <div className="gw-summary-sub">{booked ? 'Übernommen' : 'Noch nicht übernommen'}</div>
           </div>
         </div>
         <div className="gw-summary-card">
@@ -93,9 +85,6 @@ const GluehweinOverview = ({ year, onError }) => {
           <div className="gw-summary-body">
             <div className="gw-summary-label">Saldo</div>
             <div className={`gw-summary-value${totals.saldo < 0 ? ' negative' : ''}`}>{formatCurrency(totals.saldo)}</div>
-            <div className="gw-summary-sub">
-              Einnahmen {formatCurrency(totals.income)} · Ausgaben {formatCurrency(totals.expense)}
-            </div>
           </div>
         </div>
       </div>

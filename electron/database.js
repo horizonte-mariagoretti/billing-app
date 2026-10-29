@@ -1632,6 +1632,20 @@ ALTER TABLE ui_translations DROP COLUMN value_en;
   }
 }
 
+// Migration 36: previous scout years 2024/25 and 2025/26 (locked), every Hori active in them.
+if (getVersion() < 36) {
+  try {
+    db.exec(`
+INSERT OR IGNORE INTO app_years (year, locked) VALUES (2024, 1), (2025, 1);
+INSERT OR IGNORE INTO hori_years (hori_id, year, active)
+SELECT h.id, y.year, 1 FROM horis h CROSS JOIN (SELECT 2024 AS year UNION SELECT 2025) y;
+    `);
+    setVersion(36);
+  } catch (e) {
+    console.error('Migration 36 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

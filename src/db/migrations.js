@@ -1656,6 +1656,22 @@ ALTER TABLE ui_translations DROP COLUMN value_en;
       }
     },
   },
+  {
+    version: 36,
+    up: (exec) => {
+      // Previous scout years 2024/25 and 2025/26 (locked), every Hori active in them.
+      try {
+        exec(`
+INSERT OR IGNORE INTO app_years (year, locked) VALUES (2024, 1), (2025, 1);
+INSERT OR IGNORE INTO hori_years (hori_id, year, active)
+SELECT h.id, y.year, 1 FROM horis h CROSS JOIN (SELECT 2024 AS year UNION SELECT 2025) y;
+        `);
+      } catch (e) {
+        console.error('Migration 36 failed:', e.message);
+        throw e;
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void
