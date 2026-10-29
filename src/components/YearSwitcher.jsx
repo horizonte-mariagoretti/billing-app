@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Lock, Unlock, Plus, ChevronDown, Check } from 'lucide-react';
 import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
-import useYear, { setYearLocked } from '../hooks/useYear';
+import useYear from '../hooks/useYear';
 import { scoutYearLabel } from '../utils/scoutYear';
 import './YearSwitcher.css';
 
 const YearSwitcher = () => {
-  const { years, currentYear, selectedYear, setSelectedYear, isLocked, label, startNewYear, refreshYears } = useYear();
+  const { years, currentYear, selectedYear, setSelectedYear, isLocked, label, startNewYear, setYearLocked, refreshYears } = useYear();
   const [confirm, setConfirm] = useState(null); // 'new' | 'unlock' | 'lock' | null
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');

@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const { pathToFileURL } = require('url')
 
 const db = require('./database')
 
@@ -64,54 +65,11 @@ ipcMain.handle('db-transaction', (event, operations) => {
 const fs = require('fs')
 const { dialog } = require('electron')
 
-// NOTE: renderer must pass `html` containing the full <html>...</html> for the
-// document preview only. See DocumentEditor.handleExportPDF.
-ipcMain.handle('generate-pdf', async (event, { html, filename }) => {
-  if (!html || typeof html !== 'string') {
-    throw new Error('generate-pdf: html is required');
-  }
-
-  const pdfWin = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-
-  try {
-    // Load HTML via data URL — no filesystem touch.
-    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-    await pdfWin.loadURL(dataUrl);
-
-    const data = await pdfWin.webContents.printToPDF({
-      printBackground: true,
-      pageSize: 'A4',
-      // CSS padding on .pdf-page handles all spacing; no extra Electron margins.
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
-    });
-
-    const safeName = path.basename(String(filename || 'document').replace(/\.pdf$/i, '')) + '.pdf';
-
-    const { filePath } = await dialog.showSaveDialog({
-      title: 'Save PDF',
-      defaultPath: safeName,
-      filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
-    });
-
-    if (filePath) {
-      fs.writeFileSync(filePath, data);
-      return filePath;
-    }
-    return null;
-  } finally {
-    pdfWin.destroy();
-  }
-});
-
 // Save pre-rendered PDF bytes (from @react-pdf/renderer in the renderer process)
 ipcMain.handle('save-pdf-bytes', async (event, { bytes, filename }) => {
+  if (!(bytes instanceof Uint8Array) && !Array.isArray(bytes)) {
+    throw new Error('save-pdf-bytes: bytes must be a Uint8Array or array');
+  }
   const safeName = path.basename(String(filename || 'document').replace(/\.pdf$/i, '')) + '.pdf';
   const { filePath } = await dialog.showSaveDialog({
     title: 'Save PDF',
@@ -139,6 +97,18 @@ function createWindow() {
       color: '#16181D',
       symbolColor: '#C8FF00',
     }
+  })
+
+  // The window has the DB bridge: never open child windows or leave the app.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  const appUrl = process.env.VITE_DEV_SERVER_URL
+    || pathToFileURL(path.join(__dirname, '../dist/index.html')).href
+  win.webContents.on('will-navigate', (event, url) => {
+    const strip = (u) => u.split('#')[0]
+    const allowed = process.env.VITE_DEV_SERVER_URL
+      ? new URL(url).origin === new URL(appUrl).origin
+      : strip(url) === strip(appUrl)
+    if (!allowed) event.preventDefault()
   })
 
   if (process.env.VITE_DEV_SERVER_URL) {

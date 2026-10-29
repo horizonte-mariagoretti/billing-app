@@ -1,7 +1,7 @@
 {
   "name": "hori-admin",
   "private": true,
-  "version": "1.16.1",
+  "version": "1.16.2",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
