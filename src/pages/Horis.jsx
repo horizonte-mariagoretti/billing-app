@@ -8,6 +8,7 @@ import { useT } from '../hooks/useUiTranslations';
 import { calcAge, formatTimeRange } from '../utils/jobHours';
 import { calcContribution, campRulesFromSettings } from '../utils/campContribution';
 import { lasagnaShares, bonusReductionPct, applyBonus, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
+import { gluehweinShares, gluehweinBonusFromSettings } from '../utils/gluehweinBonus';
 import useDatabase from '../hooks/useDatabase';
 import Button from '../components/Button';
 import SegmentedToggle from '../components/SegmentedToggle';
@@ -179,7 +180,7 @@ const HoriDetail = ({ hori, year, locked, fmtHours, onClose, onEdit }) => {
 /* ── Page ─────────────────────────────────────────────────── */
 
 const Horis = () => {
-  const { fetchHoriStats, fetchMatrix, deleteHori, saveHori } = useHoris();
+  const { fetchHoriStats, fetchMatrix, deleteHori, saveHori, fetchGluehweinShifts } = useHoris();
   const { loadYearSettings, saveYearSettings } = useSettings();
   const { selectedYear, isLocked: yearLocked } = useYear();
   const { query } = useDatabase();
@@ -187,6 +188,7 @@ const Horis = () => {
 
   const [settings, setSettings] = useState(null);
   const [lasagnaRows, setLasagnaRows] = useState([]); // [{ hori_id, active, bolo, veggie }]
+  const [gluehweinRows, setGluehweinRows] = useState([]); // [{ hori_id, active, shifts }]
   const [stats, setStats] = useState([]);
   const [matrix, setMatrix] = useState({ jobs: [], horis: [], assignments: [] });
   const [loading, setLoading] = useState(true);
@@ -225,7 +227,7 @@ const Horis = () => {
 
   const fetchAll = async () => {
     try {
-      const [s, st, mx, lo] = await Promise.all([
+      const [s, st, mx, lo, gw] = await Promise.all([
         loadYearSettings(selectedYear), fetchHoriStats(selectedYear), fetchMatrix(selectedYear),
         // Lasagne counts per Hori for the bonus; an older DB without the table just means no bonus.
         query(`
@@ -238,10 +240,15 @@ const Horis = () => {
           console.warn('Lasagnen-Bonus übersprungen:', err);
           return [];
         }),
+        fetchGluehweinShifts(selectedYear).catch((err) => {
+          console.warn('Glühwein-Bonus übersprungen:', err);
+          return [];
+        }),
       ]);
       setSettings(s);
       setStats(st || []);
       setLasagnaRows(lo || []);
+      setGluehweinRows(gw || []);
       setMatrix({
         jobs: mx?.jobs || [],
         horis: mx?.horis || [],
@@ -276,17 +283,28 @@ const Horis = () => {
   const campRules = campRulesFromSettings(settings);
   const lasagnaBonus = lasagnaBonusFromSettings(settings);
   const lasagnaShareMap = useMemo(() => lasagnaShares(lasagnaRows), [lasagnaRows]);
-  // Lagerbeitrag before and after the (optional) lasagne bonus. Everything on this
-  // page that shows or sorts by the contribution goes through contributionInfo.
+  const gluehweinBonus = gluehweinBonusFromSettings(settings);
+  const gluehweinShareMap = useMemo(
+    () => gluehweinShares(gluehweinRows.map((r) => ({ ...r, mandatory: gluehweinBonus.mandatory }))),
+    [gluehweinRows, gluehweinBonus.mandatory]
+  );
+  // Lagerbeitrag before and after the (optional) Lasagnen and Glühwein bonus (their % add up, max 100 %).
+  // Everything on this page that shows or sorts by the contribution goes through contributionInfo.
   const contributionInfo = (h) => {
     const original = calcContribution({ ...campRules, sharePct: h.share_pct });
-    const reductionPct = bonusReductionPct({
+    const lasagnaPct = bonusReductionPct({
       sharePct: lasagnaShareMap.get(h.id)?.sharePct ?? 0,
       enabled: lasagnaBonus.enabled,
       factor: lasagnaBonus.factor,
     });
+    const gluehweinPct = bonusReductionPct({
+      sharePct: gluehweinShareMap.get(h.id)?.sharePct ?? 0,
+      enabled: gluehweinBonus.enabled,
+      factor: gluehweinBonus.factor,
+    });
+    const reductionPct = Math.min(100, lasagnaPct + gluehweinPct);
     const final = applyBonus(original, reductionPct);
-    return { original, final, reduced: lasagnaBonus.enabled && reductionPct > 0 && final !== original };
+    return { original, final, lasagnaPct, gluehweinPct, reduced: reductionPct > 0 && final !== original };
   };
   const contributionFor = (h) => contributionInfo(h).final;
 
@@ -483,7 +501,13 @@ const Horis = () => {
                   <td className="num dt-mono dt-strong">{counted ? (() => {
                     const c = contributionInfo(h);
                     return c.reduced ? (
-                      <span className="horis-contribution" title={t('horis_lasagna_bonus_tooltip', 'Reduziert durch Lasagnen-Bonus')}>
+                      <span
+                        className="horis-contribution"
+                        title={[
+                          c.lasagnaPct > 0 && `${t('horis_lasagna_bonus_tooltip', 'Reduziert durch Lasagnen-Bonus')}: ${fmtPct(c.lasagnaPct)}`,
+                          c.gluehweinPct > 0 && `${t('horis_gluehwein_bonus_tooltip', 'Reduziert durch Glühwein-Bonus')}: ${fmtPct(c.gluehweinPct)}`,
+                        ].filter(Boolean).join('\n')}
+                      >
                         <s className="horis-contribution-orig">{formatCurrency(c.original)}</s>
                         {formatCurrency(c.final)}
                       </span>

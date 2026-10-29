@@ -127,6 +127,14 @@ const useYear = () => {
                 AND NOT key GLOB '*_action_date'`,
         params: [newYear, currentYear],
       },
+      {
+        // Glühwein catalog prices and packs carry over; planned quantities start at 0.
+        // Days, shifts, Kasse and entries belong to their year and are not copied.
+        sql: `INSERT OR IGNORE INTO gw_item_terms (item_id, year, sell_price, buy_price, pack_type, pack_size, planned_qty)
+              SELECT item_id, ?, sell_price, buy_price, pack_type, pack_size, 0 FROM gw_item_terms
+              WHERE year = ?`,
+        params: [newYear, currentYear],
+      },
     ]);
     setSelectedYear(newYear);
     await fetchYears();
