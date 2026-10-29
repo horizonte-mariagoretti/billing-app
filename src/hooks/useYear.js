@@ -12,6 +12,10 @@ const AMOUNT_SETTING_KEYS = [
   'lasagna_discount_price',
   'lasagna_bonus_enabled',
   'lasagna_bonus_factor',
+  'gluehwein_mandatory_shifts',
+  'gluehwein_bonus_enabled',
+  'gluehwein_bonus_factor',
+  'gluehwein_shift_templates',
 ];
 
 const readStoredYear = () => {
@@ -118,9 +122,17 @@ const useYear = () => {
         sql: `INSERT OR IGNORE INTO year_settings (year, key, value)
               SELECT ?, key, value FROM year_settings
               WHERE year = ?
-                AND (key GLOB 'lasagna_*' OR key GLOB 'camp_*')
+                AND (key GLOB 'lasagna_*' OR key GLOB 'camp_*' OR key GLOB 'gluehwein_*')
                 AND NOT key GLOB 'lasagna_stock_*'
                 AND NOT key GLOB '*_action_date'`,
+        params: [newYear, currentYear],
+      },
+      {
+        // Glühwein catalog prices and packs carry over; planned quantities start at 0.
+        // Days, shifts, Kasse and entries belong to their year and are not copied.
+        sql: `INSERT OR IGNORE INTO gw_item_terms (item_id, year, sell_price, buy_price, pack_type, pack_size, planned_qty)
+              SELECT item_id, ?, sell_price, buy_price, pack_type, pack_size, 0 FROM gw_item_terms
+              WHERE year = ?`,
         params: [newYear, currentYear],
       },
     ]);

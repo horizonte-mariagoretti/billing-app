@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.18.0] - 2026-10-29
+
+### Added
+- **Glühweinbude page** with the tabs Übersicht (Verkaufstage, Kasse status, Saldo), Katalog, Kasse, Schichten, Einkaufsliste and Finanzen.
+- **Katalog:** 15 seeded items (Glühwein, Heiße Schokolade, Glühgin, add-ons, beers, special beers); further items and ingredients can be added. Sell/buy price, pack and planned quantity per scout year; recipes per drink.
+- **Kasse:** one counted cash total per event. "Kasse übernehmen" books it once as an Einnahme; afterwards it is read-only (deleting that Einnahme unlocks it).
+- **Schichten:** sale days with shift slots (templates, default 16:00-19:00 and 19:00-22:00) and assigned Horis. Settings popup for mandatory shifts, the Glühwein bonus and the slot templates.
+- **Einkaufsliste:** planned quantities expanded through the recipes, rounded up to whole packs, with cost (no stock).
+- **Finanzen:** Einnahmen and Ausgaben of the event with Saldo. Categories: Zutaten, Verpackung, Material, Standmiete, Sonstiges (Ausgaben); Spende, Sonstiges (Einnahmen).
+- **Horis: Glühwein bonus.** Extra shifts above the mandatory count, as a share of all extra shifts, reduce the Lagerbeitrag (same factor logic as Lasagnen). Lasagnen and Glühwein reductions add up, max 100 %.
+- **Migrations 31–33:** `gw_items`, `gw_item_terms`, `gw_recipe`, `sales_entries`, `sales_days`, `sales_kasse`, `gw_shifts`, `gw_shift_assignments`; settings `gluehwein_mandatory_shifts`, `gluehwein_bonus_enabled`, `gluehwein_bonus_factor`, `gluehwein_shift_templates` (year-locked like the Lasagnen amounts).
+
+### Changed
+- **Dashboard / Dashboard 2.0 Umsatz include the Glühwein Saldo.** It counts in the month of the first sale day. The Kasse counts only once taken over as an Einnahme.
+- "Start new year" copies the Glühwein item terms (prices, packs) with planned quantity 0. Days, shifts, Kasse and entries stay in their year.
+- `FinanceEntryModal` takes an optional `categories` list (Lasagnen unchanged).
+
 ## [1.17.0] - 2026-10-29
 
 ### Added

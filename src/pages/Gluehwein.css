@@ -1,0 +1,94 @@
+/* Glühweinbude page: tab bar + read-only Übersicht (same card look as the Lasagnen summary). */
+.gw-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.gw-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.gw-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.gw-summary-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.gw-summary-body { min-width: 0; flex: 1; }
+
+.gw-summary-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+.gw-summary-icon.indigo { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
+.gw-summary-icon.amber  { background: var(--stat-amber-bg);  color: var(--stat-amber-icon); }
+.gw-summary-icon.green  { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+
+.gw-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.gw-summary-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-dark-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gw-summary-value.negative { color: var(--color-danger); }
+
+.gw-summary-sub {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gw-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  background: var(--stat-amber-bg);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+}
+.gw-hint svg { flex-shrink: 0; margin-top: 2px; color: var(--stat-amber-icon); }
+
+@media (max-width: 1100px) {
+  .gw-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .gw-summary { grid-template-columns: minmax(0, 1fr); }
+}

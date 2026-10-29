@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
 
-const AMOUNT_SETTING_KEYS = ['camp_base_contribution', 'camp_min_contribution', 'camp_reduction_per_percent', 'lasagna_price', 'lasagna_discount_from', 'lasagna_discount_price', 'lasagna_bonus_enabled', 'lasagna_bonus_factor'];
+const AMOUNT_SETTING_KEYS = ['camp_base_contribution', 'camp_min_contribution', 'camp_reduction_per_percent', 'lasagna_price', 'lasagna_discount_from', 'lasagna_discount_price', 'lasagna_bonus_enabled', 'lasagna_bonus_factor', 'gluehwein_mandatory_shifts', 'gluehwein_bonus_enabled', 'gluehwein_bonus_factor', 'gluehwein_shift_templates'];
 
 const defaultSettings = {
   company_name: '',
@@ -21,6 +21,10 @@ const defaultSettings = {
   lasagna_discount_price: '',
   lasagna_bonus_enabled: '0',
   lasagna_bonus_factor: '100',
+  gluehwein_mandatory_shifts: '0',
+  gluehwein_bonus_enabled: '0',
+  gluehwein_bonus_factor: '100',
+  gluehwein_shift_templates: '["16:00-19:00","19:00-22:00"]',
   invoice_prefix: 'INV',
   invoice_next_number: '1',
   quote_prefix: 'QTE',

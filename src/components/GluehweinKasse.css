@@ -1,0 +1,71 @@
+/* Kasse (Bargeld) card of a Verkaufsaktion (GluehweinKasse.jsx). */
+.gw-kasse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  max-width: 560px;
+}
+
+.gw-kasse-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.gw-kasse-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--stat-green-bg);
+  color: var(--stat-green-icon);
+}
+
+.gw-kasse-title { margin: 0; font-size: 1.05rem; }
+
+.gw-kasse-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--stat-green-bg);
+  color: var(--stat-green-icon);
+}
+
+.gw-kasse-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.gw-kasse-field { flex: 1 1 220px; min-width: 0; }
+.gw-kasse-input { font-family: var(--font-mono); }
+
+.gw-kasse-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.gw-kasse-amount-label { color: var(--color-text-dark-secondary); font-size: 0.9rem; }
+.gw-kasse-amount-value { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 600; }
+
+.gw-kasse-actions { display: flex; justify-content: flex-end; }
+
+.gw-kasse-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+}
+.gw-kasse-note svg { flex-shrink: 0; margin-top: 2px; }
+.gw-kasse-note-ok { color: var(--stat-green-icon); }

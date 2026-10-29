@@ -197,7 +197,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
       });
       setInvoiceSeries(fullSeries);
       setRecentDocs(recent);
-      // Verkaufsaktionen (Lasagnen, later Glühweinbude / Baseball): a failure here must not break the dashboard.
+      // Verkaufsaktionen (Lasagnen, Glühweinbude; later Baseball): a failure here must not break the dashboard.
       try {
         setActionSaldi(await fetchSalesActionSaldi());
       } catch {
@@ -420,7 +420,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                 </button>
               ))}
             </div>
-            <label className="chart-include" title={t('dashboard_include_actions_hint', 'Saldo der Verkaufsaktionen (Lasagnen, später Glühweinbude und Baseball) zum Umsatz zählen')}>
+            <label className="chart-include" title={t('dashboard_include_actions_hint', 'Saldo der Verkaufsaktionen (Lasagnen, Glühweinbude, später Baseball) zum Umsatz zählen')}>
               <input
                 type="checkbox"
                 checked={includeActions}
