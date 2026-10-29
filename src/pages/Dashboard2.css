@@ -1,0 +1,312 @@
+/* Dashboard 2.0 — builds on the classic Dashboard styles (Dashboard.css): stat cards, chart card, recent cards,
+   quick panel. Only what those don't cover lives here. */
+/* Header row: the year on the left (context + progress), the year switcher on the right like on the other pages. */
+.d2-header { align-items: center; }
+.d2-header-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.d2-header-title h2 {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-dark-primary);
+}
+
+/* Grid children must be allowed to shrink (long lines would otherwise push the cards wider than the screen). */
+.d2 .bottom-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.d2 .recent-card, .d2 .quick-panel, .d2 .chart-card { min-width: 0; }
+
+/* ── Hero: Umsatz + comparison ── */
+.d2-hero-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.d2-hero-value-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-sm); }
+.d2-hero-value {
+  font-family: var(--font-heading);
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--color-text-dark-primary);
+  white-space: nowrap;
+}
+
+.d2-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.d2-delta.up { background: rgba(16, 185, 129, 0.18); color: #047857; }
+.d2-delta.down { background: rgba(255, 77, 77, 0.12); color: var(--color-danger); }
+
+.d2-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-md); font-size: 0.78rem; color: var(--color-text-dark-secondary); }
+.d2-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.d2-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.d2-legend i.inv, .d2-col-stack i.inv { background: var(--color-primary); }
+.d2-legend i.act, .d2-col-stack i.act { background: var(--stat-indigo-icon); }
+.d2-legend i.prev { width: 14px; height: 0; border-radius: 0; border-top: 2px solid #64748B; }
+
+/* ── Month columns (plain CSS, scale with the card); the Vorjahr is a tick on each column ── */
+.d2-chart { position: relative; height: 240px; padding-left: 40px; }
+
+.d2-chart-grid { position: absolute; inset: 0 0 26px 40px; }
+.d2-chart-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--color-border-light-theme); }
+.d2-chart-line span {
+  position: absolute;
+  left: -40px;
+  top: -7px;
+  width: 34px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.d2-chart-cols { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; height: 100%; }
+.d2-col { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.d2-col-plot { position: relative; flex: 1; min-height: 0; }
+.d2-col-stack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 34px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse; /* Rechnungen at the bottom, Aktionen on top */
+  justify-content: flex-start;
+}
+.d2-col-stack i { display: block; flex-shrink: 0; min-height: 3px; }
+.d2-col-stack i:last-child { border-radius: 6px 6px 0 0; }
+.d2-prev {
+  position: absolute;
+  left: 50%;
+  width: 100%;
+  max-width: 46px;
+  height: 2px;
+  transform: translate(-50%, 50%);
+  background: #64748B;
+  border-radius: 1px;
+}
+.d2-col-label {
+  height: 26px;
+  padding-top: 6px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+}
+.d2-col.now .d2-col-label { color: var(--color-primary); }
+
+/* ── Jahresplan under the months: today, Verkaufsaktionen, Arbeiten ── */
+.d2-plan { position: relative; padding: 30px 0 52px 40px; margin-top: var(--space-md); }
+.d2-plan-track {
+  position: relative;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+}
+.d2-plan-fill {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  bottom: -1px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-border-light);
+}
+
+.d2-job-dot {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-primary);
+  border: 1.5px solid #FFFFFF;
+}
+.d2-job-dot.done { background: #CBD5E1; }
+
+.d2-today {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  border-radius: 1px;
+  z-index: 2;
+}
+.d2-today b {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-bottom: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.d2-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  z-index: 3;
+}
+.d2-marker-icon {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid var(--stat-indigo-icon);
+  color: var(--stat-indigo-icon);
+}
+.d2-marker.unset .d2-marker-icon {
+  border-style: dashed;
+  border-color: var(--color-text-dark-tertiary);
+  color: var(--color-text-dark-tertiary);
+}
+.d2-marker-label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+  white-space: nowrap;
+}
+.d2-marker.lane-1 .d2-marker-label { top: calc(100% + 24px); }
+.d2-marker:hover .d2-marker-icon { background: var(--stat-indigo-bg); }
+.d2-marker:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 50%; }
+
+/* ── Attention rail ── */
+.d2-todo { justify-content: flex-start; text-align: left; }
+.d2-todo-text { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.d2-todo-text small { font-size: 0.72rem; font-weight: 500; color: var(--color-text-dark-tertiary); }
+.d2-count { min-width: 26px; padding: 1px 8px; border-radius: var(--radius-full); text-align: center; font-size: 0.78rem; font-weight: 700; }
+.d2-count.danger { background: rgba(255, 77, 77, 0.12); color: var(--color-danger); }
+.d2-count.warn { background: var(--stat-amber-bg); color: var(--stat-amber-icon); }
+.d2-allgood { display: inline-flex; align-items: center; gap: var(--space-xs); color: var(--stat-green-icon); font-weight: 600; font-size: 0.9rem; padding: var(--space-xs) 0; }
+
+/* Hero and the attention rail end on the same line. */
+.d2-top { align-items: stretch; }
+.d2-top .quick-panel { height: 100%; }
+.d2-top .quick-actions { flex: 1; }
+
+/* Three stat cards. */
+.d2 .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 700px) {
+  .d2 .stats-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Stat card extra: progress to plan ── */
+.d2-card-bar { height: 6px; margin-top: -4px; border-radius: var(--radius-full); background: rgba(255, 255, 255, 0.65); overflow: hidden; }
+.d2-card-bar i { display: block; height: 100%; border-radius: var(--radius-full); background: #BE185D; }
+
+/* ── One card per Verkaufsaktion ── */
+.d2-actions-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); }
+
+.d2-action {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.d2-action:hover { border-color: var(--color-primary-border); box-shadow: 0 0 0 3px var(--color-primary-faint); }
+.d2-action:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.d2-action.empty { border-style: dashed; background: var(--color-surface-muted); }
+
+.d2-action-head { display: flex; align-items: center; gap: var(--space-sm); }
+.d2-action-name { flex: 1; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--color-text-dark-primary); }
+.d2-date { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.d2-action-saldo {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-text-dark-primary);
+  margin-top: var(--space-xs);
+}
+.d2-action-saldo.negative { color: var(--color-danger); }
+.d2-action-progress { height: 6px; margin-top: var(--space-xs); border-radius: var(--radius-full); background: var(--color-surface-muted); overflow: hidden; }
+.d2-action-progress i { display: block; height: 100%; border-radius: var(--radius-full); background: var(--stat-green-icon); }
+.d2-action-go { position: absolute; right: 20px; bottom: 20px; }
+
+/* ── Lists (shared recent card rows are buttons) ── */
+.d2-item { width: 100%; border: none; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.d2-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.d2-item .recent-num { font-family: var(--font-sans); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* names, not document numbers: no mono */
+.d2-go { color: var(--color-text-dark-tertiary); }
+
+.d2-datebox {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--color-text-dark-secondary);
+}
+
+.d2-bar { display: block; height: 5px; margin-top: 4px; border-radius: var(--radius-full); background: var(--color-surface-muted); overflow: hidden; }
+.d2-bar i { display: block; height: 100%; border-radius: var(--radius-full); background: var(--color-primary); }
+
+.d2-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .d2 .bottom-grid { grid-template-columns: minmax(0, 1fr); }
+  .d2-pair { grid-template-columns: minmax(0, 1fr); }
+  .d2-actions-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .d2-hero-value { font-size: 2rem; }
+  .d2-chart-cols { gap: 4px; }
+  .d2-legend { justify-content: flex-start; }
+  .d2-chart { padding-left: 30px; }
+  .d2-chart-grid { left: 30px; }
+  .d2-chart-line span { left: -30px; width: 26px; font-size: 0.6rem; }
+  .d2-col-label { font-size: 0.58rem; letter-spacing: 0; }
+  .d2-plan { padding-left: 0; }
+  .d2-marker-label { font-size: 0.66rem; }
+}
+
+/* Hero toolbar: numbers left, legend + switch right, side by side (wrapping only on narrow screens). */
+.d2-hero .chart-toolbar { flex-wrap: nowrap; }
+.d2-hero-main { flex: 1; }
+.d2-hero .chart-controls { flex-shrink: 0; align-items: flex-end; }
+@media (max-width: 900px) {
+  .d2-hero .chart-toolbar { flex-wrap: wrap; }
+  .d2-hero .chart-controls { align-items: flex-start; }
+}

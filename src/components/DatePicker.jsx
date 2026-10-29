@@ -29,7 +29,7 @@ function formatDisplay(str) {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-const DatePicker = ({ label, value, onChange, disabled }) => {
+const DatePicker = ({ label, value, onChange, disabled, initialView }) => {
   const t = useT();
   const WEEKDAYS = t('date_weekdays_short', DEFAULT_WEEKDAYS.join(',')).split(',');
   const MONTHS = t('date_months', DEFAULT_MONTHS.join(',')).split(',');
@@ -71,8 +71,9 @@ const DatePicker = ({ label, value, onChange, disabled }) => {
 
   const handleOpen = () => {
     if (disabled) return;
-    if (value) {
-      const d = parseISO(value);
+    const shown = value || initialView; // initialView: ISO date whose month opens first while nothing is selected
+    if (shown) {
+      const d = parseISO(shown);
       if (d) { setViewYear(d.getFullYear()); setViewMonth(d.getMonth()); }
     }
     setOpen(true);

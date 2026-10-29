@@ -1,0 +1,6 @@
+/* Verkaufsaktion base page (Glühwein, Baseball) — same page rhythm as the Lasagnen page. */
+.sales-action-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}

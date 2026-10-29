@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
+import useSalesActions from '../hooks/useSalesActions';
 import StatusBadge from '../components/StatusBadge';
 import DatePicker from '../components/DatePicker';
 import { effectiveStatus } from '../utils/documentLifecycle';
@@ -68,6 +69,7 @@ function heroClosedToday() {
 
 const CUSTOM_FROM_KEY = 'dashboard_custom_from';
 const CUSTOM_TO_KEY = 'dashboard_custom_to';
+const INCLUDE_ACTIONS_KEY = 'dashboard_include_sales_actions'; // '0' = Verkaufsaktionen not counted into the Umsatz
 
 const CHART_H = 220;
 const CHART_PAD_Y = 20;
@@ -96,13 +98,17 @@ const smoothPath = (pts, yMin = -Infinity, yMax = Infinity) => {
 
 const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   const { query } = useDatabase();
+  const { fetchSalesActionSaldi } = useSalesActions();
   const t = useT();
   const MONTHS = t('chart_months_short', DEFAULT_CHART_MONTHS.join(',')).split(',');
   const [stats, setStats] = useState({
     revenue: 0, paidInvoices: 0, pendingQuotes: 0, totalClients: 0
   });
   const [recentDocs, setRecentDocs] = useState([]);
-  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [invoiceSeries, setInvoiceSeries] = useState([]); // monthly paid-invoice revenue
+  const [actionSaldi, setActionSaldi] = useState([]); // Saldo per Verkaufsaktion and scout year, with the month it counts in
+  const [includeActions, setIncludeActionsState] = useState(() => localStorage.getItem(INCLUDE_ACTIONS_KEY) !== '0');
+  const setIncludeActions = (v) => { setIncludeActionsState(v); localStorage.setItem(INCLUDE_ACTIONS_KEY, v ? '1' : '0'); };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState('scout-year');
@@ -189,8 +195,14 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         pendingQuotes: quoteCount[0]?.cnt || 0,
         totalClients: clientCount[0]?.cnt || 0,
       });
-      setMonthlyRevenue(fullSeries);
+      setInvoiceSeries(fullSeries);
       setRecentDocs(recent);
+      // Verkaufsaktionen (Lasagnen, later Glühweinbude / Baseball): a failure here must not break the dashboard.
+      try {
+        setActionSaldi(await fetchSalesActionSaldi());
+      } catch {
+        setActionSaldi([]);
+      }
     } catch (_err) {
       setError(t('doclist_load_error', 'Failed to load. Please restart the app.'));
     } finally {
@@ -230,6 +242,19 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   // effect (using whatever MONTHS resolved to before translations had
   // loaded) — relabel from .key here so it stays reactive to language
   // changes without needing to refetch.
+  // Umsatz per month = paid invoices + (if switched on) the Saldo of the Verkaufsaktionen in the month of their date.
+  const monthlyRevenue = useMemo(() => {
+    if (!includeActions || actionSaldi.length === 0) return invoiceSeries;
+    const add = new Map();
+    for (const a of actionSaldi) add.set(a.monthKey, (add.get(a.monthKey) || 0) + a.saldo);
+    const series = invoiceSeries.map((m) => (add.has(m.key) ? { ...m, value: m.value + add.get(m.key) } : m));
+    const extra = Array.from(add.keys())
+      .filter((k) => !series.some((s) => s.key === k))
+      .map((k) => ({ key: k, label: MONTHS[parseInt(k.slice(5, 7), 10) - 1], value: add.get(k) }));
+    return [...extra, ...series].sort((a, b) => a.key.localeCompare(b.key));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceSeries, actionSaldi, includeActions]);
+
   const relabelMonth = (m) => ({ ...m, label: MONTHS[parseInt(m.key.slice(5, 7), 10) - 1] });
   const visibleMonths = useMemo(() => {
     const bounds = chartRange === 'custom'
@@ -257,7 +282,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
     const dx = (W - CHART_PAD_XL - CHART_PAD_XR) / Math.max(n - 1, 1);
     return visibleMonths.map((m, i) => ({
       x: CHART_PAD_XL + i * dx,
-      y: CHART_PAD_Y + innerH * (1 - m.value / max),
+      y: CHART_PAD_Y + innerH * (1 - Math.max(m.value, 0) / max), // a net-negative month sits on the baseline; the tooltip keeps the real value
       v: m.value,
       label: m.label,
     }));
@@ -395,6 +420,14 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
                 </button>
               ))}
             </div>
+            <label className="chart-include" title={t('dashboard_include_actions_hint', 'Saldo der Verkaufsaktionen (Lasagnen, später Glühweinbude und Baseball) zum Umsatz zählen')}>
+              <input
+                type="checkbox"
+                checked={includeActions}
+                onChange={(e) => setIncludeActions(e.target.checked)}
+              />
+              <span>{t('dashboard_include_actions', 'Verkaufsaktionen einrechnen')}</span>
+            </label>
             {chartRange === 'custom' && (
               <div className="custom-range">
                 <DatePicker value={customFrom} onChange={setCustomFrom} />

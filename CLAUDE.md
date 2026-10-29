@@ -1,6 +1,6 @@
 # Hori-Admin — Project Reference
 
-**Version:** 1.12.7 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.17.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -60,6 +60,9 @@ Billing_App/
 │   │   ├── ClientPicker.jsx / .css      # Searchable client combobox + "Neuen Kunden anlegen" (ClientModal). Props: clients, value, onChange(id), onClientCreated(client)
 │   │   ├── JobDocumentDialog.jsx / .css # Wage source + preview before creating an offer/invoice from a job (one line per distinct Hori-hours value)
 │   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
+│   │   ├── ActionDateField.jsx / .css  # Date picker of a Verkaufsaktion (no visible label, tooltip only) next to the year switcher (shared `DatePicker`, `initialView` = month opened first); its month decides where the action's Saldo counts in the Dashboard Umsatz
+│   │   ├── FinanceEntryModal.jsx       # Add/edit popup for one manual Lasagnen entry (kind 'expense' | 'income': description, category, amount); onSave throws to show a save error
+│   │   ├── LasagnenFinance.jsx / .css  # Lasagnen tab "Finanzen": summary cards (Einnahmen, Ausgaben, Saldo) + "Einnahme hinzufügen" (secondary) / "Ausgabe hinzufügen" (primary) buttons (open `FinanceEntryModal`) + one list of all Einnahmen (per Hori from the Übersicht, read-only; manual) and Ausgaben, filter Alle/Einnahmen/Ausgaben, fixed column widths. Props: year, yearLocked, income{total}, incomeEntries, formatCurrency, locale, search, onError
 │   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
 │   │   ├── Input.css
 │   │   ├── SortableTh.jsx       # Sortable <th> (props: column, label, align left|right, sort, onSort). Right-aligned: arrow before label; unsorted: arrow hidden, space kept
@@ -74,6 +77,7 @@ Billing_App/
 │   │   └── ErrorBoundary.jsx   # React error boundary
 │   ├── pages/
 │   │   ├── Dashboard.jsx / .css      # KPI stats, revenue chart, recent docs, quick actions
+│   │   ├── Dashboard2.jsx / .css     # Dashboard 2.0 (sidebar: Übersicht): scout-year cockpit in the classic Dashboard's design (reuses Dashboard.css: stat cards, chart card, recent cards, red quick-stat, quick-actions). Hero = Umsatz + Vorjahr comparison (same period) + month columns with Vorjahr ticks + Jahresplan strip (today, action dates, Arbeiten); rail = Offene Posten + Braucht Aufmerksamkeit; then three stat cards, one card per Verkaufsaktion, Nächste Arbeiten, Aktivste Horis. Props: settings, onNavigate(view). Classic Dashboard stays as is
 │   │   ├── DocumentList.jsx / .css   # Table of invoices or quotes (search, edit, delete)
 │   │   ├── DocumentEditor.jsx / .css # Create/edit form + preview mode + lifecycle actions
 │   │   ├── DocumentPreview.jsx / .css# Print/PDF HTML render (language-aware)
@@ -81,7 +85,9 @@ Billing_App/
 │   │   ├── Products.jsx / .css       # Product cards + category chips + modal
 │   │   ├── Arbeiten.jsx / .css       # Work dates (times/open end), assigned Horis, planned vs actual hours, links to client/quote/invoice
 │   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share, matrix view
-│   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`)
+│   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`) / Finanzen (`LasagnenFinance`)
+│   │   ├── SalesActionPage.jsx / .css # Base page of a Verkaufsaktion: search bar, action date picker (`ActionDateField`), year switcher; content still empty. Prop: action (entry of `SALES_ACTIONS`)
+│   │   ├── Gluehwein.jsx / Baseball.jsx # Glühwein / Baseball: thin wrappers around `SalesActionPage` (blank for now)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])
@@ -91,12 +97,16 @@ Billing_App/
 │   │   ├── useJobRateSource.js # Products + "Aus Produkt | Manuell" wage state for JobRateSource (resolved name/rate/productId)
 │   │   ├── useHoris.js         # CRUD for horis + per-Hori hours/share aggregation
 │   │   ├── useTableSort.js     # Shared sort state: cycle none → asc → desc → none, sortRows(rows, accessors, {tieBreak, locale})
+│   │   ├── useDashboard2.js    # loadDashboard(year): one load for Dashboard 2.0 (invoices by month/open/overdue, open quotes, Verkaufsaktionen incl. `lasagnaSummary`, Arbeiten incl. dates, Horis, and `prev` = the Vorjahr's Umsatz per month); scoutMonthKeys(year)
+│   │   ├── useActionDate.js    # useActionDate(dateKey): date of a Verkaufsaktion for the selected scout year (year_settings), setDate(value) with scout-year range check + lock
+│   │   ├── useSalesActions.js  # fetchSalesActionSaldi(): Saldo of every Verkaufsaktion per scout year + the month it counts in (for the Dashboard)
+│   │   ├── useLasagnenExpenses.js # fetchExpenses(year), saveExpense(year, exp) (insert/update, YEAR_LOCKED check), deleteExpense(year, id)
 │   │   ├── useLasagnen.js      # fetchOrders (all Horis LEFT JOIN lasagna_orders), saveOrder (upsert by hori_id)
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–24 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–30 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -112,6 +122,7 @@ Billing_App/
 │       ├── jobHours.js           # Pure helpers: planned/actual hours, work share, camp contribution reduction
 │       ├── jobDocumentLines.js   # Pure: groupHoriHours, formatClockRange, buildJobItems (job → offer/invoice lines)
 │       ├── heatColor.js          # Shared red→yellow→green heat scale for share bars
+│       ├── lasagnaFinance.js     # Pure: lasagnaAmounts(row,settings), lasagnaSummary({orders,settings,manual}), lasagnaSaldo(...), SALES_ACTIONS, salesActionMonthKey(action,year,date), EXPENSE_CATEGORIES, incomeFor(row,min), INCOME_CATEGORIES, categoriesFor(kind), incomeTotals(rows,minFor), incomeEntries(rows,minFor,nameFor), expenseTotal(list)
 │       ├── lasagnaBonus.js       # Pure: lasagnaShares(rows), bonusReductionPct({sharePct,enabled,factor}), applyBonus(contribution,pct), lasagnaBonusFromSettings(settings)
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
@@ -219,6 +230,14 @@ id, hori_id(FK, UNIQUE), bolo, veggie, paid(0/1), final_amount (nullable)
 ```
 Settings: `lasagna_price` (one base price per lasagne, Bolo and Veggie alike), `lasagna_discount_from` (count per Hori, Bolo + Veggie, from which the discount applies; empty/0 = none), `lasagna_discount_price` (one discount price per lasagne; empty/0 = no discount). Missing keys read as 0. Betrag min = (Bolo + Veggie) × applicable price: `lasagna_discount_price` once the threshold is reached and that price is > 0 (all-units), else `lasagna_price`. Betrag final is user-entered and always saved; below Betrag min it is only highlighted red. A paid row is locked (inputs disabled) until Bezahlt is unticked. The lasagne price keys are edited only in the Lasagnen-Preis popup (not in Settings). Bonus: `lasagna_bonus_enabled` ('0'/'1'), `lasagna_bonus_factor` (% of the share applied, default 100). Share = Hori's Bolo + Veggie / total of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (helpers in `utils/lasagnaBonus.js`). Einkaufsliste stock on hand: `lasagna_stock_<item key>` (base unit, blank = 0; item keys in `utils/lasagnaShoppingList.js`).
 
+**`lasagna_expenses`** (migrations 29, 30) — manually entered Lasagnen entries per scout year: expenses and extra income (e.g. donations)
+```
+id, year, kind (expense|income), date (unused, always NULL), description, category (expense: ingredients|packaging|material|other; income: donation|other_income); newest entry first, amount, created_at
+```
+Lasagnen tab "Finanzen": Einnahmen = manual income entries + sum over the Übersicht Horis (active, or all with "Inaktive anzeigen"; name search ignored) of Betrag final, or Betrag min while Betrag final is empty; "bezahlt" = rows ticked Bezahlt, "offen" = rest. Saldo = Einnahmen − Ausgaben. Per-Hori income lines are read-only (edit them in the Übersicht). Locked year: expenses read-only (`saveExpense`/`deleteExpense` throw `YEAR_LOCKED`).
+
+**Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (now only Lasagnen counts; Glühwein and Baseball are already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, their Saldo is added once they track money) counts into the Dashboard Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). The Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
+
 **`document_events`** — append-only audit log
 ```
 id, document_id(FK), event_type, payload_json, created_at
@@ -259,7 +278,7 @@ draft → sent → accepted → converted
 No external store. `App.jsx` holds:
 
 ```js
-view          // 'dashboard' | 'invoices' | 'quotes' | 'clients' | 'products' | 'arbeiten' | 'horis' | 'lasagnen' | 'settings'
+view          // 'dashboard' | 'dashboard2' | 'invoices' | 'quotes' | 'clients' | 'products' | 'arbeiten' | 'horis' | 'lasagnen' | 'gluehwein' | 'baseball' | 'settings'
 isEditing     // bool
 editingData   // null | { doc, type }
 appSettings   // loaded once from DB on mount
@@ -358,7 +377,7 @@ import { version as appVersion } from '../../package.json';
 
 1. Schema change? Add migration in `electron/database.js`, bump `schema_version`.
 2. New data access? Add method to relevant hook in `src/hooks/`.
-3. New page? Create `pages/Foo.jsx` + `pages/Foo.css`. Add nav item to `Sidebar.jsx` `mainNav`/`generalNav`. Add view case in `App.jsx`.
+3. New page? Create `pages/Foo.jsx` + `pages/Foo.css`. Add nav item to a section of `navSections` in `Sidebar.jsx` (Übersicht / Finanzen / Arbeiten / Aktionen / Allgemein; Übersicht = Dashboard, Dashboard 2.0) and a title in `Layout.jsx` `VIEW_TITLE_KEYS`. Add view case in `App.jsx`.
 4. New component? Add to `src/components/`. Keep CSS scoped to component class.
 5. New setting key? Add default in `useSettings.js` default object + `Settings.jsx` form.
 6. Bump version in `package.json`.
