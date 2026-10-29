@@ -1620,6 +1620,18 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr) VALUES
   }
 }
 
+// Migration 35: drop the unused English column from ui_translations (the app UI is DE/FR only).
+if (getVersion() < 35) {
+  try {
+    db.exec(`
+ALTER TABLE ui_translations DROP COLUMN value_en;
+    `);
+    setVersion(35);
+  } catch (e) {
+    console.error('Migration 35 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

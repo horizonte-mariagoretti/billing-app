@@ -1642,6 +1642,20 @@ INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr) VALUES
       }
     },
   },
+  {
+    version: 35,
+    up: (exec) => {
+      // Drop the unused English column from ui_translations (the app UI is DE/FR only).
+      try {
+        exec(`
+ALTER TABLE ui_translations DROP COLUMN value_en;
+        `);
+      } catch (e) {
+        console.error('Migration 35 failed:', e.message);
+        throw e;
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void
