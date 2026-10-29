@@ -1,0 +1,158 @@
+/* Verkaufsaktion "Finanzen" tab (GluehweinFinanzen.jsx). Same look as LasagnenFinance,
+   self-contained (does not depend on Lasagnen.css). Table uses the shared .data-table look. */
+.gw-fin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ── Summary cards ── */
+.gw-fin-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.gw-fin-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.gw-fin-card-body { min-width: 0; flex: 1; }
+
+.gw-fin-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+.gw-fin-icon.income  { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+.gw-fin-icon.expense { background: var(--stat-pink-bg);   color: var(--stat-pink-icon); }
+.gw-fin-icon.saldo   { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
+
+.gw-fin-card-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.gw-fin-card-value {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-dark-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* !important: the card value and the table footer set their own colour with the same or higher specificity. */
+.gw-fin-negative { color: var(--color-danger) !important; }
+
+/* Kasse counted but not taken over yet */
+.gw-fin-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--stat-amber-bg);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.875rem;
+}
+.gw-fin-hint svg { flex-shrink: 0; color: var(--stat-amber-icon); }
+
+/* ── Toolbar ── */
+.gw-fin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.gw-fin-actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+
+/* Amounts: Einnahmen bold green, Ausgaben bold red (with a minus sign). */
+.gw-fin-amount-in  { color: var(--stat-green-icon) !important; font-weight: 600; }
+.gw-fin-amount-out { color: var(--color-danger) !important; font-weight: 600; }
+
+/* ── Table ── */
+/* Fixed column widths: the columns must not jump when the filter or search changes the rows. */
+.gw-fin-table { table-layout: fixed; min-width: 720px; }
+.gw-fin-table th:first-child { min-width: 0; }
+.gw-fin-col-cat     { width: 150px; }
+.gw-fin-col-amount  { width: 140px; }
+.gw-fin-col-actions { width: 88px; }
+
+.gw-fin-desc-cell {
+  font-weight: 600;
+  color: var(--color-text-dark-primary) !important;
+  white-space: normal;
+}
+
+.gw-fin-row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.gw-fin-row-actions button {
+  background: transparent;
+  border: none;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gw-fin-row-actions button:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+.gw-fin-readonly {
+  display: inline-flex;
+  padding: var(--space-2xs);
+  color: var(--color-text-dark-tertiary);
+}
+
+/* ── Empty state ── */
+.gw-fin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--color-text-dark-tertiary);
+  text-align: center;
+}
+
+.gw-fin-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+}
+
+.gw-fin-empty-desc {
+  font-size: 0.875rem;
+  max-width: 340px;
+}
+
+@media (max-width: 700px) {
+  .gw-fin-summary { grid-template-columns: 1fr; }
+}
