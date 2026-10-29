@@ -62,26 +62,8 @@ const ensureLoaded = () => {
   loadYears().catch(err => console.error('Failed to load years', err));
 };
 
-const snapshotYearAmounts = (year) => window.electron.db.transaction(
-  AMOUNT_SETTING_KEYS.map(key => ({
-    sql: `INSERT OR IGNORE INTO year_settings (year, key, value)
-          SELECT ?, key, value FROM settings WHERE key = ?`,
-    params: [year, key],
-  }))
-);
-
-// TODO: move direct window.electron.db access into the hook layer.
-export const setYearLocked = async (year, locked) => {
-  const result = await window.electron.db.run(
-    'UPDATE app_years SET locked = ? WHERE year = ?',
-    [locked ? 1 : 0, year]
-  );
-  await loadYears();
-  return result;
-};
-
 const useYear = () => {
-  const { query, transaction } = useDatabase();
+  const { query, run, transaction } = useDatabase();
   const { years, selectedYear: selected } = useSyncExternalStore(subscribe, getSnapshot);
 
   useEffect(() => {
@@ -103,6 +85,23 @@ const useYear = () => {
     setState({ selectedYear: value });
     writeStoredYear(value);
   }, []);
+
+  const snapshotYearAmounts = useCallback((year) => transaction(
+    AMOUNT_SETTING_KEYS.map(key => ({
+      sql: `INSERT OR IGNORE INTO year_settings (year, key, value)
+            SELECT ?, key, value FROM settings WHERE key = ?`,
+      params: [year, key],
+    }))
+  ), [transaction]);
+
+  const setYearLocked = useCallback(async (year, locked) => {
+    const result = await run(
+      'UPDATE app_years SET locked = ? WHERE year = ?',
+      [locked ? 1 : 0, year]
+    );
+    await fetchYears();
+    return result;
+  }, [run, fetchYears]);
 
   const startNewYear = useCallback(async () => {
     const newYear = currentYear + 1;
@@ -127,7 +126,7 @@ const useYear = () => {
     setSelectedYear(newYear);
     await fetchYears();
     return newYear;
-  }, [currentYear, transaction, setSelectedYear, fetchYears]);
+  }, [currentYear, transaction, snapshotYearAmounts, setSelectedYear, fetchYears]);
 
   return {
     years,
@@ -137,6 +136,7 @@ const useYear = () => {
     isLocked,
     label: scoutYearLabel(selectedYear),
     startNewYear,
+    setYearLocked,
     refreshYears: fetchYears,
   };
 };
