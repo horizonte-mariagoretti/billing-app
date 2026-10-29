@@ -1,0 +1,50 @@
+.gw-shift-settings-note {
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-light-theme);
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}
+
+.gw-shift-settings-fieldset {
+  border: 0;
+  margin: 0 0 var(--space-lg);
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+.gw-shift-settings-fieldset > .settings-fields-modal-grid { width: 100%; }
+
+.gw-shift-settings-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.gw-shift-settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.gw-shift-settings-times {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.gw-shift-settings-times .input-field { width: 130px; flex: 0 0 auto; }
+.gw-shift-settings-times .input-field.error { border-color: var(--color-danger); }
+
+.gw-shift-settings-dash {
+  color: var(--color-text-dark-tertiary);
+  font-weight: 600;
+}
