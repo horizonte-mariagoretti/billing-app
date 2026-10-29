@@ -1625,6 +1625,23 @@ CREATE TABLE IF NOT EXISTS gw_shift_assignments (
       }
     },
   },
+  {
+    version: 34,
+    up: (exec) => {
+      // UI strings for the Glühwein Dashboard 2.0 card and the Horis Glühwein bonus tooltip.
+      try {
+        exec(`
+INSERT OR IGNORE INTO ui_translations (key, value_de, value_fr, value_en) VALUES
+('d2_sales_days','Verkaufstage','jours de vente','sale days'),
+('d2_counts_in','zählt im','compte en','counts in'),
+('horis_gluehwein_bonus_tooltip','Reduziert durch Glühwein-Bonus','Réduit par le bonus vin chaud','Reduced by Glühwein bonus');
+        `);
+      } catch (e) {
+        console.error('Migration 34 failed:', e.message);
+        throw e;
+      }
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void
