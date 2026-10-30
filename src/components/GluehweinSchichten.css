@@ -5,13 +5,11 @@
 }
 
 .gw-shifts-loading,
-.gw-shifts-empty,
-.gw-shifts-day-empty {
+.gw-shifts-empty {
   color: var(--color-text-dark-tertiary);
   font-size: 0.9rem;
 }
 .gw-shifts-empty { padding: var(--space-lg); }
-.gw-shifts-day-empty { margin: 0; }
 
 .gw-shifts-toolbar {
   display: flex;
@@ -39,109 +37,6 @@
   color: var(--color-text-dark-secondary);
 }
 
-.gw-shifts-days {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
-  gap: var(--space-md);
-}
-
-.gw-shifts-day {
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 0;
-}
-
-.gw-shifts-day-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-}
-.gw-shifts-day-head h3 {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  color: var(--color-text-dark-primary);
-}
-.gw-shifts-day-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.gw-shifts-slots {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.gw-shifts-slot {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-md);
-}
-
-.gw-shifts-slot-time {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--color-text-dark-primary);
-}
-
-.gw-shifts-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: 0.85rem;
-}
-
-.gw-shifts-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px 2px 10px;
-  border-radius: 999px;
-  background-color: var(--color-indigo-alpha);
-  color: var(--color-indigo-hover);
-  font-weight: 500;
-}
-
-.gw-shifts-chip-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.gw-shifts-chip-remove:hover:not(:disabled) { background-color: var(--color-indigo-alpha); }
-.gw-shifts-chip-remove:disabled { cursor: default; opacity: 0.5; }
-
-.gw-shifts-picker {
-  width: auto;
-  min-width: 130px;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  font-size: 0.85rem;
-}
-
 .gw-shifts-under {
   margin-left: var(--space-xs);
   font-size: 0.78rem;
@@ -149,4 +44,9 @@
   color: var(--color-danger);
 }
 
-.gw-shifts-inactive td { opacity: 0.7; }
+.gw-shifts-data th:nth-child(5) { min-width: 150px; }
+
+/* Inactive Horis (still assigned to a shift): greyed like the Horis Übersicht */
+.gw-shifts-inactive td { color: var(--color-text-dark-tertiary); }
+.gw-shifts-inactive .dt-strong,
+.gw-shifts-inactive .dt-heat .dt-mono { color: var(--color-text-dark-tertiary) !important; }

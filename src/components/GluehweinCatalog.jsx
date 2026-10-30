@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AlertCircle, Plus, Edit2, Archive, ArchiveRestore, BookOpen, Package, Lock } from 'lucide-react';
+import { AlertCircle, Edit2, Archive, ArchiveRestore, BookOpen, Package, Lock } from 'lucide-react';
 import { useGluehweinCatalog } from '../hooks/useGluehweinCatalog';
+import { useGluehweinIngredients } from '../hooks/useGluehweinIngredients';
 import useTableSort from '../hooks/useTableSort';
 import useCurrency from '../hooks/useCurrency';
 import useFocusTrap from '../hooks/useFocusTrap';
@@ -9,6 +10,7 @@ import SortableTh from './SortableTh';
 import ConfirmDialog from './ConfirmDialog';
 import DecimalInput from './DecimalInput';
 import RecipeEditor from './RecipeEditor';
+import { itemEconomics, recipeCostPerUnit } from '../utils/gluehweinCatalogMath';
 import Button from './Button';
 import './DataTable.css';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
@@ -17,46 +19,49 @@ import './GluehweinCatalog.css';
 
 const LOCALE = 'de-DE';
 
-// Display order of the kinds; also the default (unsorted) order of the table.
-const KINDS = [
-  { value: 'drink', label: 'Getränk' },
-  { value: 'addon', label: 'Zusatz' },
-  { value: 'beer', label: 'Bier' },
-  { value: 'beer_special', label: 'Spezialbier' },
-  { value: 'ingredient', label: 'Zutat' },
-];
-const KIND_ORDER = new Map(KINDS.map((k, i) => [k.value, i]));
+// Suggestions for the free-text units (datalist).
+const SELL_UNITS = ['Glas', 'Becher', 'Flasche', 'Shot', 'Stk'];
+const BUY_UNITS = ['Flasche', 'Kasten', 'Paket', 'Fass', 'Kiste'];
 
-const PACK_TYPES = [
-  { value: 'none', label: '–' },
-  { value: 'kasten', label: 'Kasten' },
-  { value: 'flasche', label: 'Flasche' },
-  { value: 'paket', label: 'Paket' },
-];
-
-const isProduct = (kind) => kind !== 'ingredient';
 const numOrNull = (v) => {
   if (v === '' || v == null) return null;
   const n = Number(String(v).replace(',', '.'));
   return Number.isFinite(n) ? n : null;
 };
 const fmtNum = (n) => (n == null ? '' : Number(n).toLocaleString(LOCALE, { maximumFractionDigits: 3 }));
+const fmtPct = (p) => (p == null ? null : `${(p * 100).toLocaleString(LOCALE, { maximumFractionDigits: 1 })} %`);
 const str = (v) => (v == null ? '' : String(v));
+const digits = (v) => String(v).replace(/\D/g, '');
+const round2 = (n) => (n == null ? null : Math.round(n * 100) / 100);
+const hasRecipe = (i) => (i?.recipe?.length || 0) > 0;
+const unitOf = (i) => String(i?.unit || '').trim() || 'Stk';
+
+/** Migrated multi-pack without content: buying unit differs from the selling unit but content is still 1. */
+const contentMissing = (i) => (
+  !hasRecipe(i)
+  && i.buy_pack_price != null
+  && Number(i.pack_size) === 1
+  && !!String(i.buy_unit || '').trim()
+  && String(i.buy_unit).trim().toLowerCase() !== unitOf(i).toLowerCase()
+);
 
 /**
- * Add / edit one catalog item: the item itself (name, kind, unit; not year-bound, always editable)
- * and its terms for the selected scout year (prices, pack, Bedarf; read-only when the year is locked).
- * onSave({ item, terms|null }) throws to show the save error.
+ * Add / edit one Sortiment product: the product itself (name, selling unit; not year-bound, always editable)
+ * and its terms for the selected scout year (read-only when the year is locked): selling price per selling unit,
+ * buying unit + price per buying unit + content (selling units per buying unit), planned quantity in selling units.
+ * Products with a recipe are costed through the recipe (recipeCost per selling unit); their own buy fields are
+ * ignored and kept as they are. onSave({ item, terms|null }) throws to show the save error.
  */
-const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => {
+const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, triggerRef }) => {
   const t = useT();
+  const formatCurrency = useCurrency();
+  const withRecipe = hasRecipe(item);
   const [form, setForm] = useState(() => ({
     name: item?.name || '',
-    kind: item?.kind || 'drink',
-    unit: item?.unit || 'Stk',
+    unit: item?.unit || 'Becher',
     sell_price: str(item?.sell_price),
-    buy_price: str(item?.buy_price),
-    pack_type: item?.pack_type || 'none',
+    buy_unit: item?.buy_unit || '',
+    buy_pack_price: str(item?.buy_pack_price),
     pack_size: str(item?.pack_size ?? 1),
     planned_qty: str(item?.planned_qty ?? 0),
   }));
@@ -78,36 +83,52 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
-  const sellable = isProduct(form.kind);
+  const unit = form.unit.trim() || 'Stk';
+  const buyUnit = form.buy_unit.trim();
+  const buyUnitLabel = buyUnit || t('gw_buy_unit_fallback', 'Einkaufseinheit');
+  const oldBuyFilled = withRecipe && (item?.buy_pack_price != null || !!item?.buy_unit);
+
+  const packPrice = numOrNull(form.buy_pack_price);
+  const econ = itemEconomics({
+    sell_price: numOrNull(form.sell_price),
+    buy_pack_price: withRecipe ? null : packPrice,
+    pack_size: withRecipe ? null : numOrNull(form.pack_size),
+    planned_qty: numOrNull(form.planned_qty) ?? 0,
+    recipeCost: withRecipe ? recipeCost ?? 0 : undefined,
+  });
+  const totalCost = !withRecipe && econ.packsToBuy != null && packPrice != null ? econ.packsToBuy * packPrice : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const next = {};
     if (!form.name.trim()) next.name = t('gw_err_name', 'Bitte einen Namen eingeben.');
-    const packSize = numOrNull(form.pack_size);
-    if (!yearLocked && form.pack_type !== 'none' && (packSize == null || packSize <= 0)) {
-      next.pack_size = t('gw_err_pack_size', 'Bitte eine Packungsgröße größer 0 eingeben.');
+    const content = numOrNull(form.pack_size);
+    if (!yearLocked && !withRecipe && packPrice != null && (content == null || content <= 0)) {
+      next.pack_size = t('gw_err_content', 'Bitte einen Inhalt größer 0 eingeben.');
     }
     setErrors(next);
     if (Object.keys(next).length) return;
     setSaving(true);
     setSaveError(null);
-    const round2 = (n) => (n == null ? null : Math.round(n * 100) / 100);
+    const base = {
+      sell_price: round2(numOrNull(form.sell_price)),
+      planned_qty: numOrNull(form.planned_qty) ?? 0,
+    };
     try {
       await onSave({
         item: {
           ...(item?.id ? { id: item.id, sort_order: item.sort_order, active: item.active } : {}),
           name: form.name.trim(),
-          kind: form.kind,
-          unit: form.unit.trim() || 'Stk',
+          unit,
         },
-        terms: yearLocked ? null : {
-          sell_price: sellable ? round2(numOrNull(form.sell_price)) : null,
-          buy_price: round2(numOrNull(form.buy_price)),
-          pack_type: form.pack_type,
-          pack_size: form.pack_type === 'none' ? 1 : packSize,
-          planned_qty: numOrNull(form.planned_qty) ?? 0,
-        },
+        terms: yearLocked ? null : withRecipe
+          ? { ...base, keepBuy: true }
+          : {
+            ...base,
+            buy_unit: buyUnit || null,
+            buy_pack_price: round2(packPrice),
+            pack_size: content != null && content > 0 ? content : 1,
+          },
       });
     } catch {
       setSaveError(t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
@@ -116,10 +137,65 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
   };
 
   const yearLabel = `${year}/${String((year + 1) % 100).padStart(2, '0')}`;
+  const money = (v) => (v == null ? '–' : formatCurrency(v));
+
+  const buyFields = (disabled) => (
+    <>
+      <div className="settings-fields-modal-field">
+        <label className="input-label" htmlFor="gw-item-buy-unit">{t('gw_col_buy_unit', 'Einkaufseinheit')}</label>
+        <input
+          id="gw-item-buy-unit"
+          type="text"
+          list="gw-buy-units"
+          className="input-field"
+          value={form.buy_unit}
+          maxLength={20}
+          placeholder="Kasten"
+          disabled={disabled}
+          onChange={(e) => setValue('buy_unit', e.target.value)}
+        />
+      </div>
+      <div className="settings-fields-modal-field">
+        <label className="input-label" htmlFor="gw-item-buy-price">
+          {t('gw_buy_pack_price_per', 'Preis je')} {buyUnitLabel}
+        </label>
+        <DecimalInput
+          id="gw-item-buy-price"
+          min="0"
+          className="input-field"
+          value={form.buy_pack_price}
+          placeholder="0,00"
+          disabled={disabled}
+          onChange={(e) => setValue('buy_pack_price', e.target.value)}
+          onFocus={(e) => e.target.select()}
+        />
+      </div>
+      <div className="settings-fields-modal-field wide">
+        <label className="input-label" htmlFor="gw-item-content">{t('gw_col_content', 'Inhalt')}</label>
+        <div className="settings-fields-modal-input">
+          <input
+            id="gw-item-content"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            className={`input-field${errors.pack_size ? ' error' : ''}`}
+            value={form.pack_size}
+            placeholder="1"
+            disabled={disabled}
+            onChange={(e) => setValue('pack_size', digits(e.target.value))}
+            onFocus={(e) => e.target.select()}
+            aria-invalid={errors.pack_size ? 'true' : undefined}
+          />
+          <span className="settings-fields-modal-suffix">{unit} {t('gw_per', 'pro')} {buyUnitLabel}</span>
+        </div>
+        {errors.pack_size && <span className="input-error">{errors.pack_size}</span>}
+      </div>
+    </>
+  );
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-item-modal-title">
-      <div className="modal-content settings-fields-modal" ref={modalRef}>
+      <div className="modal-content settings-fields-modal gw-item-modal" ref={modalRef}>
         <h2 id="gw-item-modal-title">
           {item ? t('gw_item_edit', 'Artikel bearbeiten') : t('gw_item_add', 'Artikel hinzufügen')}
         </h2>
@@ -130,6 +206,8 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
               <span>{saveError}</span>
             </div>
           )}
+          <datalist id="gw-sell-units">{SELL_UNITS.map((u) => <option key={u} value={u} />)}</datalist>
+          <datalist id="gw-buy-units">{BUY_UNITS.map((u) => <option key={u} value={u} />)}</datalist>
           <div className="settings-fields-modal-grid">
             <div className="settings-fields-modal-field wide">
               <label className="input-label" htmlFor="gw-item-name">{t('gw_col_name', 'Name')}</label>
@@ -145,30 +223,21 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
               />
               {errors.name && <span className="input-error">{errors.name}</span>}
             </div>
-            <div className="settings-fields-modal-field">
-              <label className="input-label" htmlFor="gw-item-kind">{t('gw_col_kind', 'Art')}</label>
-              <select
-                id="gw-item-kind"
-                className="input-field"
-                value={form.kind}
-                onChange={(e) => setValue('kind', e.target.value)}
-              >
-                {KINDS.map((k) => (
-                  <option key={k.value} value={k.value}>{t(`gw_kind_${k.value}`, k.label)}</option>
-                ))}
-              </select>
-            </div>
-            <div className="settings-fields-modal-field">
-              <label className="input-label" htmlFor="gw-item-unit">{t('gw_col_unit', 'Einheit')}</label>
+            <div className="settings-fields-modal-field wide">
+              <label className="input-label" htmlFor="gw-item-unit">{t('gw_col_sell_unit', 'Verkaufseinheit')}</label>
               <input
                 id="gw-item-unit"
                 type="text"
+                list="gw-sell-units"
                 className="input-field"
                 value={form.unit}
                 maxLength={20}
-                placeholder="Stk"
+                placeholder="Becher"
                 onChange={(e) => setValue('unit', e.target.value)}
               />
+              <span className="settings-fields-modal-hint">
+                {t('gw_sell_unit_hint', 'So wird verkauft, z. B. Glas, Becher oder Flasche.')}
+              </span>
             </div>
           </div>
 
@@ -180,9 +249,9 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
           </div>
           <fieldset className="gw-item-terms" disabled={yearLocked}>
             <div className="settings-fields-modal-grid">
-              {sellable && (
-                <div className="settings-fields-modal-field">
-                  <label className="input-label" htmlFor="gw-item-sell">{t('gw_col_sell', 'Verkaufspreis')}</label>
+              <div className="settings-fields-modal-field">
+                <label className="input-label" htmlFor="gw-item-sell">{t('gw_col_sell', 'Verkaufspreis')}</label>
+                <div className="settings-fields-modal-input">
                   <DecimalInput
                     id="gw-item-sell"
                     min="0"
@@ -192,69 +261,72 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
                     onChange={(e) => setValue('sell_price', e.target.value)}
                     onFocus={(e) => e.target.select()}
                   />
+                  <span className="settings-fields-modal-suffix">€ {t('gw_per', 'pro')} {unit}</span>
                 </div>
-              )}
-              <div className={`settings-fields-modal-field${sellable ? '' : ' wide'}`}>
-                <label className="input-label" htmlFor="gw-item-buy">{t('gw_col_buy', 'Einkaufspreis')}</label>
-                <DecimalInput
-                  id="gw-item-buy"
-                  min="0"
-                  className="input-field"
-                  value={form.buy_price}
-                  placeholder="0,00"
-                  onChange={(e) => setValue('buy_price', e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                />
-                <span className="settings-fields-modal-hint">{t('gw_buy_hint', 'Pro Einheit')}</span>
               </div>
               <div className="settings-fields-modal-field">
-                <label className="input-label" htmlFor="gw-item-pack">{t('gw_col_pack', 'Gebinde')}</label>
-                <select
-                  id="gw-item-pack"
-                  className="input-field"
-                  value={form.pack_type}
-                  onChange={(e) => setValue('pack_type', e.target.value)}
-                >
-                  {PACK_TYPES.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.value === 'none' ? t('gw_pack_none_option', 'Keins') : t(`gw_pack_${p.value}`, p.label)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="settings-fields-modal-field">
-                <label className="input-label" htmlFor="gw-item-pack-size">{t('gw_col_pack_size', 'Packungsgröße')}</label>
-                <DecimalInput
-                  id="gw-item-pack-size"
-                  min="0"
-                  className={`input-field${errors.pack_size ? ' error' : ''}`}
-                  value={form.pack_type === 'none' ? '1' : form.pack_size}
-                  disabled={yearLocked || form.pack_type === 'none'}
-                  onChange={(e) => setValue('pack_size', e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  aria-invalid={errors.pack_size ? 'true' : undefined}
-                />
-                {errors.pack_size && <span className="input-error">{errors.pack_size}</span>}
-              </div>
-              <div className="settings-fields-modal-field wide">
-                <label className="input-label" htmlFor="gw-item-planned">{t('gw_col_planned', 'Bedarf')}</label>
+                <label className="input-label" htmlFor="gw-item-planned">{t('gw_col_planned_qty', 'Geplant')}</label>
                 <div className="settings-fields-modal-input">
-                  <DecimalInput
+                  <input
                     id="gw-item-planned"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
                     className="input-field"
                     value={form.planned_qty}
                     placeholder="0"
-                    onChange={(e) => setValue('planned_qty', e.target.value)}
+                    onChange={(e) => setValue('planned_qty', digits(e.target.value))}
                     onFocus={(e) => e.target.select()}
                   />
-                  <span className="settings-fields-modal-suffix">{form.unit.trim() || 'Stk'}</span>
+                  <span className="settings-fields-modal-suffix">{unit}</span>
                 </div>
-                <span className="settings-fields-modal-hint">
-                  {sellable
-                    ? t('gw_planned_hint_product', 'Geplante Verkaufsmenge; mit Rezept wird daraus der Zutatenbedarf berechnet.')
-                    : t('gw_planned_hint_ingredient', 'Zusätzlicher Bedarf dieser Zutat.')}
-                </span>
+              </div>
+
+              {withRecipe ? (
+                <div className="settings-fields-modal-field wide">
+                  <div className="gw-item-recipe-cost">
+                    <span>{t('gw_recipe_cost', 'Kosten laut Rezept')}</span>
+                    <strong className="dt-mono">{money(recipeCost ?? 0)} / {unit}</strong>
+                  </div>
+                  <span className="settings-fields-modal-hint">
+                    {t('gw_recipe_cost_hint', 'Berechnet aus den Zutatenpreisen; eingekauft wird über die Einkaufsliste.')}
+                  </span>
+                </div>
+              ) : buyFields(false)}
+
+              {oldBuyFilled && (
+                <>
+                  <div className="settings-fields-modal-field wide">
+                    <span className="settings-fields-modal-hint">
+                      {t('gw_old_buy_ignored', 'Frühere Einkaufsangaben: werden ignoriert, solange ein Rezept existiert.')}
+                    </span>
+                  </div>
+                  {buyFields(true)}
+                </>
+              )}
+            </div>
+
+            <div className="gw-item-preview" aria-live="polite">
+              <div><span>{t('gw_col_unit_cost', 'Kosten/Einheit')}</span><strong>{money(econ.cost)}</strong></div>
+              <div>
+                <span>{t('gw_col_margin', 'Marge')}</span>
+                <strong className={econ.margin != null && econ.margin < 0 ? 'negative' : undefined}>
+                  {money(econ.margin)}{econ.marginPct != null ? ` · ${fmtPct(econ.marginPct)}` : ''}
+                </strong>
+              </div>
+              {!withRecipe && (
+                <div>
+                  <span>{t('gw_col_to_buy', 'Zu kaufen')}</span>
+                  <strong>{econ.packsToBuy == null ? '–' : `${fmtNum(econ.packsToBuy)} ${buyUnit || unit}`}</strong>
+                </div>
+              )}
+              {!withRecipe && (
+                <div><span>{t('gw_total_cost', 'Gesamtkosten')}</span><strong>{money(totalCost)}</strong></div>
+              )}
+              <div><span>{t('gw_col_revenue', 'Umsatz')}</span><strong>{money(econ.revenue)}</strong></div>
+              <div>
+                <span>{t('gw_col_profit', 'Rohgewinn')}</span>
+                <strong className={econ.profit != null && econ.profit < 0 ? 'negative' : undefined}>{money(econ.profit)}</strong>
               </div>
             </div>
           </fieldset>
@@ -272,34 +344,43 @@ const ItemModal = ({ item, year, yearLocked, onSave, onCancel, triggerRef }) => 
 };
 
 /**
- * Catalog of a Verkaufsaktion (Glühwein and any other action using the gw_* catalog):
- * all items with their terms for the selected scout year.
+ * Sortiment of a Verkaufsaktion (Glühwein and any other action using the gw_* catalog): only finished, sellable
+ * products with their terms for the selected scout year. Ingredients live in the Einkaufsliste (Zutaten).
  * action: SALES_ACTIONS entry (label only; the catalog itself is shared).
- * Items (name/kind/unit/active) are always editable; terms are read-only in a locked year.
- * Products (all kinds except 'ingredient') have a recipe; ingredients have no sell price.
- * search: filters by name.
+ * Products (name/unit/active) are always editable; terms are read-only in a locked year. Recipes are not year-bound.
+ * Sold per selling unit (unit), bought per buying unit (buy_unit, content = pack_size); recipe products are costed
+ * through their ingredients. search: filters by name.
+ * addRequest: { n, triggerRef } from the page header's "Artikel hinzufügen" button; a new n opens the add popup
+ * (stays available in a locked year: the product is not year-bound, the terms lock inside the popup).
  */
-const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) => {
+const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addRequest = null }) => {
   const t = useT();
   const formatCurrency = useCurrency();
   const { fetchItems, saveItem, deleteItem, saveTerms } = useGluehweinCatalog();
+  const { fetchIngredients } = useGluehweinIngredients();
   const [items, setItems] = useState([]);
+  const [ingredients, setIngredients] = useState([]);
   const [loadedYear, setLoadedYear] = useState(null);
   const loading = loadedYear !== year;
   const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState(null); // null | { item: row | null, triggerRef }
-  const [recipeFor, setRecipeFor] = useState(null); // product id
+  const [recipeFor, setRecipeFor] = useState(null); // { product, ingredients }
   const [toDeactivate, setToDeactivate] = useState(null);
-  const addRef = useRef(null);
-  // Unsorted = grouped by kind (drink, addon, beer, beer_special, ingredient), then sort_order, name.
+  // Unsorted = sort_order, then name (order of fetchItems).
   const { sort, toggleSort, sortRows } = useTableSort({ key: null, dir: null });
 
+  // Header add button: open the popup on a new request, not for the one present when the tab mounts.
+  const seenAddRef = useRef(addRequest?.n ?? 0);
+  useEffect(() => {
+    if (!addRequest || addRequest.n === seenAddRef.current) return;
+    seenAddRef.current = addRequest.n;
+    setModal({ item: null, triggerRef: addRequest.triggerRef || null });
+  }, [addRequest]);
+
   const report = useCallback((err) => {
-    const msg = err?.message === 'ITEM_IN_USE'
-      ? t('gw_err_item_in_use', 'Diese Zutat wird in einem Rezept verwendet und kann nicht deaktiviert werden.')
-      : err?.message === 'YEAR_LOCKED'
-        ? t('gw_err_year_locked', 'Das Jahr ist gesperrt.')
-        : t('gw_save_error', 'Änderung konnte nicht gespeichert werden.');
+    const msg = err?.message === 'YEAR_LOCKED'
+      ? t('gw_err_year_locked', 'Das Jahr ist gesperrt.')
+      : t('gw_save_error', 'Änderung konnte nicht gespeichert werden.');
     onError?.(msg);
   }, [onError, t]);
 
@@ -307,10 +388,13 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
     let cancelled = false;
     (async () => {
       try {
-        const list = await fetchItems(year);
-        if (!cancelled) setItems(list || []);
+        const [list, ings] = await Promise.all([fetchItems(year), fetchIngredients(year)]);
+        if (!cancelled) {
+          setItems(list || []);
+          setIngredients(ings || []);
+        }
       } catch {
-        if (!cancelled) onError?.(t('gw_load_error', 'Katalog konnte nicht geladen werden.'));
+        if (!cancelled) onError?.(t('gw_load_error_sortiment', 'Sortiment konnte nicht geladen werden.'));
       } finally {
         if (!cancelled) setLoadedYear(year);
       }
@@ -320,39 +404,56 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
   }, [year]);
 
   const reload = useCallback(async () => {
-    setItems((await fetchItems(year)) || []);
-  }, [fetchItems, year]);
+    const [list, ings] = await Promise.all([fetchItems(year), fetchIngredients(year)]);
+    setItems(list || []);
+    setIngredients(ings || []);
+  }, [fetchItems, fetchIngredients, year]);
 
-  const kindLabel = useCallback((kind) => {
-    const k = KINDS.find((x) => x.value === kind);
-    return k ? t(`gw_kind_${k.value}`, k.label) : (kind || '');
-  }, [t]);
-  const packLabel = useCallback((type) => {
-    const p = PACK_TYPES.find((x) => x.value === type) || PACK_TYPES[0];
-    return p.value === 'none' ? p.label : t(`gw_pack_${p.value}`, p.label);
-  }, [t]);
-
-  const grouped = useMemo(() => [...items].sort((a, b) => (
-    (KIND_ORDER.get(a.kind) ?? 99) - (KIND_ORDER.get(b.kind) ?? 99)
-    || (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0)
-    || String(a.name).localeCompare(String(b.name), LOCALE)
-  )), [items]);
+  // Per product: economics for the selected year (recipe products costed through their ingredients).
+  const rows = useMemo(() => items.map((i) => {
+    const recipeCost = hasRecipe(i) ? recipeCostPerUnit(i.recipe, ingredients) : null;
+    const econ = itemEconomics({
+      sell_price: i.sell_price,
+      buy_pack_price: i.buy_pack_price,
+      pack_size: i.pack_size,
+      planned_qty: i.planned_qty,
+      recipeCost: hasRecipe(i) ? recipeCost ?? 0 : undefined,
+    });
+    return { ...i, recipeCost, econ };
+  }), [items, ingredients]);
 
   const inactiveCount = items.filter((i) => !i.active).length;
   const q = search.trim().toLowerCase();
-  const visible = useMemo(() => grouped.filter((i) => (
+  const visible = useMemo(() => rows.filter((i) => (
     (showInactive || i.active) && (!q || String(i.name).toLowerCase().includes(q))
-  )), [grouped, showInactive, q]);
+  )), [rows, showInactive, q]);
 
   const sorted = useMemo(() => sortRows(visible, {
     name: (i) => String(i.name).toLowerCase(),
-    kind: (i) => KIND_ORDER.get(i.kind) ?? 99,
-    sell_price: (i) => (isProduct(i.kind) ? i.sell_price ?? null : null),
-    buy_price: (i) => i.buy_price ?? null,
-    pack_type: (i) => (i.pack_type && i.pack_type !== 'none' ? packLabel(i.pack_type).toLowerCase() : null),
-    pack_size: (i) => (i.pack_type && i.pack_type !== 'none' ? Number(i.pack_size) : null),
+    sell_price: (i) => i.sell_price ?? null,
+    buy: (i) => (hasRecipe(i) || !i.buy_unit
+      ? null
+      : `${String(i.buy_unit).toLowerCase()} ${String(Math.round((Number(i.buy_pack_price) || 0) * 100)).padStart(10, '0')}`),
+    cost: (i) => i.econ.cost,
+    margin: (i) => i.econ.margin,
+    margin_pct: (i) => i.econ.marginPct,
     planned_qty: (i) => Number(i.planned_qty) || 0,
-  }, { tieBreak: (i) => i.name, locale: LOCALE }), [visible, sortRows, packLabel]);
+    packs: (i) => i.econ.packsToBuy,
+    revenue: (i) => i.econ.revenue,
+    profit: (i) => i.econ.profit,
+    recipe: (i) => i.recipe?.length || 0,
+    status: (i) => (i.active ? 0 : 1),
+  }, { tieBreak: (i) => i.name, locale: LOCALE }), [visible, sortRows]);
+
+  // Totals of the visible active products; missing values are skipped.
+  const totals = useMemo(() => {
+    const active = visible.filter((i) => i.active);
+    const sum = (key) => {
+      const vals = active.map((i) => i.econ[key]).filter((v) => v != null);
+      return vals.length ? vals.reduce((s, v) => s + v, 0) : null;
+    };
+    return { revenue: sum('revenue'), profit: sum('profit') };
+  }, [visible]);
 
   // Throws on failure so the popup shows its save error and stays open.
   const handleSave = async ({ item, terms }) => {
@@ -375,8 +476,17 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
 
   const reactivate = async (item) => {
     try {
-      await saveItem({ id: item.id, name: item.name, kind: item.kind, unit: item.unit, sort_order: item.sort_order, active: 1 });
+      await saveItem({ id: item.id, name: item.name, unit: item.unit, sort_order: item.sort_order, active: 1 });
       await reload();
+    } catch (err) {
+      report(err);
+    }
+  };
+
+  const openRecipe = async (product) => {
+    try {
+      const ings = await fetchIngredients(year);
+      setRecipeFor({ product, ingredients: ings || [] });
     } catch (err) {
       report(err);
     }
@@ -395,34 +505,30 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
     <SortableTh column={key} label={label} align={align} sort={sort} onSort={toggleSort} />
   );
 
-  const money = (v) => (v == null ? <span className="dt-muted">–</span> : formatCurrency(Number(v)));
+  const muted = (text) => <span className="dt-muted">{text}</span>;
+  const money = (v, signed = false) => (v == null
+    ? muted('–')
+    : <span className={signed && v < 0 ? 'negative' : undefined}>{formatCurrency(Number(v))}</span>);
 
   return (
     <div className="gw-catalog">
-      <div className="gw-catalog-toolbar">
-        <div className="gw-catalog-toolbar-left">
-          {yearLocked && (
-            <span className="gw-catalog-locked">
-              <Lock size={14} /> {t('gw_terms_locked', 'Jahr gesperrt: Preise und Bedarf sind schreibgeschützt.')}
-            </span>
-          )}
-          {inactiveCount > 0 && (
-            <label className="gw-catalog-inactive-toggle">
-              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-              {t('gw_show_inactive', 'Inaktive anzeigen')} ({inactiveCount})
-            </label>
-          )}
+      {(yearLocked || inactiveCount > 0) && (
+        <div className="gw-catalog-toolbar">
+          <div className="gw-catalog-toolbar-left">
+            {yearLocked && (
+              <span className="gw-catalog-locked">
+                <Lock size={14} /> {t('gw_terms_locked', 'Jahr gesperrt: Preise und Bedarf sind schreibgeschützt.')}
+              </span>
+            )}
+            {inactiveCount > 0 && (
+              <label className="gw-catalog-inactive-toggle">
+                <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+                {t('gw_show_inactive', 'Inaktive anzeigen')} ({inactiveCount})
+              </label>
+            )}
+          </div>
         </div>
-        <Button
-          ref={addRef}
-          variant="primary"
-          size="md"
-          icon={Plus}
-          onClick={() => setModal({ item: null, triggerRef: addRef })}
-        >
-          {t('gw_item_add', 'Artikel hinzufügen')}
-        </Button>
-      </div>
+      )}
 
       <div className="data-table-container">
         {loading || visible.length === 0 ? (
@@ -433,68 +539,122 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
                 ? t('loading', 'Laden…')
                 : items.length > 0 && q
                   ? `${t('gw_no_match', 'Keine Artikel gefunden für')} "${search.trim()}"`
-                  : `${t('gw_empty', 'Noch keine Artikel im Katalog')}${action?.label ? ` (${action.label})` : ''}`}
+                  : `${t('gw_empty_sortiment', 'Noch keine Artikel im Sortiment')}${action?.label ? ` (${action.label})` : ''}`}
             </div>
             {!loading && q && items.length > 0 && (
               <div className="gw-catalog-empty-desc">{t('try_different_search', 'Versuche einen anderen Suchbegriff.')}</div>
             )}
           </div>
         ) : (
-          <table className="data-table gw-catalog-table" aria-label={`${t('gw_catalog', 'Katalog')}${action?.label ? ` ${action.label}` : ''}`}>
+          <table className="data-table gw-catalog-table" aria-label={`${t('gw_sortiment', 'Sortiment')}${action?.label ? ` ${action.label}` : ''}`}>
             <colgroup>
               <col />
-              <col className="gw-col-kind" />
+              <col className="gw-col-sell" />
+              <col className="gw-col-buy" />
               <col className="gw-col-money" />
               <col className="gw-col-money" />
-              <col className="gw-col-pack" />
-              <col className="gw-col-pack-size" />
+              <col className="gw-col-pct" />
               <col className="gw-col-planned" />
+              <col className="gw-col-packs" />
+              <col className="gw-col-money" />
+              <col className="gw-col-money" />
+              <col className="gw-col-recipe" />
+              <col className="gw-col-status" />
               <col className="gw-col-actions" />
             </colgroup>
             <thead>
               <tr>
                 {sortTh('name', t('gw_col_name', 'Name'))}
-                {sortTh('kind', t('gw_col_kind', 'Art'))}
                 {sortTh('sell_price', t('gw_col_sell', 'Verkaufspreis'), 'right')}
-                {sortTh('buy_price', t('gw_col_buy', 'Einkaufspreis'), 'right')}
-                {sortTh('pack_type', t('gw_col_pack', 'Gebinde'))}
-                {sortTh('pack_size', t('gw_col_pack_size', 'Packungsgröße'))}
-                {sortTh('planned_qty', t('gw_col_planned', 'Bedarf'))}
+                {sortTh('buy', t('gw_col_buy_short', 'Einkauf'))}
+                {sortTh('cost', t('gw_col_unit_cost', 'Kosten/Einheit'), 'right')}
+                {sortTh('margin', t('gw_col_margin_eur', 'Marge €'), 'right')}
+                {sortTh('margin_pct', t('gw_col_margin_pct', 'Marge %'), 'right')}
+                {sortTh('planned_qty', t('gw_col_planned_qty', 'Geplant'))}
+                {sortTh('packs', t('gw_col_to_buy', 'Zu kaufen'))}
+                {sortTh('revenue', t('gw_col_revenue', 'Umsatz'), 'right')}
+                {sortTh('profit', t('gw_col_profit', 'Rohgewinn'), 'right')}
+                {sortTh('recipe', t('gw_recipe_title', 'Rezept'))}
+                {sortTh('status', t('gw_col_status', 'Status'))}
                 <th aria-label={t('actions', 'Aktionen')} />
               </tr>
             </thead>
             <tbody>
               {sorted.map((i) => {
-                const product = isProduct(i.kind);
-                const hasPack = i.pack_type && i.pack_type !== 'none';
                 const recipeCount = i.recipe?.length || 0;
+                const unit = unitOf(i);
+                const { econ } = i;
                 return (
                   <tr key={i.id} className={i.active ? undefined : 'gw-row-inactive'}>
-                    <td className="gw-name-cell">
-                      {i.name}
-                      {!i.active && <span className="gw-badge-inactive">{t('gw_inactive', 'inaktiv')}</span>}
+                    <td className="gw-name-cell">{i.name}</td>
+                    <td className="num dt-mono">
+                      {i.sell_price == null
+                        ? muted('–')
+                        : <>{formatCurrency(Number(i.sell_price))} <span className="dt-muted gw-unit-suffix">/ {unit}</span></>}
                     </td>
-                    <td><span className={`gw-kind gw-kind-${i.kind}`}>{kindLabel(i.kind)}</span></td>
-                    <td className="num dt-mono">{product ? money(i.sell_price) : <span className="dt-muted">–</span>}</td>
-                    <td className="num dt-mono">{money(i.buy_price)}</td>
-                    <td>{packLabel(i.pack_type)}</td>
-                    <td className="dt-mono">{hasPack ? fmtNum(i.pack_size) : <span className="dt-muted">–</span>}</td>
+                    <td className="gw-buy-cell">
+                      {recipeCount > 0 ? muted(t('gw_via_recipe', 'über Rezept')) : (
+                        <>
+                          <div>
+                            {i.buy_unit
+                              ? <>1 {i.buy_unit} = <span className="dt-mono">{fmtNum(i.pack_size)}</span> {unit}</>
+                              : muted('–')}
+                            {contentMissing(i) && (
+                              <span
+                                className="gw-badge-warn"
+                                title={t('gw_content_missing_hint', 'Inhalt prüfen: wie viele Verkaufseinheiten stecken in einer Einkaufseinheit?')}
+                              >
+                                {t('gw_content_missing', 'Inhalt fehlt')}
+                              </span>
+                            )}
+                          </div>
+                          {i.buy_pack_price != null && (
+                            <div className="dt-muted dt-mono gw-buy-price">à {formatCurrency(Number(i.buy_pack_price))}</div>
+                          )}
+                        </>
+                      )}
+                    </td>
+                    <td className="num dt-mono">{money(econ.cost)}</td>
+                    <td className="num dt-mono">{money(econ.margin, true)}</td>
+                    <td className="num dt-mono">
+                      {econ.marginPct == null
+                        ? muted('–')
+                        : <span className={econ.marginPct < 0 ? 'negative' : undefined}>{fmtPct(econ.marginPct)}</span>}
+                    </td>
                     <td className="dt-mono">
-                      {fmtNum(Number(i.planned_qty) || 0)} <span className="dt-muted">{i.unit || 'Stk'}</span>
+                      {fmtNum(Number(i.planned_qty) || 0)} <span className="dt-muted">{unit}</span>
+                    </td>
+                    <td className="dt-mono">
+                      {recipeCount > 0
+                        ? muted(t('gw_via_shopping_list', 'über Einkaufsliste'))
+                        : econ.packsToBuy == null
+                          ? muted('–')
+                          : <>{fmtNum(econ.packsToBuy)} <span className="dt-muted">{i.buy_unit || unit}</span></>}
+                    </td>
+                    <td className="num dt-mono">{money(econ.revenue)}</td>
+                    <td className="num dt-mono">{money(econ.profit, true)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="gw-recipe-btn"
+                        onClick={() => openRecipe(i)}
+                        title={t('gw_recipe_title', 'Rezept')}
+                        aria-label={`${t('gw_recipe_title', 'Rezept')}: ${i.name}`}
+                      >
+                        <BookOpen size={15} />
+                        <span>
+                          {recipeCount
+                            ? `${recipeCount} ${recipeCount === 1 ? t('gw_recipe_ingredient_one', 'Zutat') : t('gw_recipe_ingredient_many', 'Zutaten')}`
+                            : t('gw_recipe_none', 'Kein Rezept')}
+                        </span>
+                      </button>
+                    </td>
+                    <td>
+                      <span className={`gw-status${i.active ? ' active' : ''}`}>
+                        {i.active ? t('gw_active', 'aktiv') : t('gw_inactive', 'inaktiv')}
+                      </span>
                     </td>
                     <td className="gw-row-actions">
-                      {product && (
-                        <button
-                          type="button"
-                          className="gw-recipe-btn"
-                          onClick={() => setRecipeFor(i.id)}
-                          title={t('gw_recipe_title', 'Rezept')}
-                          aria-label={`${t('gw_recipe_title', 'Rezept')}: ${i.name}`}
-                        >
-                          <BookOpen size={15} />
-                          <span>{t('gw_recipe_title', 'Rezept')}{recipeCount ? ` (${recipeCount})` : ''}</span>
-                        </button>
-                      )}
                       <button
                         type="button"
                         onClick={() => setModal({ item: i, triggerRef: null })}
@@ -527,6 +687,23 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr>
+                <td>{t('gw_total', 'Gesamt')}</td>
+                <td />
+                <td />
+                <td />
+                <td />
+                <td />
+                <td />
+                <td />
+                <td className="num dt-mono">{money(totals.revenue)}</td>
+                <td className="num dt-mono">{money(totals.profit, true)}</td>
+                <td />
+                <td />
+                <td />
+              </tr>
+            </tfoot>
           </table>
         )}
       </div>
@@ -536,6 +713,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
           item={modal.item}
           year={year}
           yearLocked={yearLocked}
+          recipeCost={modal.item ? rows.find((r) => r.id === modal.item.id)?.recipeCost ?? null : null}
           onSave={handleSave}
           onCancel={() => setModal(null)}
           triggerRef={modal.triggerRef}
@@ -544,8 +722,8 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError }) =>
 
       {recipeFor && (
         <RecipeEditor
-          productId={recipeFor}
-          items={items}
+          product={recipeFor.product}
+          ingredients={recipeFor.ingredients}
           onClose={() => setRecipeFor(null)}
           onSaved={handleRecipeSaved}
         />

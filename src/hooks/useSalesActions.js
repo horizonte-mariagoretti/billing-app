@@ -4,10 +4,11 @@ import useLasagnen from './useLasagnen';
 import useSettings from './useSettings';
 import { SALES_ACTIONS, lasagnaSummary, salesActionMonthKey } from '../utils/lasagnaFinance';
 import { saldo as entriesSaldo, saldoMonthKey } from '../utils/gluehweinFinance';
+import { loadKasse } from './useSalesKasse';
 
 // Where the money of a Verkaufsaktion comes from. Actions missing here (Baseball) track no money yet.
 //   lasagna: Übersicht orders + lasagna_expenses (lasagnaSummary)
-//   entries: sales_entries income − expense; the Kasse counts only through its taken-over income entry
+//   entries: sales_entries income − expense + the Kasse live (Bargeld + Kartenzahlung, kasseIncome)
 const SALDO_SOURCE = { lasagnen: 'lasagna', gluehwein: 'entries' };
 
 export const hasSaldoSource = (action) => Boolean(SALDO_SOURCE[action?.key]);
@@ -32,11 +33,12 @@ const useSalesActions = () => {
       return { saldo: summary.saldo, monthKey: salesActionMonthKey(action, year, settings[action.dateKey]), summary };
     }
     if (source === 'entries') {
-      const [entries, days] = await Promise.all([
+      const [entries, days, kasse] = await Promise.all([
         query('SELECT kind, amount FROM sales_entries WHERE action = ? AND year = ?', [action.key, year]),
         query('SELECT date FROM sales_days WHERE action = ? AND year = ? ORDER BY date ASC', [action.key, year]),
+        loadKasse(query, action.key, year),
       ]);
-      const s = entriesSaldo(entries);
+      const s = entriesSaldo(entries, kasse);
       // Month of the first sales day; without days the action date set next to the year switcher, else the default month.
       const dateKey = settings?.[action.dateKey];
       const monthDays = days.length ? days : (dateKey ? [{ date: dateKey }] : []);

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Info,
+  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Plus,
 } from 'lucide-react';
 import useSettings from '../hooks/useSettings';
 import useYear from '../hooks/useYear';
@@ -9,8 +9,9 @@ import { useSalesDays } from '../hooks/useSalesDays';
 import { useSalesKasse } from '../hooks/useSalesKasse';
 import { useSalesEntries } from '../hooks/useSalesEntries';
 import { SALES_ACTIONS } from '../utils/lasagnaFinance';
-import { saldo as computeSaldo } from '../utils/gluehweinFinance';
+import { saldo as computeSaldo, kasseIncome } from '../utils/gluehweinFinance';
 import YearSwitcher from '../components/YearSwitcher';
+import Button from '../components/Button';
 import SegmentedToggle from '../components/SegmentedToggle';
 import GluehweinCatalog from '../components/GluehweinCatalog';
 import GluehweinKasse from '../components/GluehweinKasse';
@@ -24,7 +25,7 @@ const ACTION = SALES_ACTIONS.find((a) => a.key === 'gluehwein');
 
 const TABS = [
   { value: 'overview', label: 'Übersicht', icon: <LayoutList size={15} /> },
-  { value: 'catalog', label: 'Katalog', icon: <Coffee size={15} /> },
+  { value: 'catalog', label: 'Sortiment', icon: <Coffee size={15} /> },
   { value: 'kasse', label: 'Kasse', icon: <Banknote size={15} /> },
   { value: 'shifts', label: 'Schichten', icon: <CalendarDays size={15} /> },
   { value: 'shopping', label: 'Einkaufsliste', icon: <ShoppingCart size={15} /> },
@@ -34,34 +35,39 @@ const TABS = [
 // Tabs whose content filters by the search bar.
 const SEARCH_TABS = new Set(['catalog', 'finance']);
 
-/** Read-only summary: event days, Kasse status, Saldo. Reloads on mount (i.e. each time the tab is opened). */
+// Add buttons a tab shows in the page header, left of the year switcher (like Lasagnen / Horis). Per tab an array,
+// so a tab can supply several (key tells the tab which one was clicked). A click bumps addRequest = { tab, key, n,
+// triggerRef }; the tab opens its popup when n changes (the value present on mount is ignored).
+const HEADER_ACTIONS = {
+  catalog: [{ key: 'add', label: 'Artikel hinzufügen', icon: Plus }],
+};
+
+/** Read-only summary: event days, Kasse (Bargeld + Karte), Saldo. Reloads on mount (i.e. each time the tab is opened). */
 const GluehweinOverview = ({ year, onError }) => {
   const { fetchDays } = useSalesDays(ACTION.key);
-  const { fetchKasse } = useSalesKasse(ACTION.key);
+  const { readKasse } = useSalesKasse(ACTION.key);
   const { fetchEntries } = useSalesEntries(ACTION.key);
   const formatCurrency = useCurrency();
-  const [data, setData] = useState(null); // { year, days, kasse, totals }
+  const [data, setData] = useState(null); // { year, days, kasseTotal, totals }
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [days, kasse, entries] = await Promise.all([fetchDays(year), fetchKasse(year), fetchEntries(year)]);
-        if (!cancelled) setData({ year, days, kasse, totals: computeSaldo(entries) });
+        const [days, kasse, entries] = await Promise.all([fetchDays(year), readKasse(year), fetchEntries(year)]);
+        const kasseTotal = Math.round(kasseIncome(kasse).reduce((s, x) => s + x.amount, 0) * 100) / 100;
+        if (!cancelled) setData({ year, days, kasseTotal, totals: computeSaldo(entries, kasse) });
       } catch (err) {
         console.error('Glühwein-Übersicht laden fehlgeschlagen', err);
         if (!cancelled) onError?.('Übersicht konnte nicht geladen werden.');
       }
     })();
     return () => { cancelled = true; };
-  }, [year, fetchDays, fetchKasse, fetchEntries, onError]);
+  }, [year, fetchDays, readKasse, fetchEntries, onError]);
 
   const ready = data && data.year === year;
   const days = ready ? data.days : [];
-  const kasse = ready ? data.kasse : null;
   const totals = ready ? data.totals : { income: 0, expense: 0, saldo: 0 };
-  const counted = kasse?.counted_cash != null ? Number(kasse.counted_cash) : null;
-  const booked = !!kasse?.entry_id;
 
   return (
     <div className="gw-overview">
@@ -77,7 +83,7 @@ const GluehweinOverview = ({ year, onError }) => {
           <div className="gw-summary-icon amber"><Banknote size={20} /></div>
           <div className="gw-summary-body">
             <div className="gw-summary-label">Kasse</div>
-            <div className="gw-summary-value">{counted != null ? formatCurrency(counted) : '–'}</div>
+            <div className="gw-summary-value">{ready ? formatCurrency(data.kasseTotal) : '–'}</div>
           </div>
         </div>
         <div className="gw-summary-card">
@@ -88,16 +94,6 @@ const GluehweinOverview = ({ year, onError }) => {
           </div>
         </div>
       </div>
-
-      {ready && !booked && (
-        <div className="gw-hint" role="note">
-          <Info size={16} />
-          <span>
-            Die Kasse ist noch nicht übernommen und fehlt daher im Saldo. Nach dem letzten Verkaufstag im Tab
-            „Kasse“ den gezählten Betrag eintragen und übernehmen.
-          </span>
-        </div>
-      )}
     </div>
   );
 };
@@ -113,6 +109,8 @@ const Gluehwein = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [addRequest, setAddRequest] = useState(null); // { tab, key, n, triggerRef }
+  const headerBtnRefs = useRef({});
 
   useEffect(() => {
     let cancelled = false;
@@ -149,6 +147,23 @@ const Gluehwein = () => {
           />
         </div>
         <div className="page-header-end">
+          {(HEADER_ACTIONS[view] || []).map((a) => (
+            <Button
+              key={a.key}
+              ref={(el) => { headerBtnRefs.current[`${view}:${a.key}`] = el; }}
+              variant="primary"
+              size="md"
+              icon={a.icon}
+              onClick={() => setAddRequest((r) => ({
+                tab: view,
+                key: a.key,
+                n: (r?.n || 0) + 1,
+                triggerRef: { current: headerBtnRefs.current[`${view}:${a.key}`] },
+              }))}
+            >
+              {a.label}
+            </Button>
+          ))}
           <YearSwitcher />
         </div>
       </div>
@@ -171,7 +186,14 @@ const Gluehwein = () => {
       </div>
 
       {view === 'overview' && <GluehweinOverview key={selectedYear} year={selectedYear} onError={setError} />}
-      {view === 'catalog' && <GluehweinCatalog {...common} search={search} onError={setError} />}
+      {view === 'catalog' && (
+        <GluehweinCatalog
+          {...common}
+          search={search}
+          onError={setError}
+          addRequest={addRequest?.tab === 'catalog' ? addRequest : null}
+        />
+      )}
       {view === 'kasse' && <GluehweinKasse key={selectedYear} {...common} onError={setError} />}
       {view === 'shifts' && <GluehweinSchichten key={selectedYear} {...common} settings={settings} onError={setError} />}
       {view === 'shopping' && <GluehweinEinkaufsliste {...common} />}

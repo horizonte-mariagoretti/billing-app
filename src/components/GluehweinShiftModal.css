@@ -1,0 +1,30 @@
+.gw-shift-modal { max-width: 420px; }
+
+.gw-shift-modal-time { font-family: var(--font-mono); }
+
+.gw-shift-modal-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 28px;
+  font-size: 0.9rem;
+  color: var(--color-text-dark-secondary);
+}
+
+.gw-shift-modal-duration {
+  font-family: var(--font-mono);
+  color: var(--color-text-dark-primary);
+}
+
+.gw-shift-modal-badge {
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--stat-indigo-bg);
+  color: var(--stat-indigo-icon);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gw-shift-modal-muted { color: var(--color-text-dark-tertiary); }

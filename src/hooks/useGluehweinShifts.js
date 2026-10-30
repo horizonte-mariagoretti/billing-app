@@ -1,5 +1,16 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
+import { fmtMinutes, shiftTimeError, toMinutes } from '../utils/shiftLayout';
+
+const sameTime = (a, b) => String(a ?? '').slice(0, 5) === String(b ?? '').slice(0, 5);
+
+// Checks hand-entered times ("HH:MM"); end before start = next day, max 12 h. Returns [start, end].
+// Throws BAD_SLOT_TIME / SLOT_TOO_LONG.
+const checkTimes = (start, end) => {
+  const err = shiftTimeError(start, end);
+  if (err) throw new Error(err);
+  return [fmtMinutes(toMinutes(start)), fmtMinutes(toMinutes(end))];
+};
 
 const TEMPLATE_RE = /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -73,6 +84,63 @@ export function useGluehweinShifts(action) {
     if (ops.length) await transaction(ops);
   }, [query, transaction, action, assertYearOpen]);
 
+  // Adds one shift with free times to a day; throws SLOT_EXISTS when the day already has a shift with that start.
+  const addSlot = useCallback(async (dayId, start, end) => {
+    const [s, e] = checkTimes(start, end);
+    const days = await query('SELECT year FROM sales_days WHERE id = ? AND action = ?', [dayId, action]);
+    if (!days.length) return;
+    await assertYearOpen(days[0].year);
+    const existing = await query('SELECT start_time FROM gw_shifts WHERE day_id = ?', [dayId]);
+    if (existing.some((r) => sameTime(r.start_time, s))) throw new Error('SLOT_EXISTS');
+    await run(
+      'INSERT INTO gw_shifts (id, day_id, start_time, end_time) VALUES (?, ?, ?, ?)',
+      [crypto.randomUUID(), dayId, s, e]
+    );
+  }, [query, run, action, assertYearOpen]);
+
+  // Changes the times of a shift; its Horis stay assigned (keyed by shift id).
+  const updateSlot = useCallback(async (id, start, end) => {
+    const [s, e] = checkTimes(start, end);
+    const rows = await query(
+      `SELECT s.day_id, d.year FROM gw_shifts s JOIN sales_days d ON d.id = s.day_id
+        WHERE s.id = ? AND d.action = ?`,
+      [id, action]
+    );
+    if (!rows.length) return;
+    await assertYearOpen(rows[0].year);
+    const others = await query('SELECT start_time FROM gw_shifts WHERE day_id = ? AND id <> ?', [rows[0].day_id, id]);
+    if (others.some((r) => sameTime(r.start_time, s))) throw new Error('SLOT_EXISTS');
+    await run('UPDATE gw_shifts SET start_time = ?, end_time = ? WHERE id = ?', [s, e, id]);
+  }, [query, run, action, assertYearOpen]);
+
+  // Copies the shift times (not the Horis) of one day to another; starts that already exist are skipped.
+  // Returns the number of copied shifts.
+  const copySlots = useCallback(async (fromDayId, toDayId) => {
+    if (fromDayId === toDayId) return 0;
+    const days = await query('SELECT year FROM sales_days WHERE id = ? AND action = ?', [toDayId, action]);
+    if (!days.length) return 0;
+    await assertYearOpen(days[0].year);
+    const source = await query(
+      `SELECT s.start_time, s.end_time FROM gw_shifts s JOIN sales_days d ON d.id = s.day_id
+        WHERE s.day_id = ? AND d.action = ? ORDER BY s.start_time ASC`,
+      [fromDayId, action]
+    );
+    const existing = await query('SELECT start_time FROM gw_shifts WHERE day_id = ?', [toDayId]);
+    const seen = new Set(existing.map((r) => String(r.start_time).slice(0, 5)));
+    const ops = [];
+    for (const r of source) {
+      const start = String(r.start_time).slice(0, 5);
+      if (seen.has(start)) continue;
+      seen.add(start);
+      ops.push({
+        sql: 'INSERT OR IGNORE INTO gw_shifts (id, day_id, start_time, end_time) VALUES (?, ?, ?, ?)',
+        params: [crypto.randomUUID(), toDayId, start, r.end_time ? String(r.end_time).slice(0, 5) : r.end_time],
+      });
+    }
+    if (ops.length) await transaction(ops);
+    return ops.length;
+  }, [query, transaction, action, assertYearOpen]);
+
   const removeSlot = useCallback(async (id) => {
     const year = await shiftYear(id);
     if (year == null) return;
@@ -97,5 +165,5 @@ export function useGluehweinShifts(action) {
     await run('DELETE FROM gw_shift_assignments WHERE shift_id = ? AND hori_id = ?', [shiftId, horiId]);
   }, [run, shiftYear, assertYearOpen]);
 
-  return { fetchShifts, addSlots, removeSlot, assign, unassign };
+  return { fetchShifts, addSlots, addSlot, updateSlot, copySlots, removeSlot, assign, unassign };
 }

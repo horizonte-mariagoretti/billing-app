@@ -3,6 +3,7 @@ import { AlertCircle, Plus, Trash2 } from 'lucide-react';
 import useSettings from '../hooks/useSettings';
 import useFocusTrap from '../hooks/useFocusTrap';
 import Button from './Button';
+import { shiftTimeError } from '../utils/shiftLayout';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css';
 import './GluehweinShiftSettingsModal.css';
@@ -24,9 +25,10 @@ function parseShiftTemplates(raw) {
 function templateError(value) {
   const m = SLOT_RE.exec(String(value ?? '').trim());
   if (!m) return 'Format HH:MM-HH:MM, z. B. 16:00-19:00.';
-  const start = Number(m[1]) * 60 + Number(m[2]);
-  const end = Number(m[3]) * 60 + Number(m[4]);
-  if (end <= start) return 'Das Ende muss nach dem Beginn liegen.';
+  // End before start = shift ends after midnight (e.g. 22:00-02:00).
+  const err = shiftTimeError(`${m[1]}:${m[2]}`, `${m[3]}:${m[4]}`);
+  if (err === 'SLOT_TOO_LONG') return 'Eine Schicht darf höchstens 12 Stunden dauern.';
+  if (err) return 'Beginn und Ende dürfen nicht gleich sein.';
   return null;
 }
 
@@ -98,7 +100,7 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
 
     setErrors(next);
     if (Object.keys(next).length) return null;
-    const sorted = [...templates].sort();
+    const sorted = [...templates].sort(); // "HH:MM-…" sorts by start time
     return {
       gluehwein_shift_templates: JSON.stringify(sorted),
       gluehwein_mandatory_shifts: String(m === '' ? 0 : parseInt(m, 10)),
@@ -188,6 +190,7 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
               })}
             </ul>
             {errors.templates && <span className="input-error">{errors.templates}</span>}
+            <span className="settings-fields-modal-hint">Ende vor Beginn = Schicht endet nach Mitternacht (z. B. 22:00–02:00).</span>
             <Button type="button" variant="secondary" size="sm" onClick={addRow}>
               <Plus size={16} /> Schicht hinzufügen
             </Button>

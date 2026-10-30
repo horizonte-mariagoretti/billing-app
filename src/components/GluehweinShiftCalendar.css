@@ -1,0 +1,440 @@
+/* Shift calendar: one card per block of consecutive Verkaufstage, a continuous vertical time line with a time
+   axis left and one lane column for all shifts of the block. Day rows ("bands") sit at the top (first day) and at
+   each midnight; shifts crossing midnight run under them. Positions come from utils/shiftLayout.js
+   (buildTimeScale / layoutShifts); HOUR_H / BAND_H / EMPTY_H / PAUSE_H live in the JSX. */
+
+.gw-cal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.gw-cal {
+  --gw-cal-axis-w: 56px;
+  --gw-cal-accent: var(--stat-indigo-icon);
+  --gw-cal-fill: var(--stat-indigo-bg);
+  --gw-cal-warn: var(--stat-amber-icon);
+  --gw-cal-warn-fill: var(--stat-amber-bg);
+  padding: 0;
+}
+
+.gw-cal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs) var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light-theme);
+}
+.gw-cal-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--color-text-dark-primary);
+}
+.gw-cal-head-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.gw-cal-body { position: relative; }
+
+/* ── Time axis + lanes ── */
+.gw-cal-axis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--gw-cal-axis-w);
+}
+
+.gw-cal-hour {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-dark-tertiary);
+  white-space: nowrap;
+}
+/* first hour right under a day row: below the row instead of centred on its edge (would be half hidden) */
+.gw-cal-hour.is-below-band { transform: translateY(2px); }
+
+.gw-cal-lanes {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--gw-cal-axis-w);
+  right: 0;
+  border-left: 1px solid var(--color-border-light-theme);
+}
+
+.gw-cal-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid var(--color-border-light-theme);
+  pointer-events: none;
+}
+
+.gw-cal-pause {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding-left: var(--space-sm);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-dark-tertiary);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-light-bg) 0 6px,
+    transparent 6px 12px
+  );
+  border-top: 1px dashed var(--color-border-light-theme);
+  border-bottom: 1px dashed var(--color-border-light-theme);
+  pointer-events: none;
+}
+
+/* ── Day rows (top of the block + each midnight) ── */
+.gw-cal-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  /* Solid strip: a shift crossing midnight runs under it and continues below (".gw-cal-cont" hint). */
+  background-color: var(--color-light-surface);
+  border-bottom: 1px solid var(--color-border-light-theme);
+}
+.gw-cal-band.is-midnight { border-top: 2px solid var(--gw-cal-accent); }
+
+.gw-cal-band-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 43px; /* 44px band minus its bottom border */
+  padding: 0 var(--space-sm);
+}
+.gw-cal-band.is-midnight .gw-cal-band-row { height: 41px; }
+
+
+.gw-cal-daypill {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light-theme);
+  white-space: nowrap;
+}
+.gw-cal-band.is-midnight .gw-cal-daypill { border-color: var(--gw-cal-accent); }
+.gw-cal-midnight {
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+}
+.gw-cal-dayname {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text-dark-primary);
+}
+
+.gw-cal-daymeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+  white-space: nowrap;
+}
+
+.gw-cal-badge {
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gw-cal-badge.is-ok { background-color: var(--stat-green-bg); color: var(--stat-green-icon); }
+.gw-cal-badge.is-warn { background-color: var(--gw-cal-warn-fill); color: var(--gw-cal-warn); }
+
+.gw-cal-dayactions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: var(--radius-md);
+}
+.gw-cal-dayactions .btn { white-space: nowrap; }
+
+.gw-cal-band-empty {
+  margin: 4px 8px 8px calc(var(--gw-cal-axis-w) + 8px);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.85rem;
+}
+
+/* Continuation of a shift below a midnight row */
+.gw-cal-cont {
+  position: absolute;
+  z-index: 1;
+  padding: 0 8px 0 12px;
+  font-size: 0.72rem;
+  line-height: 16px;
+  color: var(--color-text-dark-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none; /* clicks go to the block underneath */
+}
+.gw-cal-cont .gw-cal-time { font-weight: 500; color: var(--color-text-dark-secondary); }
+
+/* ── "Schichten kopieren von…" menu ── */
+.gw-cal-menu-anchor { position: relative; display: inline-flex; }
+.gw-cal-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: var(--space-xs);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+.gw-cal-menu-title {
+  padding: 2px 8px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+}
+.gw-cal-menu-empty {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  color: var(--color-text-dark-tertiary);
+}
+.gw-cal-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-primary);
+  text-align: left;
+  cursor: pointer;
+}
+.gw-cal-menu-item:hover:not(:disabled) { background-color: var(--color-light-bg); }
+.gw-cal-menu-item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.gw-cal-menu-item:disabled { cursor: default; opacity: 0.5; }
+
+/* ── Shift blocks ── */
+.gw-cal-block {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 6px 4px 8px;
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--gw-cal-accent);
+  background-color: var(--gw-cal-fill);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast);
+}
+.gw-cal-block:hover,
+.gw-cal-block.is-open { box-shadow: 0 0 0 1px var(--gw-cal-accent); }
+.gw-cal-block.is-empty {
+  border-left: 4px dashed var(--gw-cal-warn);
+  background-color: var(--gw-cal-warn-fill);
+}
+.gw-cal-block.is-empty:hover,
+.gw-cal-block.is-empty.is-open { box-shadow: 0 0 0 1px var(--gw-cal-warn); }
+.gw-cal-block.is-open-end { border-bottom: 2px dashed var(--gw-cal-accent); }
+.gw-cal-block.is-short { gap: 0; padding-top: 2px; padding-bottom: 2px; }
+
+.gw-cal-block-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.gw-cal-time {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.gw-cal-nextday {
+  flex: none;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-light-surface);
+  color: var(--gw-cal-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.gw-cal-count {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-dark-secondary);
+}
+
+.gw-cal-block-tools {
+  display: inline-flex;
+  margin-left: auto;
+  opacity: 0;
+}
+.gw-cal-block:hover .gw-cal-block-tools,
+.gw-cal-block:focus-within .gw-cal-block-tools { opacity: 1; }
+@media (hover: none) {
+  .gw-cal-block-tools { opacity: 1; }
+}
+
+.gw-cal-summary {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.gw-cal-chips,
+.gw-cal-popover-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gw-cal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 1px 4px 1px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.gw-cal-chip.is-inactive { color: var(--color-text-dark-tertiary); }
+.gw-cal-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gw-cal-chip-remove,
+.gw-cal-icon-btn,
+.gw-cal-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+}
+.gw-cal-chip-remove { width: 16px; height: 16px; border-radius: 50%; }
+.gw-cal-icon-btn { width: 26px; height: 26px; border-radius: var(--radius-sm); }
+.gw-cal-add {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px dashed var(--gw-cal-accent);
+  color: var(--gw-cal-accent);
+}
+.gw-cal-block.is-empty .gw-cal-add { border-color: var(--gw-cal-warn); color: var(--gw-cal-warn); }
+.gw-cal-chip-remove:hover:not(:disabled),
+.gw-cal-icon-btn:hover:not(:disabled) {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+.gw-cal-add:hover:not(:disabled) { background-color: var(--color-light-surface); }
+.gw-cal-chip-remove:disabled,
+.gw-cal-icon-btn:disabled,
+.gw-cal-add:disabled { cursor: default; opacity: 0.4; }
+.gw-cal-icon-btn:focus-visible,
+.gw-cal-add:focus-visible,
+.gw-cal-chip-remove:focus-visible,
+.gw-cal-summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+.gw-cal-muted {
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.78rem;
+}
+
+/* ── Hori popover (anchored to the block inside the lanes) ── */
+.gw-cal-popover {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 240px;
+  max-width: calc(100% - 8px);
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  background-color: var(--color-light-surface);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+.gw-cal-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.gw-cal-popover-list {
+  max-height: 160px;
+  overflow-y: auto;
+}
+.gw-cal-picker {
+  width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 700px) {
+  .gw-cal { --gw-cal-axis-w: 44px; }
+  .gw-cal-band-row { gap: var(--space-xs); padding: 0 var(--space-xs); }
+  .gw-cal-midnight,
+  .gw-cal-daymeta-count,
+  .gw-cal-fill .gw-cal-fill-label { display: none; } /* icon only; aria-label + title keep the meaning */
+  .gw-cal-daypill { padding: 2px 8px; }
+}

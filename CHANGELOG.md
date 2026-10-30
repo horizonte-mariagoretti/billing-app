@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.20.0] - 2026-10-29
+
+### Added
+- **Glühwein Schichten: per-day shifts, past midnight, one continuous time frame.** Consecutive Verkaufstage form one calendar block with a "Mitternacht" divider; a shift like 22:00-02:00 is drawn once across it. Every day has its own shifts with free start/end (add and edit popup, "Schichten kopieren von…", max 12 h); long empty gaps collapse into a "Pause" strip. Shift templates in the settings accept past-midnight entries. No schema change.
+- **Glühwein Sortiment: buying vs selling units.** Items are sold per Verkaufseinheit (Glas, Becher, Shot…) and bought per Einkaufseinheit (Flasche, Kasten, Paket…) with price per pack and content. The list shows cost per unit, Marge € / %, Zu kaufen (packs), Umsatz and Rohgewinn with totals; recipe products take their cost from the recipe ("über Rezept"). The Einkaufsliste uses the pack price and content. Migration 39 converts existing data without loss.
+- **"Artikel hinzufügen" in the page header** next to the year switcher (generic per-tab header action mechanism).
+
+## [1.19.0] - 2026-10-29
+
+### Added
+- **Glühwein Kasse redesigned.** A Kartenzahlung field and a Bargeldkasse with Start and Ende counts for 0,10 / 0,20 / 0,50 / 1 / 2 / 5 / 10 / 20 / 50 / 100 / 200 € (Differenz and Summe). Bargeld and Kartenzahlung count live in Finanzen, the Übersicht and the Dashboard. "Kasse übernehmen" locks the Kasse, the button then becomes "Kasse entsperren" for late changes. Migration 38 (already booked Kassen are kept as locked, their old Einnahme entry is replaced by the live lines).
+- **Glühwein Schichten as a calendar.** One column per Verkaufstag with a time axis; shifts are blocks with the Horis working in them (assign, remove, own shift times, overlapping shifts side by side). New component `GluehweinShiftCalendar` + `utils/shiftLayout.js`.
+- **Zutaten in the Einkaufsliste.** Own ingredient management (unit, pack, price, Zusatzbedarf, Bestand) and a "Rezepte" view; the shopping list subtracts the Bestand. Migration 37 moves existing ingredients out of the catalog (data and recipes are kept).
+
+### Changed
+- **Glühwein "Katalog" is now "Sortiment"** and only holds finished products: the Art/category tag is gone, ingredients no longer appear there.
+- **Schichten Horis list:** every column is sortable and Anteil % has the heat bar like Horis/Lasagnen.
+- Sample data (dev only) updated for the new Glühwein structure.
+
 ## [1.18.1] - 2026-10-29
 
 ### Added

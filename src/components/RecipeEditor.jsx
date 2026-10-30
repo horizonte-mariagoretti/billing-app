@@ -12,18 +12,17 @@ let rowSeq = 0;
 const newKey = () => `r${++rowSeq}`;
 
 /**
- * Recipe of one catalog product (drink, addon, beer, beer_special): which ingredients, how much per sold unit.
- * productId: gw_items id of the product.
- * items: all catalog items (from fetchItems); ingredients = kind 'ingredient'. The product's current recipe
- *   is read from items[].recipe.
+ * Recipe of one Sortiment product: which ingredients, how much per sold unit.
+ * product: gw_items row from useGluehweinCatalog().fetchItems (its current recipe is product.recipe).
+ * ingredients: gw_ingredients rows from useGluehweinIngredients().fetchIngredients (incl. inactive ones).
+ *   A recipe row whose ingredient is inactive or missing is shown with "(inaktiv)".
  * onClose(): cancel. onSaved(): after a successful saveRecipe (the parent reloads and closes).
  * Blank and duplicate ingredient rows are prevented: each select only offers ingredients not used in another row,
  * and saving checks that every row has an ingredient and a quantity > 0.
  */
-const RecipeEditor = ({ productId, items, onClose, onSaved }) => {
+const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
   const t = useT();
   const { saveRecipe } = useGluehweinCatalog();
-  const product = useMemo(() => items.find((i) => i.id === productId) || null, [items, productId]);
   const [rows, setRows] = useState(() => (product?.recipe || []).map((r) => ({
     key: newKey(),
     ingredient_id: r.ingredient_id,
@@ -41,11 +40,9 @@ const RecipeEditor = ({ productId, items, onClose, onSaved }) => {
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const ingredients = useMemo(
-    () => items.filter((i) => i.kind === 'ingredient'),
-    [items],
-  );
-  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  const byId = useMemo(() => new Map(ingredients.map((i) => [i.id, i])), [ingredients]);
+  // A missing ingredient (should not happen, the FK forbids it) still shows as an inactive option.
+  const lookup = (id) => byId.get(id) || { id, name: t('gw_recipe_unknown', 'Unbekannte Zutat'), unit: '', active: 0 };
   const used = new Set(rows.map((r) => r.ingredient_id).filter(Boolean));
   // Active ingredients not used in any row yet.
   const free = ingredients.filter((i) => i.active && !used.has(i.id));
@@ -87,7 +84,7 @@ const RecipeEditor = ({ productId, items, onClose, onSaved }) => {
     setSaving(true);
     setError(null);
     try {
-      await saveRecipe(productId, parsed);
+      await saveRecipe(product.id, parsed);
       onSaved?.();
     } catch {
       setError(t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
@@ -112,9 +109,9 @@ const RecipeEditor = ({ productId, items, onClose, onSaved }) => {
             </div>
           )}
 
-          {ingredients.length === 0 ? (
+          {ingredients.length === 0 && rows.length === 0 ? (
             <div className="recipe-editor-empty">
-              {t('gw_recipe_no_ingredients', 'Noch keine Zutaten im Katalog. Lege zuerst Artikel der Art „Zutat“ an.')}
+              {t('gw_recipe_no_ingredients_shop', 'Lege Zutaten in der Einkaufsliste an.')}
             </div>
           ) : (
             <>
@@ -128,7 +125,7 @@ const RecipeEditor = ({ productId, items, onClose, onSaved }) => {
                     <span />
                   </div>
                   {rows.map((r, idx) => {
-                    const current = r.ingredient_id ? byId.get(r.ingredient_id) : null;
+                    const current = r.ingredient_id ? lookup(r.ingredient_id) : null;
                     // Own ingredient + the free ones (an inactive one stays visible while it is selected).
                     const options = [
                       ...(current ? [current] : []),

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
 
-// Manual entries (expenses and income) of a Verkaufsaktion per scout year, plus the income entry a Kasse
-// creates on "Kasse übernehmen" (source_kasse_id set; read-only here, but deletable to unlock the Kasse).
+// Manual entries (expenses and income) of a Verkaufsaktion per scout year. The Kasse is not stored here any
+// more (it counts live, see useSalesKasse); source_kasse_id rows were removed by migration 38.
 export function useSalesEntries(action) {
   const { query, run } = useDatabase();
 
@@ -49,7 +49,6 @@ export function useSalesEntries(action) {
     return id;
   }, [query, run, action, assertYearOpen]);
 
-  // Deleting a Kasse entry is allowed: sales_kasse.entry_id goes NULL (ON DELETE SET NULL) and unlocks the Kasse.
   const deleteEntry = useCallback(async (id) => {
     const rows = await query('SELECT year FROM sales_entries WHERE id = ? AND action = ?', [id, action]);
     if (!rows.length) return;

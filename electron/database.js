@@ -1646,6 +1646,111 @@ SELECT h.id, y.year, 1 FROM horis h CROSS JOIN (SELECT 2024 AS year UNION SELECT
   }
 }
 
+// Migration 37: Glühwein ingredients leave the catalog — own tables gw_ingredients + gw_ingredient_terms
+// (same ids, extra need + stock per year), gw_recipe points at gw_ingredients; ingredient rows removed from gw_items.
+if (getVersion() < 37) {
+  try {
+    db.transaction(() => {
+      db.exec(`
+CREATE TABLE IF NOT EXISTS gw_ingredients (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'Stk',
+  sort_order INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS gw_ingredient_terms (
+  ingredient_id TEXT NOT NULL REFERENCES gw_ingredients(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  buy_price REAL,
+  pack_type TEXT CHECK (pack_type IN ('none','kasten','flasche','paket')),
+  pack_size REAL DEFAULT 1,
+  extra_qty REAL DEFAULT 0,
+  stock_qty REAL DEFAULT 0,
+  PRIMARY KEY (ingredient_id, year)
+);
+CREATE INDEX IF NOT EXISTS idx_gw_ingredient_terms_year ON gw_ingredient_terms(year);
+INSERT OR IGNORE INTO gw_ingredients (id, name, unit, sort_order, active, created_at)
+SELECT id, name, unit, sort_order, active, created_at FROM gw_items WHERE kind = 'ingredient';
+INSERT OR IGNORE INTO gw_ingredient_terms (ingredient_id, year, buy_price, pack_type, pack_size, extra_qty, stock_qty)
+SELECT t.item_id, t.year, t.buy_price, t.pack_type, t.pack_size, t.planned_qty, 0
+FROM gw_item_terms t JOIN gw_items i ON i.id = t.item_id WHERE i.kind = 'ingredient';
+CREATE TABLE gw_recipe_new (
+  product_id TEXT NOT NULL REFERENCES gw_items(id) ON DELETE CASCADE,
+  ingredient_id TEXT NOT NULL REFERENCES gw_ingredients(id),
+  qty_per_unit REAL NOT NULL,
+  PRIMARY KEY (product_id, ingredient_id)
+);
+INSERT INTO gw_recipe_new (product_id, ingredient_id, qty_per_unit)
+SELECT r.product_id, r.ingredient_id, r.qty_per_unit FROM gw_recipe r
+WHERE r.ingredient_id IN (SELECT id FROM gw_ingredients)
+  AND r.product_id IN (SELECT id FROM gw_items WHERE kind <> 'ingredient');
+DROP TABLE gw_recipe;
+ALTER TABLE gw_recipe_new RENAME TO gw_recipe;
+DELETE FROM gw_item_terms WHERE item_id IN (SELECT id FROM gw_items WHERE kind = 'ingredient');
+DELETE FROM gw_items WHERE kind = 'ingredient';
+      `);
+      setVersion(37);
+    })();
+  } catch (e) {
+    console.error('Migration 37 failed:', e.message);
+  }
+}
+
+// Migration 38: Kasse with card payment + cash count per denomination (start/end) and a lock flag. The Kasse
+// counts live in the Saldo: booked Kassen are locked and their income entry is removed (no double counting);
+// counted_cash stays as legacy cash amount and is part of the cash total.
+if (getVersion() < 38) {
+  try {
+    db.transaction(() => {
+      db.exec(`
+ALTER TABLE sales_kasse ADD COLUMN card_amount REAL;
+ALTER TABLE sales_kasse ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS sales_kasse_counts (
+  kasse_id TEXT NOT NULL REFERENCES sales_kasse(id) ON DELETE CASCADE,
+  phase TEXT NOT NULL CHECK (phase IN ('start','end')),
+  denom_cents INTEGER NOT NULL,
+  qty INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (kasse_id, phase, denom_cents)
+);
+UPDATE sales_kasse SET locked = 1 WHERE entry_id IS NOT NULL;
+UPDATE sales_kasse SET entry_id = NULL WHERE entry_id IS NOT NULL;
+DELETE FROM sales_entries WHERE source_kasse_id IS NOT NULL;
+      `);
+      setVersion(38);
+    })();
+  } catch (e) {
+    console.error('Migration 38 failed:', e.message);
+  }
+}
+
+// Migration 39: Glühwein Sortiment sold per selling unit (gw_items.unit), bought per buying unit. buy_unit =
+// free-text buying unit, buy_pack_price = price per buying unit, pack_size reused as content (selling units per
+// buying unit). Legacy pack_type/buy_price stay.
+if (getVersion() < 39) {
+  try {
+    db.transaction(() => {
+      db.exec(`
+ALTER TABLE gw_item_terms ADD COLUMN buy_unit TEXT;
+ALTER TABLE gw_item_terms ADD COLUMN buy_pack_price REAL;
+UPDATE gw_item_terms SET
+  buy_unit = CASE pack_type
+    WHEN 'kasten' THEN 'Kasten'
+    WHEN 'flasche' THEN 'Flasche'
+    WHEN 'paket' THEN 'Paket'
+    ELSE (SELECT unit FROM gw_items i WHERE i.id = gw_item_terms.item_id)
+  END,
+  buy_pack_price = CASE WHEN buy_price IS NULL THEN NULL
+    ELSE ROUND(buy_price * CASE WHEN pack_size > 0 THEN pack_size ELSE 1 END, 2) END;
+      `);
+      setVersion(39);
+    })();
+  } catch (e) {
+    console.error('Migration 39 failed:', e.message);
+  }
+}
+
 // Lightweight startup maintenance — reclaim space and refresh query planner stats.
 try { db.exec('PRAGMA analysis_limit=400; ANALYZE;'); } catch (_e) {}
 

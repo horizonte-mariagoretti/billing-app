@@ -1,28 +1,64 @@
-/* Einkaufsliste of a Verkaufsaktion (GluehweinEinkaufsliste.jsx). Read-only, shared .data-table look.
-   Alignment rule (CLAUDE.md): everything left, money right (.num). */
+/* Einkaufsliste of a Verkaufsaktion (GluehweinEinkaufsliste.jsx): sub-views Einkaufsliste / Zutaten / Rezepte,
+   shared .data-table look. Alignment rule (CLAUDE.md): everything left, money right (.num). */
 .gw-shop {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
+.gw-shop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.gw-shop-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
 .gw-shop-locked {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  align-self: flex-start;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-dark-secondary);
   font-size: 0.85rem;
+  color: var(--color-text-dark-tertiary);
 }
 
+.gw-shop-inactive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+}
+.gw-shop-inactive-toggle input { accent-color: var(--color-primary); cursor: pointer; }
+
 /* Fixed column widths so the columns do not jump between years. */
-.gw-shop-table { table-layout: fixed; min-width: 720px; }
-.gw-shop-table th:first-child { min-width: 0; }
-.gw-shop-col-qty   { width: 140px; }
-.gw-shop-col-money { width: 200px; }
+.gw-shop-table,
+.gw-ing-table,
+.gw-recipes-table { table-layout: fixed; }
+.gw-shop-table { min-width: 960px; }
+.gw-ing-table { min-width: 900px; }
+.gw-recipes-table { min-width: 720px; }
+.gw-shop-table th:first-child,
+.gw-ing-table th:first-child,
+.gw-recipes-table th:first-child { min-width: 0; }
+
+.gw-shop-col-type  { width: 110px; }
+.gw-shop-col-qty   { width: 130px; }
+.gw-shop-col-buy   { width: 230px; }
+.gw-shop-col-money { width: 160px; }
+.gw-ing-col-unit   { width: 100px; }
+.gw-ing-col-pack   { width: 130px; }
+.gw-ing-col-qty    { width: 140px; }
+.gw-recipes-col-name   { width: 220px; }
+.gw-recipes-col-action { width: 110px; }
 
 .gw-shop-name {
   font-weight: 600;
@@ -30,6 +66,60 @@
   white-space: normal;
 }
 
+/* Row fully covered by stock: nothing to buy. */
+.gw-shop-row-covered td { opacity: 0.6; }
+
+.gw-shop-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.gw-shop-type.ingredient { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+.gw-shop-type.product    { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
+
+/* ── Zutaten ── */
+.gw-ing-row { cursor: pointer; }
+.gw-ing-row:hover td { background-color: var(--color-light-bg); }
+.gw-ing-row:focus-visible { outline: 2px solid var(--color-indigo); outline-offset: -2px; }
+.gw-shop-row-inactive td { opacity: 0.6; }
+
+.gw-shop-badge-inactive {
+  margin-left: var(--space-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-light-bg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-dark-tertiary);
+}
+
+/* ── Rezepte ── */
+.gw-recipes-parts { white-space: normal; }
+.gw-recipes-inactive { color: var(--color-text-dark-tertiary); }
+
+.gw-recipes-action { text-align: right; }
+.gw-recipes-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.gw-recipes-btn:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+
+/* ── Empty state ── */
 .gw-shop-empty {
   display: flex;
   flex-direction: column;
@@ -45,4 +135,4 @@
   color: var(--color-text-dark-secondary);
 }
 
-.gw-shop-empty-desc { font-size: 0.9rem; }
+.gw-shop-empty-desc { font-size: 0.9rem; max-width: 420px; }

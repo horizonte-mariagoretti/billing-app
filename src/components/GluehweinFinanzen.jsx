@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { TrendingUp, ReceiptEuro, Scale, Plus, Edit2, Trash2, Receipt, LayoutList, Lock, Wallet } from 'lucide-react';
+import { TrendingUp, ReceiptEuro, Scale, Plus, Edit2, Trash2, Receipt, LayoutList, Lock } from 'lucide-react';
 import { useSalesEntries } from '../hooks/useSalesEntries';
 import { useSalesKasse } from '../hooks/useSalesKasse';
 import useCurrency from '../hooks/useCurrency';
 import useTableSort from '../hooks/useTableSort';
-import { saldo as computeSaldo } from '../utils/gluehweinFinance';
+import { saldo as computeSaldo, kasseIncome } from '../utils/gluehweinFinance';
 import SortableTh from './SortableTh';
 import SegmentedToggle from './SegmentedToggle';
 import ConfirmDialog from './ConfirmDialog';
@@ -32,10 +32,11 @@ const SALES_ENTRY_CATEGORIES = {
   ],
 };
 
-const KASSE_LABEL = 'Kasse';
+// Categories of the virtual Kasse income lines (kasseIncome) and of old booked Kasse entries.
+const KASSE_LABELS = { kasse: 'Kasse', kasse_cash: 'Kasse Bargeld', kasse_card: 'Kartenzahlung' };
 
 const categoryLabel = (kind, value) => {
-  if (value === 'kasse') return KASSE_LABEL;
+  if (KASSE_LABELS[value]) return KASSE_LABELS[value];
   const c = (SALES_ENTRY_CATEGORIES[kind] || []).find((x) => x.value === value);
   return c ? c.label : (value || '');
 };
@@ -51,14 +52,14 @@ const errorText = (err, fallback) => ERROR_TEXT[err?.message] || fallback;
 /**
  * "Finanzen" tab of a Verkaufsaktion (Glühwein, Baseball, ...).
  * action: SALES_ACTIONS entry (uses action.key). year: scout start year.
- * Manual Einnahmen/Ausgaben per action + year; the Kasse appears as its taken-over income entry
- * (source_kasse_id set), read-only here. Saldo = Einnahmen − Ausgaben over all entries.
+ * Manual Einnahmen/Ausgaben per action + year, plus the Kasse live as two read-only income lines
+ * (Kasse Bargeld, Kartenzahlung; changed in the Kasse tab). Saldo = Einnahmen − Ausgaben.
  * search: filters the list (the cards stay overall).
  */
 const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) => {
   const actionKey = action?.key;
   const { fetchEntries, saveEntry, deleteEntry } = useSalesEntries(actionKey);
-  const { fetchKasse } = useSalesKasse(actionKey);
+  const { readKasse } = useSalesKasse(actionKey);
   const formatCurrency = useCurrency();
   const locale = 'de-DE';
 
@@ -79,7 +80,7 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
     let cancelled = false;
     (async () => {
       try {
-        const [list, k] = await Promise.all([fetchEntries(year), fetchKasse(year)]);
+        const [list, k] = await Promise.all([fetchEntries(year), readKasse(year)]);
         if (!cancelled) {
           setRecords(list || []);
           setKasse(k || null);
@@ -95,27 +96,38 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
   }, [loadKey]);
 
   const reload = useCallback(async () => {
-    const [list, k] = await Promise.all([fetchEntries(year), fetchKasse(year)]);
+    const [list, k] = await Promise.all([fetchEntries(year), readKasse(year)]);
     setRecords(list || []);
     setKasse(k || null);
-  }, [fetchEntries, fetchKasse, year]);
+  }, [fetchEntries, readKasse, year]);
 
-  // The Kasse counts only through its linked entry (already in records): no extra Kasse total.
-  const totals = useMemo(() => computeSaldo(records), [records]);
+  // The Kasse counts live (Bargeld + Kartenzahlung), never as a stored entry.
+  const totals = useMemo(() => computeSaldo(records, kasse), [records, kasse]);
 
-  const entries = useMemo(() => records.map((x) => {
-    const isIncome = x.kind === 'income';
-    const amount = Number(x.amount) || 0;
-    return {
-      key: x.id,
-      kind: isIncome ? 'income' : 'expense',
-      description: x.description || '',
-      category: categoryLabel(isIncome ? 'income' : 'expense', x.category),
-      amount: isIncome ? amount : -amount,
-      isKasse: x.source_kasse_id != null,
-      raw: x,
-    };
-  }), [records]);
+  const entries = useMemo(() => [
+    ...kasseIncome(kasse).map((x) => ({
+      key: x.key,
+      kind: 'income',
+      description: x.category === 'kasse_card' ? 'Kartenzahlung (Kasse)' : 'Bargeld (Kasse)',
+      category: categoryLabel('income', x.category),
+      amount: x.amount,
+      isKasse: true,
+      raw: null,
+    })),
+    ...records.map((x) => {
+      const isIncome = x.kind === 'income';
+      const amount = Number(x.amount) || 0;
+      return {
+        key: x.id,
+        kind: isIncome ? 'income' : 'expense',
+        description: x.description || '',
+        category: categoryLabel(isIncome ? 'income' : 'expense', x.category),
+        amount: isIncome ? amount : -amount,
+        isKasse: x.source_kasse_id != null,
+        raw: x,
+      };
+    }),
+  ], [records, kasse]);
 
   const incomeCount = entries.filter((x) => x.kind === 'income').length;
   const expenseCount = entries.length - incomeCount;
@@ -144,8 +156,6 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
     category: (x) => x.category.toLowerCase(),
     amount: (x) => x.amount,
   }, { tieBreak: (x) => x.description, locale }), [visible, sortRows]);
-
-  const kasseOpen = kasse && !kasse.entry_id && Number(kasse.counted_cash) > 0;
 
   // Throws on failure so the popup shows its save error and stays open.
   const handleSave = async (entry) => {
@@ -200,15 +210,6 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
           </div>
         </div>
       </div>
-
-      {!loading && kasseOpen && (
-        <div className="gw-fin-hint">
-          <Wallet size={16} />
-          <span>
-            Kasse gezählt ({formatCurrency(Number(kasse.counted_cash))}), aber noch nicht übernommen. Sie zählt erst nach „Kasse übernehmen“ in den Saldo.
-          </span>
-        </div>
-      )}
 
       <div className="gw-fin-toolbar">
         <SegmentedToggle
@@ -287,7 +288,7 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
                   {!yearLocked && (
                     <td className="gw-fin-row-actions">
                       {x.isKasse ? (
-                        <span className="gw-fin-readonly" title="Kassen-Eintrag: nur lesen (Betrag im Kasse-Tab)">
+                        <span className="gw-fin-readonly" title="Aus der Kasse: im Tab Kasse ändern">
                           <Lock size={14} />
                         </span>
                       ) : (
