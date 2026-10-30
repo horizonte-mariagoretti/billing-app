@@ -1,0 +1,35 @@
+/* Ingredient popup (GluehweinIngredientModal.jsx). Overlay/content/actions from ClientModal.css,
+   field grid from SettingsFieldsModal.css. */
+.gw-ing-terms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--space-lg) 0 var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light-theme);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+}
+
+.gw-ing-terms-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.gw-ing-terms {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.gw-ing-terms:disabled .input-field { opacity: 0.7; cursor: not-allowed; }
+
+/* Deactivate / reactivate sits on the left, cancel + save on the right. */
+.gw-ing-actions .gw-ing-deactivate { margin-right: auto; }

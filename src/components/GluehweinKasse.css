@@ -1,10 +1,16 @@
-/* Kasse (Bargeld) card of a Verkaufsaktion (GluehweinKasse.jsx). */
+/* Kasse of a Verkaufsaktion (GluehweinKasse.jsx): Kartenzahlung, Bargeldkasse table, summary + lock button. */
+.gw-kasse-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
 .gw-kasse {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-lg);
-  max-width: 560px;
+  min-width: 0;
 }
 
 .gw-kasse-header {
@@ -23,6 +29,10 @@
   background: var(--stat-green-bg);
   color: var(--stat-green-icon);
 }
+.gw-kasse-icon.card-pay {
+  background: var(--stat-indigo-bg);
+  color: var(--stat-indigo-icon);
+}
 
 .gw-kasse-title { margin: 0; font-size: 1.05rem; }
 
@@ -39,24 +49,54 @@
   color: var(--stat-green-icon);
 }
 
-.gw-kasse-row {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.gw-kasse-field { flex: 1 1 220px; min-width: 0; }
+.gw-kasse-field { max-width: 280px; }
 .gw-kasse-input { font-family: var(--font-mono); }
 
-.gw-kasse-amount {
+.gw-kasse-help {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+}
+
+/* Bargeldkasse table: flat inside the card (the card already has border + shadow). */
+.gw-kasse-table-wrap { box-shadow: none; }
+.gw-kasse-table th:first-child { min-width: 0; }
+.gw-kasse-table td { padding-top: var(--space-xs); padding-bottom: var(--space-xs); }
+.gw-kasse-col-denom { width: 120px; }
+.gw-kasse-col-count { width: 110px; }
+.gw-kasse-col-diff { width: 110px; }
+
+.gw-kasse-count {
+  width: 80px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.gw-kasse-legacy td { font-style: italic; }
+
+.gw-kasse-negative { color: var(--color-danger) !important; }
+
+.gw-kasse-sum {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.gw-kasse-sum-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-sm);
+  color: var(--color-text-dark-secondary);
 }
-.gw-kasse-amount-label { color: var(--color-text-dark-secondary); font-size: 0.9rem; }
-.gw-kasse-amount-value { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 600; }
+.gw-kasse-sum-row .dt-mono { font-size: 1rem; color: var(--color-text-dark-primary); }
+.gw-kasse-sum-total {
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light-theme);
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+.gw-kasse-sum-total .dt-mono { font-size: 1.4rem; font-weight: 600; }
 
 .gw-kasse-actions { display: flex; justify-content: flex-end; }
 
@@ -68,4 +108,4 @@
   color: var(--color-text-dark-secondary);
 }
 .gw-kasse-note svg { flex-shrink: 0; margin-top: 2px; }
-.gw-kasse-note-ok { color: var(--stat-green-icon); }
+.gw-kasse-note-warn { color: var(--color-danger); }

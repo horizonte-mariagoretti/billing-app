@@ -41,14 +41,34 @@
 
 /* ── Table ── */
 /* Fixed column widths: columns must not jump when search or filter changes the rows. */
-.gw-catalog-table { table-layout: fixed; min-width: 1040px; }
+.gw-catalog-table { table-layout: fixed; min-width: 1760px; }
 .gw-catalog-table th:first-child { min-width: 0; }
-.gw-col-kind      { width: 130px; }
-.gw-col-money     { width: 140px; }
-.gw-col-pack      { width: 110px; }
-.gw-col-pack-size { width: 140px; }
-.gw-col-planned   { width: 120px; }
-.gw-col-actions   { width: 190px; }
+.gw-col-sell      { width: 160px; }
+.gw-col-buy       { width: 190px; }
+.gw-col-money     { width: 130px; }
+.gw-col-pct       { width: 100px; }
+.gw-col-planned   { width: 110px; }
+.gw-col-packs     { width: 150px; }
+.gw-col-recipe    { width: 130px; }
+.gw-col-status    { width: 90px; }
+.gw-col-actions   { width: 90px; }
+
+.gw-catalog-table .negative { color: var(--color-danger); }
+.gw-unit-suffix { font-family: var(--font-sans); font-size: 0.8rem; }
+.gw-buy-cell { white-space: normal; line-height: 1.35; }
+.gw-buy-price { font-size: 0.8rem; }
+
+.gw-badge-warn {
+  display: inline-block;
+  margin-left: var(--space-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--stat-amber-bg, rgba(255, 214, 0, 0.18));
+  color: var(--stat-amber-icon, #B45309);
+  cursor: help;
+}
 
 .gw-name-cell {
   font-weight: 600;
@@ -58,29 +78,16 @@
 
 .gw-row-inactive td { opacity: 0.6; }
 
-.gw-badge-inactive {
-  margin-left: var(--space-xs);
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-light-bg);
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--color-text-dark-tertiary);
-}
-
-.gw-kind {
+.gw-status {
   display: inline-block;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 600;
   background-color: var(--color-light-bg);
-  color: var(--color-text-dark-secondary);
+  color: var(--color-text-dark-tertiary);
 }
-.gw-kind-drink        { background: var(--stat-pink-bg);   color: var(--stat-pink-icon); }
-.gw-kind-addon        { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
-.gw-kind-beer,
-.gw-kind-beer_special { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
+.gw-status.active { background: var(--stat-green-bg); color: var(--stat-green-icon); }
 
 .gw-row-actions {
   text-align: right;
@@ -103,16 +110,23 @@
   background-color: var(--color-light-bg);
 }
 
-.gw-row-actions .gw-recipe-btn {
+.gw-recipe-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-right: var(--space-xs);
   padding: 2px var(--space-xs);
   border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-sm);
+  background: transparent;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-dark-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.gw-recipe-btn:hover {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
 }
 
 /* ── Empty state ── */
@@ -164,3 +178,48 @@
   min-width: 0;
 }
 .gw-item-terms:disabled .input-field { opacity: 0.7; cursor: not-allowed; }
+
+.gw-item-terms:disabled .settings-fields-modal-suffix { opacity: 0.7; }
+
+/* Read-only recipe cost (products with a recipe) */
+.gw-item-recipe-cost {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--color-text-dark-secondary);
+}
+.gw-item-recipe-cost strong { color: var(--color-text-dark-primary); }
+
+/* Live preview of the economics */
+.gw-item-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm) var(--space-md);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-light-bg);
+}
+.gw-item-preview > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gw-item-preview span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-dark-tertiary);
+}
+.gw-item-preview strong {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-text-dark-primary);
+  overflow-wrap: anywhere;
+}
+.gw-item-preview strong.negative { color: var(--color-danger); }
+@media (max-width: 560px) {
+  .gw-item-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

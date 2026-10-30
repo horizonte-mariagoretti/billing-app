@@ -1,16 +1,17 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
 
-const PACK_TYPES = ['none', 'kasten', 'flasche', 'paket'];
-
 const numOrNull = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
 const numOr = (v, fallback) => {
   const n = numOrNull(v);
   return n === null || Number.isNaN(n) ? fallback : n;
 };
 
-// Glühwein catalog: items (not year-bound), per-year terms (prices, packs, planned qty; locked with the year)
-// and recipes (product -> ingredients, not year-bound).
+// Glühwein Sortiment: sellable products (not year-bound), per-year terms (prices, buying unit, planned qty; locked with
+// the year) and recipes (product -> gw_ingredients, not year-bound). Ingredients live in useGluehweinIngredients.
+// gw_items.kind is a legacy column (SQLite CHECK): new rows get 'drink', it is not read any more.
+// Sold per selling unit (gw_items.unit), bought per buying unit (terms.buy_unit) at buy_pack_price; pack_size is the
+// content (selling units per buying unit). sell_price and planned_qty are per selling unit.
 export function useGluehweinCatalog() {
   const { query, run, transaction } = useDatabase();
 
@@ -21,8 +22,8 @@ export function useGluehweinCatalog() {
 
   const fetchItems = useCallback(async (year) => {
     const items = await query(
-      `SELECT i.id, i.name, i.kind, i.unit, i.sort_order, i.active,
-              t.sell_price, t.buy_price, t.pack_type, t.pack_size, t.planned_qty
+      `SELECT i.id, i.name, i.unit, i.sort_order, i.active,
+              t.sell_price, t.buy_price, t.pack_type, t.pack_size, t.buy_unit, t.buy_pack_price, t.planned_qty
          FROM gw_items i
          LEFT JOIN gw_item_terms t ON t.item_id = i.id AND t.year = ?
         ORDER BY i.sort_order, i.name`,
@@ -42,12 +43,14 @@ export function useGluehweinCatalog() {
       buy_price: i.buy_price ?? null,
       pack_type: i.pack_type ?? 'none',
       pack_size: i.pack_size ?? 1,
+      buy_unit: i.buy_unit ?? null,
+      buy_pack_price: i.buy_pack_price ?? null,
       planned_qty: i.planned_qty ?? 0,
       recipe: recipes.get(i.id) || [],
     }));
   }, [query]);
 
-  // item: { id?, name, kind, unit, sort_order?, active? }. Without id a new row is created.
+  // item: { id?, name, unit, sort_order?, active? }. Without id a new row is created.
   // On update, omitted sort_order / active keep their stored value.
   const saveItem = useCallback(async (item) => {
     const name = String(item.name ?? '').trim();
@@ -56,47 +59,64 @@ export function useGluehweinCatalog() {
     const active = item.active === undefined || item.active === null ? null : (item.active ? 1 : 0);
     if (item.id) {
       await run(
-        `UPDATE gw_items SET name = ?, kind = ?, unit = ?,
+        `UPDATE gw_items SET name = ?, unit = ?,
                 sort_order = COALESCE(?, sort_order), active = COALESCE(?, active)
           WHERE id = ?`,
-        [name, item.kind, unit, sortOrder, active, item.id]
+        [name, unit, sortOrder, active, item.id]
       );
       return item.id;
     }
     const id = crypto.randomUUID();
     await run(
-      'INSERT INTO gw_items (id, name, kind, unit, sort_order, active) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, name, item.kind, unit, sortOrder ?? 0, active ?? 1]
+      "INSERT INTO gw_items (id, name, kind, unit, sort_order, active) VALUES (?, ?, 'drink', ?, ?, ?)",
+      [id, name, unit, sortOrder ?? 0, active ?? 1]
     );
     return id;
   }, [run]);
 
-  // Soft delete: refuses while the item is a recipe ingredient, else deactivates it.
+  // Soft delete: deactivates the product (terms, recipe and Kasse history stay).
   const deleteItem = useCallback(async (id) => {
-    const used = await query('SELECT 1 FROM gw_recipe WHERE ingredient_id = ? LIMIT 1', [id]);
-    if (used.length) throw new Error('ITEM_IN_USE');
-    const rows = await query('SELECT id, name, kind, unit, sort_order FROM gw_items WHERE id = ?', [id]);
+    const rows = await query('SELECT id, name, unit, sort_order FROM gw_items WHERE id = ?', [id]);
     if (!rows[0]) return;
     await saveItem({ ...rows[0], active: 0 });
   }, [query, saveItem]);
 
-  // terms: { sell_price, buy_price, pack_type, pack_size, planned_qty } for one item in one scout year (upsert).
+  // terms: { sell_price, buy_unit, buy_pack_price, pack_size (content), planned_qty } for one item in one scout year
+  // (upsert). Legacy columns for compatibility (migration 39): pack_type is always 'none' (its CHECK only knows four
+  // fixed values) and buy_price = buy_pack_price / pack_size, i.e. the price per selling unit as before.
+  // Recipe products may pass keepBuy: true to leave the stored (ignored) buy fields untouched.
   const saveTerms = useCallback(async (year, itemId, terms) => {
     await assertYearOpen(year);
-    const packType = PACK_TYPES.includes(terms.pack_type) ? terms.pack_type : 'none';
+    const content = numOr(terms.pack_size, 1) > 0 ? numOr(terms.pack_size, 1) : 1;
+    const packPrice = numOrNull(terms.buy_pack_price);
+    const buyUnit = terms.buy_unit ? String(terms.buy_unit).trim() || null : null;
+    const legacyUnitPrice = packPrice == null ? null : Math.round((packPrice / content) * 1e4) / 1e4;
+    if (terms.keepBuy) {
+      await run(
+        `INSERT INTO gw_item_terms (item_id, year, sell_price, pack_type, pack_size, planned_qty)
+         VALUES (?, ?, ?, 'none', 1, ?)
+         ON CONFLICT(item_id, year) DO UPDATE SET
+           sell_price = excluded.sell_price, planned_qty = excluded.planned_qty`,
+        [itemId, year, numOrNull(terms.sell_price), numOr(terms.planned_qty, 0)]
+      );
+      return;
+    }
     await run(
-      `INSERT INTO gw_item_terms (item_id, year, sell_price, buy_price, pack_type, pack_size, planned_qty)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO gw_item_terms
+         (item_id, year, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty)
+       VALUES (?, ?, ?, ?, 'none', ?, ?, ?, ?)
        ON CONFLICT(item_id, year) DO UPDATE SET
          sell_price = excluded.sell_price, buy_price = excluded.buy_price, pack_type = excluded.pack_type,
-         pack_size = excluded.pack_size, planned_qty = excluded.planned_qty`,
+         pack_size = excluded.pack_size, buy_unit = excluded.buy_unit, buy_pack_price = excluded.buy_pack_price,
+         planned_qty = excluded.planned_qty`,
       [
         itemId,
         year,
         numOrNull(terms.sell_price),
-        numOrNull(terms.buy_price),
-        packType,
-        numOr(terms.pack_size, 1),
+        legacyUnitPrice,
+        content,
+        buyUnit,
+        packPrice,
         numOr(terms.planned_qty, 0),
       ]
     );

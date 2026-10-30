@@ -1,6 +1,6 @@
 # Hori-Admin — Project Reference
 
-**Version:** 1.18.1 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 1.20.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
 
 > Single source of truth. Read this; read nothing else.
 
@@ -62,12 +62,12 @@ Billing_App/
 │   │   ├── JobLinesDialog.jsx / .css    # Editor "Aus Arbeit laden…": pick a job, append its grouped Hori-hours lines
 │   │   ├── ActionDateField.jsx / .css  # Date picker of a Verkaufsaktion (no visible label, tooltip only) next to the year switcher (shared `DatePicker`, `initialView` = month opened first); its month decides where the action's Saldo counts in the Dashboard Umsatz
 │   │   ├── FinanceEntryModal.jsx       # Add/edit popup for one manual Lasagnen entry (kind 'expense' | 'income': description, category, amount); optional `categories` ([{value,label}]) overrides the Lasagnen list (Glühwein Finanzen); onSave throws to show a save error
-│   │   ├── GluehweinCatalog.jsx / .css  # Glühwein tab "Katalog": items (drink, addon, beer, beer_special, ingredient) with per-year terms (sell/buy price, pack, planned qty), archive/restore, opens `RecipeEditor`
+│   │   ├── GluehweinCatalog.jsx / .css  # Glühwein tab "Sortiment" (value `catalog`): finished products only; sold per Verkaufseinheit (`gw_items.unit`: Glas/Becher/Shot…), bought per Einkaufseinheit (`buy_unit`, `buy_pack_price`, content = `pack_size`); derived cost/margin/packs to buy/Umsatz/Rohgewinn (`utils/gluehweinCatalogMath.js`); recipe products show cost "über Rezept". "Artikel hinzufügen" lives in the page header next to the year switcher (`HEADER_ACTIONS` + `addRequest` in Gluehwein.jsx)
 │   │   ├── RecipeEditor.jsx / .css      # Popup: ingredients + qty per unit of one Glühwein product (`gw_recipe`)
-│   │   ├── GluehweinKasse.jsx / .css    # Glühwein tab "Kasse": one counted cash total per event; "Kasse übernehmen" books it once as an Einnahme, then read-only
-│   │   ├── GluehweinSchichten.jsx / .css # Glühwein tab "Schichten": sale days, shift slots, Hori assignments, shift counts + bonus %
+│   │   ├── GluehweinKasse.jsx / .css    # Glühwein tab "Kasse": Kartenzahlung field + Bargeldkasse (Start/Ende count per denomination 0,10–200 €, Differenz, Summe); counts as Einnahmen live in Finanzen/Übersicht/Dashboard; "Kasse übernehmen" locks it, "Kasse entsperren" unlocks (`sales_kasse.locked`, `sales_kasse_counts`)
+│   │   ├── GluehweinSchichten.jsx / .css # Glühwein tab "Schichten": consecutive sale days form one continuous calendar block (`GluehweinShiftCalendar`, `utils/shiftLayout.js`); per-day shifts with free start/end (end before start = past midnight), add/edit modal (`GluehweinShiftModal`), copy shifts from another day, template shifts; Hori list sortable with Anteil % heat bar
 │   │   ├── GluehweinShiftSettingsModal.jsx / .css # Popup: `gluehwein_mandatory_shifts`, bonus on/factor, `gluehwein_shift_templates`
-│   │   ├── GluehweinEinkaufsliste.jsx / .css # Glühwein tab "Einkaufsliste": read-only, planned qty through recipes, whole packs, cost (`utils/gluehweinShoppingList.js`)
+│   │   ├── GluehweinEinkaufsliste.jsx / .css # Glühwein tab "Einkaufsliste": computed list + "Zutaten" (`gw_ingredients`, own modal) + recipes;  planned qty through recipes, whole packs, cost (`utils/gluehweinShoppingList.js`)
 │   │   ├── GluehweinFinanzen.jsx / .css # Glühwein tab "Finanzen": `sales_entries` (Einnahmen/Ausgaben, own categories incl. Standmiete) + Saldo, via `FinanceEntryModal`
 │   │   ├── LasagnenFinance.jsx / .css  # Lasagnen tab "Finanzen": summary cards (Einnahmen, Ausgaben, Saldo) + "Einnahme hinzufügen" (secondary) / "Ausgabe hinzufügen" (primary) buttons (open `FinanceEntryModal`) + one list of all Einnahmen (per Hori from the Übersicht, read-only; manual) and Ausgaben, filter Alle/Einnahmen/Ausgaben, fixed column widths. Props: year, yearLocked, income{total}, incomeEntries, formatCurrency, locale, search, onError
 │   │   ├── JobRateSource.jsx / .css     # Shared "Aus Produkt | Manuell" wage switch + live line preview (state: hooks/useJobRateSource.js)
@@ -94,7 +94,7 @@ Billing_App/
 │   │   ├── Horis.jsx / .css          # Helpers overview: hours, share %, camp contribution reduced by work share and the Lasagnen + Glühwein bonus (added up, max 100 %; tooltip shows each %), matrix view
 │   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`) / Finanzen (`LasagnenFinance`)
 │   │   ├── SalesActionPage.jsx / .css # Base page of a Verkaufsaktion: search bar, action date picker (`ActionDateField`), year switcher; content still empty. Prop: action (entry of `SALES_ACTIONS`)
-│   │   ├── Gluehwein.jsx / .css      # Glühweinbude: search bar (Katalog, Finanzen), year switcher, tabs Übersicht (Verkaufstage, Kasse, Saldo) / Katalog / Kasse / Schichten / Einkaufsliste / Finanzen
+│   │   ├── Gluehwein.jsx / .css      # Glühweinbude: search bar (Sortiment, Finanzen), year switcher, tabs Übersicht (Verkaufstage, Kasse, Saldo) / Sortiment / Kasse / Schichten / Einkaufsliste / Finanzen
 │   │   ├── Baseball.jsx              # Baseballturnier: thin wrapper around `SalesActionPage` (blank for now)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
@@ -109,17 +109,17 @@ Billing_App/
 │   │   ├── useActionDate.js    # useActionDate(dateKey): date of a Verkaufsaktion for the selected scout year (year_settings), setDate(value) with scout-year range check + lock
 │   │   ├── useSalesActions.js  # fetchSalesActionSaldi(): Saldo of every Verkaufsaktion per scout year + the month it counts in (for the Dashboard); fetchActionSaldo(action,year,settings); hasSaldoSource(action) (Lasagnen, Glühwein)
 │   │   ├── useLasagnenExpenses.js # fetchExpenses(year), saveExpense(year, exp) (insert/update, YEAR_LOCKED check), deleteExpense(year, id)
-│   │   ├── useGluehweinCatalog.js # fetchItems(year) (items + that year's terms + recipe), saveItem, deleteItem (soft, refused while used in a recipe), saveTerms(year,itemId,terms), saveRecipe(productId,rows)
+│   │   ├── useGluehweinCatalog.js # fetchItems(year) (products + that year\'s terms + recipe), saveItem, deleteItem (soft), saveTerms(year,itemId,terms), saveRecipe(productId,rows); ingredients: `useGluehweinIngredients.js`
 │   │   ├── useSalesDays.js     # useSalesDays(action): fetchDays(year), addDay(year,date), deleteDay(id)
-│   │   ├── useSalesKasse.js    # useSalesKasse(action): fetchKasse(year), saveKasse(year,countedCash), takeOverKasse(year) (one-time income entry)
+│   │   ├── useSalesKasse.js    # useSalesKasse(action): fetchKasse(year), saveCard, saveCount(year,phase,cents,qty), lockKasse/unlockKasse; shared read `loadKasse` (also used by useSalesActions)
 │   │   ├── useSalesEntries.js  # useSalesEntries(action): fetchEntries(year), saveEntry(year,entry), deleteEntry(id)
-│   │   ├── useGluehweinShifts.js # useGluehweinShifts(action): fetchShifts(year), addSlots(dayId,templates), removeSlot, assign/unassign(shiftId,horiId)
+│   │   ├── useGluehweinShifts.js # useGluehweinShifts(action): fetchShifts(year), addSlots(dayId,templates), addSlot, updateSlot, copySlots, removeSlot, assign/unassign(shiftId,horiId)
 │   │   ├── useLasagnen.js      # fetchOrders (all Horis LEFT JOIN lasagna_orders), saveOrder (upsert by hori_id)
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
 │   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–36 (runtime-agnostic).
+│   │   └── migrations.js        # Schema + migrations 0–39 (runtime-agnostic).
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -137,8 +137,8 @@ Billing_App/
 │       ├── heatColor.js          # Shared red→yellow→green heat scale for share bars
 │       ├── lasagnaFinance.js     # Pure: lasagnaAmounts(row,settings), lasagnaSummary({orders,settings,manual}), lasagnaSaldo(...), SALES_ACTIONS, salesActionMonthKey(action,year,date), EXPENSE_CATEGORIES, incomeFor(row,min), INCOME_CATEGORIES, categoriesFor(kind), incomeTotals(rows,minFor), incomeEntries(rows,minFor,nameFor), expenseTotal(list)
 │       ├── lasagnaBonus.js       # Pure: lasagnaShares(rows), bonusReductionPct({sharePct,enabled,factor}), applyBonus(contribution,pct), lasagnaBonusFromSettings(settings)
-│       ├── gluehweinFinance.js   # Pure: saldo(entries) → {income,expense,saldo}, saldoMonthKey(days,action,year) (month of the first sale day)
-│       ├── gluehweinShoppingList.js # Pure: buildShoppingList({items,terms,recipe}) → {rows:[{item,need,packs,cost}],total}
+│       ├── gluehweinFinance.js   # Pure: saldo(entries, kasseLines) → {income,expense,saldo}, DENOMS, kasseCash, kasseIncome, saldoMonthKey(days,action,year) (month of the first sale day)
+│       ├── gluehweinShoppingList.js # Pure: buildShoppingList({products,ingredients,productTerms,ingredientTerms,recipe}) → rows (Zutat/Produkt, need, stock, toBuy, packs, cost) + total
 │       ├── gluehweinBonus.js     # Pure: gluehweinShares(rows) (extra shifts above mandatory / all extra shifts), gluehweinBonusFromSettings(settings); re-exports bonusReductionPct, applyBonus
 │       ├── campContribution.js   # Lagerbeitrag formula: base, minimum, reduction per %
 │       └── validators.js         # Email regex, phone (libphonenumber-js), VAT (VIES), address (Nominatim)
@@ -263,9 +263,15 @@ item_id(FK), year, sell_price, buy_price, pack_type (none|kasten|flasche|paket),
 ```
 "Start new year" copies the terms to the new year with `planned_qty` 0. Days, shifts, Kasse and entries are not copied.
 
-**`gw_recipe`** (migration 31)
+**`gw_item_terms`** extra columns (migration 39): `buy_unit` (free text), `buy_pack_price` (price per buying unit); `pack_size` = content (selling units per buying unit); legacy `pack_type`/`buy_price` are still written for compatibility. Migration 39 maps old rows losslessly (buy_pack_price = buy_price × pack_size); migrated multi-pack items start with content 1 ("Inhalt fehlt" badge).
+
+**`gw_ingredients`** (migration 37) — ingredients (id, name, unit, sort_order, active) + **`gw_ingredient_terms`** per year (buy_price, pack_type, pack_size, extra_qty = Zusatzbedarf, stock_qty = Bestand; reset to 0 on a new year). `gw_items.kind` is legacy and unused (new products get 'drink').
+
+**`sales_kasse`** (migrations 32, 38) — one row per action + year: card_amount, locked, counted_cash (legacy "Sonstiger Bargeldbetrag", included in the cash total) + **`sales_kasse_counts`** (kasse_id, phase start|end, denom_cents, qty). Bargeld = Σ (Ende − Start) × denomination; Bargeld and Kartenzahlung are read live as income lines (no `sales_entries` row is written for the Kasse any more).
+
+**`gw_recipe`** (migration 31, rebuilt in 37)
 ```
-product_id(FK gw_items), ingredient_id(FK gw_items), qty_per_unit; PK (product_id, ingredient_id)
+product_id(FK gw_items), ingredient_id(FK gw_ingredients), qty_per_unit; PK (product_id, ingredient_id)
 ```
 Einkaufsliste: planned_qty × qty_per_unit per ingredient (a product without recipe is bought itself), rounded up to whole packs; no stock.
 
@@ -279,12 +285,6 @@ id, action, year, kind (expense|income), description, category, amount, source_k
 id, action, year, date; UNIQUE (action, year, date)
 ```
 
-**`sales_kasse`** (migration 32) — one Kasse per event, cash total only
-```
-id, action, year, counted_cash, entry_id(FK sales_entries, ON DELETE SET NULL); UNIQUE (action, year)
-```
-"Kasse übernehmen" is a one-time booking: it creates one income entry and sets `entry_id`; the Kasse is then read-only. Deleting that entry unlocks it.
-
 **`gw_shifts`** (migration 33)
 ```
 id, day_id(FK sales_days, CASCADE), start_time, end_time; UNIQUE (day_id, start_time)
@@ -296,7 +296,7 @@ shift_id(FK, CASCADE), hori_id(FK, CASCADE); PK (shift_id, hori_id)
 ```
 Settings (saved per scout year in `year_settings` via `useSettings.saveYearSettings`, read via `loadYearSettings`, year-locked like the Lasagnen amounts, edited in `GluehweinShiftSettingsModal`): `gluehwein_mandatory_shifts` (whole number, default 0), `gluehwein_bonus_enabled` ('0'/'1'), `gluehwein_bonus_factor` (default 100), `gluehwein_shift_templates` (JSON array, default `["16:00-19:00","19:00-22:00"]`). Bonus: extra shifts = max(0, shifts − mandatory); share = Hori's extra shifts / extra shifts of all active Horis; Lagerbeitrag reduction % = share × factor / 100 (`utils/gluehweinBonus.js`). On the Horis page the Lasagnen and Glühwein % are added up, max 100 %.
 
-**Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (Lasagnen and Glühwein count; Baseball is already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, its Saldo is added once it tracks money; sources in `SALDO_SOURCE` of `hooks/useSalesActions.js`) counts into the Dashboard and Dashboard 2.0 Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). Lasagnen: the Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Glühwein: Saldo = `sales_entries` income − expense; it lands in the month of the first sale day (`sales_days`), else of `gluehwein_action_date`, else the default month. The Kasse counts only through its taken-over income entry. Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. A Glühwein load error (e.g. older DB) only drops its numbers; Lasagnen errors still propagate. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
+**Verkaufsaktionen → Dashboard Umsatz.** The Saldo of a Verkaufsaktion (Lasagnen and Glühwein count; Baseball is already in `SALES_ACTIONS` in `utils/lasagnaFinance.js` with a base page and date, its Saldo is added once it tracks money; sources in `SALDO_SOURCE` of `hooks/useSalesActions.js`) counts into the Dashboard and Dashboard 2.0 Umsatz card and chart when the checkbox "Verkaufsaktionen einrechnen" is on (localStorage `dashboard_include_sales_actions`, default on). Lasagnen: the Saldo lands in the month of the action's date: `year_settings` key `lasagna_action_date` (YYYY-MM-DD, set per scout year next to the year switcher on the Lasagnen page, not copied by "Start new year"; keys ending in `_action_date`). Glühwein: Saldo = `sales_entries` income − expense; it lands in the month of the first sale day (`sales_days`), else of `gluehwein_action_date`, else the default month. The Kasse (Bargeld + Kartenzahlung) counts live as income. Without a date: first-half actions (Lasagnen, Glühwein) count in December of the start year, second-half actions (Baseball) in June of the end year. A Glühwein load error (e.g. older DB) only drops its numbers; Lasagnen errors still propagate. The Dashboard uses active Horis only. A net-negative month is drawn on the chart baseline; the card sums the real values.
 
 **`document_events`** — append-only audit log
 ```
