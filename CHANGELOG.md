@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.21.0] - 2026-10-30
+
+### Added
+- **Glühwein Sortiment: "Aus Jahr kopieren"** in the page header (left of "Artikel hinzufügen"). Copies the terms of every item (Verkaufspreis, Einkaufseinheit, Einkaufspreis, Inhalt) from another scout year into the selected year, overwriting them there; "Geplante Mengen mitkopieren" is optional. Recipes and ingredients are not touched. Refused in a locked year.
+- **Glühwein Sortiment: inline editing.** Verkaufspreis, Inhalt, Einkaufspreis and Geplant are edited directly in the table (commit on Tab/blur or Enter) without opening the Artikel popup. Locked years are read-only.
+
 ## [1.20.0] - 2026-10-29
 
 ### Added

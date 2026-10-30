@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AlertCircle, Edit2, Archive, ArchiveRestore, BookOpen, Package, Lock } from 'lucide-react';
 import { useGluehweinCatalog } from '../hooks/useGluehweinCatalog';
 import { useGluehweinIngredients } from '../hooks/useGluehweinIngredients';
+import useYear from '../hooks/useYear';
+import { scoutYearLabel } from '../utils/scoutYear';
 import useTableSort from '../hooks/useTableSort';
 import useCurrency from '../hooks/useCurrency';
 import useFocusTrap from '../hooks/useFocusTrap';
@@ -35,6 +37,8 @@ const digits = (v) => String(v).replace(/\D/g, '');
 const round2 = (n) => (n == null ? null : Math.round(n * 100) / 100);
 const hasRecipe = (i) => (i?.recipe?.length || 0) > 0;
 const unitOf = (i) => String(i?.unit || '').trim() || 'Stk';
+// Shown in the inline fields: comma decimal, no grouping (so the text parses back with numOrNull).
+const shownNum = (v) => (v == null || v === '' ? '' : Number(v).toLocaleString(LOCALE, { useGrouping: false, maximumFractionDigits: 4 }));
 
 /** Migrated multi-pack without content: buying unit differs from the selling unit but content is still 1. */
 const contentMissing = (i) => (
@@ -344,6 +348,128 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, trigg
 };
 
 /**
+ * Number field edited in place in the table. Commits on blur or Enter; onCommit(text) resolves true when the value
+ * is accepted (or unchanged) and false when it was refused, which resets the field to the stored value.
+ */
+const InlineField = ({ label, value, disabled = false, digitsOnly = false, onCommit }) => {
+  const [draft, setDraft] = useState(() => shownNum(value));
+  useEffect(() => { setDraft(shownNum(value)); }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode={digitsOnly ? 'numeric' : 'decimal'}
+      autoComplete="off"
+      className="gw-inline-input"
+      aria-label={label}
+      title={label}
+      value={draft}
+      disabled={disabled}
+      onChange={(e) => setDraft(digitsOnly ? digits(e.target.value) : e.target.value)}
+      onFocus={(e) => e.target.select()}
+      onBlur={async () => {
+        if (draft === shownNum(value)) return;
+        const ok = await onCommit(draft);
+        if (!ok) setDraft(shownNum(value));
+      }}
+      onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+    />
+  );
+};
+
+/**
+ * Copies the Sortiment terms (prices, Einkaufseinheit, content, optionally planned quantities) of one scout year
+ * into the selected year. onCopy(fromYear, withQty) throws to show the error and keep the popup open.
+ */
+const CopyTermsModal = ({ year, onCopy, onCancel, triggerRef }) => {
+  const t = useT();
+  const { years } = useYear();
+  const sources = years.filter((y) => y.year !== year);
+  const [from, setFrom] = useState('');
+  const [withQty, setWithQty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const source = from || sources[0]?.year || '';
+
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, { active: true, triggerRef });
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onCancel]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!source) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onCopy(Number(source), withQty);
+    } catch (err) {
+      setSaveError(err?.message === 'YEAR_LOCKED'
+        ? t('gw_err_year_locked', 'Das Jahr ist gesperrt.')
+        : t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-copy-modal-title">
+      <div className="modal-content settings-fields-modal gw-copy-modal" ref={modalRef}>
+        <h2 id="gw-copy-modal-title">{t('gw_copy_title', 'Sortiment aus Jahr kopieren')}</h2>
+        <form onSubmit={handleSubmit} noValidate>
+          {saveError && (
+            <div className="page-error" role="alert">
+              <AlertCircle size={16} />
+              <span>{saveError}</span>
+            </div>
+          )}
+          {sources.length === 0 ? (
+            <span className="settings-fields-modal-hint">
+              {t('gw_copy_no_source', 'Kein anderes Jahr vorhanden.')}
+            </span>
+          ) : (
+            <div className="settings-fields-modal-grid">
+              <div className="settings-fields-modal-field wide">
+                <label className="input-label" htmlFor="gw-copy-source">{t('gw_copy_from', 'Kopieren von')}</label>
+                <select
+                  id="gw-copy-source"
+                  className="input-field"
+                  value={source}
+                  onChange={(e) => setFrom(Number(e.target.value))}
+                >
+                  {sources.map((y) => (
+                    <option key={y.year} value={y.year}>{scoutYearLabel(y.year)}</option>
+                  ))}
+                </select>
+              </div>
+              <label className="gw-copy-qty-toggle">
+                <input type="checkbox" checked={withQty} onChange={(e) => setWithQty(e.target.checked)} />
+                {t('gw_copy_with_qty', 'Geplante Mengen mitkopieren')}
+              </label>
+              <span className="settings-fields-modal-hint wide">
+                {t(
+                  'gw_copy_hint',
+                  'Verkaufspreis, Einkaufseinheit, Preis und Inhalt werden in das gewählte Jahr übernommen und überschreiben dort vorhandene Werte. Rezepte bleiben unverändert.'
+                )}
+              </span>
+            </div>
+          )}
+          <div className="modal-actions">
+            <Button variant="ghost" type="button" onClick={onCancel}>{t('btn_cancel', 'Abbrechen')}</Button>
+            <Button variant="primary" type="submit" disabled={saving || !source}>
+              {saving ? t('horis_saving', 'Speichern…') : t('gw_copy_action', 'Kopieren')}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Sortiment of a Verkaufsaktion (Glühwein and any other action using the gw_* catalog): only finished, sellable
  * products with their terms for the selected scout year. Ingredients live in the Einkaufsliste (Zutaten).
  * action: SALES_ACTIONS entry (label only; the catalog itself is shared).
@@ -356,7 +482,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, trigg
 const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addRequest = null }) => {
   const t = useT();
   const formatCurrency = useCurrency();
-  const { fetchItems, saveItem, deleteItem, saveTerms } = useGluehweinCatalog();
+  const { fetchItems, saveItem, deleteItem, saveTerms, copyTerms } = useGluehweinCatalog();
   const { fetchIngredients } = useGluehweinIngredients();
   const [items, setItems] = useState([]);
   const [ingredients, setIngredients] = useState([]);
@@ -364,17 +490,20 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
   const loading = loadedYear !== year;
   const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState(null); // null | { item: row | null, triggerRef }
+  const [copyOpen, setCopyOpen] = useState(null); // null | { triggerRef }
   const [recipeFor, setRecipeFor] = useState(null); // { product, ingredients }
   const [toDeactivate, setToDeactivate] = useState(null);
   // Unsorted = sort_order, then name (order of fetchItems).
   const { sort, toggleSort, sortRows } = useTableSort({ key: null, dir: null });
 
-  // Header add button: open the popup on a new request, not for the one present when the tab mounts.
+  // Header buttons ("Aus Jahr kopieren", "Artikel hinzufügen"): act on a new request, not on the one present when the
+  // tab mounts.
   const seenAddRef = useRef(addRequest?.n ?? 0);
   useEffect(() => {
     if (!addRequest || addRequest.n === seenAddRef.current) return;
     seenAddRef.current = addRequest.n;
-    setModal({ item: null, triggerRef: addRequest.triggerRef || null });
+    if (addRequest.key === 'copy') setCopyOpen({ triggerRef: addRequest.triggerRef || null });
+    else setModal({ item: null, triggerRef: addRequest.triggerRef || null });
   }, [addRequest]);
 
   const report = useCallback((err) => {
@@ -461,6 +590,46 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
     if (terms && !yearLocked) await saveTerms(year, id || item.id, terms);
     await reload();
     setModal(null);
+  };
+
+  const handleCopy = async (fromYear, withQty) => {
+    await copyTerms(fromYear, year, { withQty });
+    setCopyOpen(null);
+    await reload();
+  };
+
+  // One inline edit of a row: whole terms are rewritten, the other fields keep their stored values.
+  // Returns false when the value is refused (the field then shows the stored value again).
+  const commitField = async (row, field, text) => {
+    const trimmed = String(text).trim();
+    const parsed = trimmed === '' ? null : numOrNull(trimmed);
+    const invalid = parsed === null ? (trimmed !== '' || field === 'pack_size') : parsed < 0 || (field === 'pack_size' && parsed === 0);
+    if (invalid) {
+      onError?.(t('gw_err_number', 'Bitte eine gültige Zahl eingeben.'));
+      return false;
+    }
+    const value = field === 'planned_qty'
+      ? parsed ?? 0
+      : field === 'pack_size' ? parsed : round2(parsed);
+    const current = row[field] == null ? null : Number(row[field]);
+    if (value === (field === 'planned_qty' ? current ?? 0 : current)) return true;
+    const terms = {
+      sell_price: row.sell_price,
+      planned_qty: row.planned_qty,
+      buy_unit: row.buy_unit,
+      buy_pack_price: row.buy_pack_price,
+      pack_size: row.pack_size,
+      [field]: value,
+    };
+    if (hasRecipe(row)) terms.keepBuy = true;
+    try {
+      await saveTerms(year, row.id, terms);
+      await reload();
+      return true;
+    } catch (err) {
+      report(err);
+      return false;
+    }
   };
 
   const confirmDeactivate = async () => {
@@ -588,16 +757,26 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                   <tr key={i.id} className={i.active ? undefined : 'gw-row-inactive'}>
                     <td className="gw-name-cell">{i.name}</td>
                     <td className="num dt-mono">
-                      {i.sell_price == null
-                        ? muted('–')
-                        : <>{formatCurrency(Number(i.sell_price))} <span className="dt-muted gw-unit-suffix">/ {unit}</span></>}
+                      <InlineField
+                        label={`${t('gw_col_sell', 'Verkaufspreis')}: ${i.name}`}
+                        value={i.sell_price}
+                        disabled={yearLocked}
+                        onCommit={(text) => commitField(i, 'sell_price', text)}
+                      />
+                      <span className="dt-muted gw-unit-suffix"> / {unit}</span>
                     </td>
                     <td className="gw-buy-cell">
                       {recipeCount > 0 ? muted(t('gw_via_recipe', 'über Rezept')) : (
                         <>
                           <div>
                             {i.buy_unit
-                              ? <>1 {i.buy_unit} = <span className="dt-mono">{fmtNum(i.pack_size)}</span> {unit}</>
+                              ? <>1 {i.buy_unit} = <InlineField
+                                label={`${t('gw_col_content', 'Inhalt')}: ${i.name}`}
+                                value={i.pack_size}
+                                digitsOnly
+                                disabled={yearLocked}
+                                onCommit={(text) => commitField(i, 'pack_size', text)}
+                              /> {unit}</>
                               : muted('–')}
                             {contentMissing(i) && (
                               <span
@@ -608,9 +787,14 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                               </span>
                             )}
                           </div>
-                          {i.buy_pack_price != null && (
-                            <div className="dt-muted dt-mono gw-buy-price">à {formatCurrency(Number(i.buy_pack_price))}</div>
-                          )}
+                          <div className="dt-muted dt-mono gw-buy-price">
+                            à <InlineField
+                              label={`${t('gw_buy_pack_price_per', 'Preis je')}: ${i.name}`}
+                              value={i.buy_pack_price}
+                              disabled={yearLocked}
+                              onCommit={(text) => commitField(i, 'buy_pack_price', text)}
+                            /> €
+                          </div>
                         </>
                       )}
                     </td>
@@ -622,7 +806,14 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                         : <span className={econ.marginPct < 0 ? 'negative' : undefined}>{fmtPct(econ.marginPct)}</span>}
                     </td>
                     <td className="dt-mono">
-                      {fmtNum(Number(i.planned_qty) || 0)} <span className="dt-muted">{unit}</span>
+                      <InlineField
+                        label={`${t('gw_col_planned_qty', 'Geplant')}: ${i.name}`}
+                        value={i.planned_qty}
+                        digitsOnly
+                        disabled={yearLocked}
+                        onCommit={(text) => commitField(i, 'planned_qty', text)}
+                      />
+                      <span className="dt-muted"> {unit}</span>
                     </td>
                     <td className="dt-mono">
                       {recipeCount > 0
@@ -707,6 +898,15 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
           </table>
         )}
       </div>
+
+      {copyOpen && (
+        <CopyTermsModal
+          year={year}
+          onCopy={handleCopy}
+          onCancel={() => setCopyOpen(null)}
+          triggerRef={copyOpen.triggerRef}
+        />
+      )}
 
       {modal && (
         <ItemModal
