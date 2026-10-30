@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Plus,
+  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Plus, Copy,
 } from 'lucide-react';
 import useSettings from '../hooks/useSettings';
 import useYear from '../hooks/useYear';
@@ -39,7 +39,10 @@ const SEARCH_TABS = new Set(['catalog', 'finance']);
 // so a tab can supply several (key tells the tab which one was clicked). A click bumps addRequest = { tab, key, n,
 // triggerRef }; the tab opens its popup when n changes (the value present on mount is ignored).
 const HEADER_ACTIONS = {
-  catalog: [{ key: 'add', label: 'Artikel hinzufügen', icon: Plus }],
+  catalog: [
+    { key: 'copy', label: 'Aus Jahr kopieren', icon: Copy, variant: 'secondary' },
+    { key: 'add', label: 'Artikel hinzufügen', icon: Plus, variant: 'primary' },
+  ],
 };
 
 /** Read-only summary: event days, Kasse (Bargeld + Karte), Saldo. Reloads on mount (i.e. each time the tab is opened). */
@@ -151,7 +154,7 @@ const Gluehwein = () => {
             <Button
               key={a.key}
               ref={(el) => { headerBtnRefs.current[`${view}:${a.key}`] = el; }}
-              variant="primary"
+              variant={a.variant}
               size="md"
               icon={a.icon}
               onClick={() => setAddRequest((r) => ({

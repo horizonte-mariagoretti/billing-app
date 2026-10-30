@@ -122,6 +122,24 @@ export function useGluehweinCatalog() {
     );
   }, [run, assertYearOpen]);
 
+  // Copies the terms of every item from one scout year to another (upsert: existing target terms are overwritten).
+  // withQty: also copy planned_qty; otherwise the target keeps its planned quantities (new rows start at 0).
+  const copyTerms = useCallback(async (fromYear, toYear, { withQty = false } = {}) => {
+    await assertYearOpen(toYear);
+    await run(
+      `INSERT INTO gw_item_terms
+         (item_id, year, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty)
+       SELECT item_id, ?, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, ${withQty ? 'planned_qty' : '0'}
+         FROM gw_item_terms
+        WHERE year = ?
+       ON CONFLICT(item_id, year) DO UPDATE SET
+         sell_price = excluded.sell_price, buy_price = excluded.buy_price, pack_type = excluded.pack_type,
+         pack_size = excluded.pack_size, buy_unit = excluded.buy_unit, buy_pack_price = excluded.buy_pack_price,
+         planned_qty = ${withQty ? 'excluded.planned_qty' : 'gw_item_terms.planned_qty'}`,
+      [toYear, fromYear]
+    );
+  }, [run, assertYearOpen]);
+
   // rows: [{ ingredient_id, qty_per_unit }]. Replaces the whole recipe of the product in one transaction.
   const saveRecipe = useCallback(async (productId, rows) => {
     const ops = [{ sql: 'DELETE FROM gw_recipe WHERE product_id = ?', params: [productId] }];
@@ -135,5 +153,5 @@ export function useGluehweinCatalog() {
     await transaction(ops);
   }, [transaction]);
 
-  return { fetchItems, saveItem, deleteItem, saveTerms, saveRecipe };
+  return { fetchItems, saveItem, deleteItem, saveTerms, copyTerms, saveRecipe };
 }
