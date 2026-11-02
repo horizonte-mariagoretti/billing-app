@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.35.1] - 2026-11-02
+
+### Changed
+- **Baseballturnier tabs:** the four areas are replaced by one flat tab row like Lasagnen and Glühweinbude: Übersicht, Teams, Tabelle, Felder, Sponsoren, Kasse, Einkaufsliste, Schichten, Finanzen.
+
 ## [1.35.0] - 2026-11-02
 
 ### Changed

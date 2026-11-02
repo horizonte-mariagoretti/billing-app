@@ -1,4 +1,4 @@
-/* Baseballturnier page (Baseball.jsx): area switcher, sub-tab row and the placeholder body of each tab. */
+/* Baseballturnier page (Baseball.jsx): tab row and the placeholder body of each tab. */
 .baseball-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -17,11 +17,6 @@
 .baseball-toolbar .seg-toggle-btn {
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-/* Sub-tab row sits closer to the area switcher than the page's section gap. */
-.baseball-subtoolbar {
-  margin-top: calc(var(--space-sm) - var(--space-xl));
 }
 
 .baseball-tab-placeholder {
