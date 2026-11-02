@@ -45,7 +45,6 @@ const yearFromRow = (row) => ({
   paid: !!Number(row?.paid),
   special: str(row?.special),
   material_out: str(row?.material_out),
-  material_in: str(row?.material_in),
 });
 
 /** Changed identity fields (trimmed) compared with `initial`; {} when nothing changed. */
@@ -164,7 +163,6 @@ const BaseballSponsorModal = ({
       paid: yearFields.paid ? 1 : 0,
       special: yearFields.special.trim(),
       material_out: yearFields.material_out.trim(),
-      material_in: yearFields.material_in.trim(),
     };
   };
 

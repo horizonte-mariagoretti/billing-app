@@ -28,7 +28,7 @@ export function groupTeams(teams) {
  * @param {Array<{id: string, name: string, sort_order: number}>} fields `baseball_fields` rows of the year
  *   (sort_order 1..4 = field number).
  * @returns {{
- *   fields: Array<{number: number, name: string, teams: Array<object>, complete: boolean}>,
+ *   fields: Array<{id: string, number: number, name: string, teams: Array<object>, complete: boolean}>,
  *   unassigned: Array<object>, total: number, totalValid: boolean
  * }} fields = exactly the given fields (by sort_order), complete = exactly 4 teams; unassigned = teams without
  *   field_id or with a field_id not in `fields`; totalValid = total > 0 and a multiple of 4.
@@ -49,7 +49,7 @@ export function groupByField(teams, fields) {
   return {
     fields: fieldList.map((f) => {
       const fieldTeams = byId.get(f.id);
-      return { number: Number(f.sort_order) || 0, name: f.name, teams: fieldTeams, complete: fieldTeams.length === GROUP_SIZE };
+      return { id: f.id, number: Number(f.sort_order) || 0, name: f.name, teams: fieldTeams, complete: fieldTeams.length === GROUP_SIZE };
     }),
     unassigned,
     total,

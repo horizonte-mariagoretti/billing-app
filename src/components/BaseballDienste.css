@@ -1,52 +1,11 @@
-/* Baseballturnier parent duties (BaseballDienste.jsx): add forms, duty x shift grid. */
-.baseball-dienste {
+/* Baseballturnier Schichten (BaseballDienste.jsx, BaseballShiftCard.jsx): one card per shift, duty rows with
+   person chips, Soll/Ist. Cards, chips, banner and toolbar come from BaseballPlanning.css. */
+.baseball-dienste-actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.baseball-dienste-add {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.baseball-dienste-form {
-  display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-sm);
-}
-.baseball-dienste-form .input-field { width: 180px; }
-.baseball-dienste-form input[type='time'].input-field { width: 130px; }
-
-.baseball-dienste-table { table-layout: fixed; }
-.baseball-dienste-table th:first-child,
-.baseball-dienste-table td:first-child { width: 160px; }
-
-.baseball-dienste-shift {
-  display: inline-flex;
-  align-items: center;
   gap: var(--space-xs);
 }
 
-.baseball-dienste-duty {
-  font-weight: 600;
-  color: var(--color-text-dark-primary);
-}
-
-.baseball-dienste-cell {
-  width: 100%;
-  min-width: 0;
-  padding: 6px 8px;
-  font-size: 0.85rem;
-}
-
-.baseball-dienste-loading,
-.baseball-dienste-empty {
-  color: var(--color-text-dark-tertiary);
-  font-size: 0.9rem;
-}
 .baseball-dienste-empty { padding: var(--space-lg); }
 
 .baseball-dienste-note {
@@ -55,4 +14,95 @@
   gap: var(--space-xs);
   font-size: 0.85rem;
   color: var(--color-text-dark-secondary);
+}
+
+.baseball-dienste-card .baseball-field-head .baseball-row-actions { flex-shrink: 0; }
+
+/* Table: Dienst | Personen | Soll | Ist | actions. The persons cell wraps its chips. */
+.baseball-dienste-col-duty { width: 150px; }
+.baseball-dienste-col-num { width: 84px; }
+.baseball-dienste-col-actions { width: 52px; }
+.baseball-dienste-table td.baseball-dienste-persons { white-space: normal; }
+
+/* Person chip: a button; name + muted phone. */
+.baseball-dienste-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+.baseball-dienste-chip:hover:not(:disabled) {
+  border-color: var(--color-primary-border-mid);
+  background: var(--color-primary-soft);
+}
+.baseball-dienste-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-border-mid);
+}
+.baseball-dienste-chip:disabled { cursor: default; }
+.baseball-dienste-chip-phone {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--color-text-dark-tertiary);
+}
+
+/* Dashed "+" chip at the end of a slot, and the inline name field that replaces it. */
+.baseball-dienste-chip-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 4px 10px;
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+}
+.baseball-dienste-chip-add:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+}
+.baseball-dienste-chip-add:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-border-mid);
+}
+.baseball-dienste-chip-add:disabled { opacity: 0.4; cursor: not-allowed; }
+.baseball-dienste-chip-input.input-field {
+  width: 180px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+}
+
+/* Ist: mono count, warning colour when below Soll. */
+.baseball-dienste-ist { font-family: var(--font-mono); }
+.baseball-dienste-ist--short {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* Modals (Schicht / Person). */
+.baseball-shift-modal-hint,
+.baseball-person-modal-context {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+}
+.baseball-person-modal-context { margin-top: calc(-1 * var(--space-xs)); }
+.baseball-person-modal-actions { align-items: center; }
+.baseball-person-modal-spacer { flex: 1; }
+
+@media (max-width: 700px) {
+  .baseball-dienste-col-duty { width: 104px; }
+  .baseball-dienste-col-num { width: 64px; }
+  .baseball-dienste-col-actions { width: 44px; }
+  .baseball-dienste-table th,
+  .baseball-dienste-table td { padding-left: 6px; padding-right: 6px; }
 }

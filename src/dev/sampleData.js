@@ -339,17 +339,26 @@ export function buildSampleStatements() {
   dutyShifts.forEach(([id, label, start, end], i) => insert('baseball_duty_shifts', {
     id, year: bbYear, label, start_time: start, end_time: end, sort_order: i + 1,
   }));
+  // Per shift: [needed, persons] or null; a person is a name or [name, phone]. Schicht 2 is short on Burger and Bons.
   const dutyRows = [
-    ['bd-1', 'Theke', ['Familie Beispiel (Mia)', 'Familie Muster (Leo)', 'Familie Test (Nina)', 'Familie Probe (Tom)'], ['Familie Demo (Sara), Familie Demo (Jan)', 'Familie Sample (Ole)'], null],
-    ['bd-2', 'Burger', ['Familie Beispiel (Ben)', 'Familie Muster (Lia)', 'Familie Test (Paul)', 'Familie Probe (Emma)'], ['Familie Demo (Ida)'], null],
-    ['bd-3', 'Bons', ['Familie Sample (Greta)', 'Familie Demo (Max)'], null, null],
-    ['bd-4', 'Putzen', null, null, ['Familie Probe (Lena)']],
-    ['bd-5', 'Gemüse', ['Familie Muster (Hanna)', 'Familie Test (Felix)'], null, null],
+    ['bd-1', 'Theke', [4, [['Familie Beispiel (Mia)', '+32 470 00 00 01'], 'Familie Muster (Leo)', 'Familie Test (Nina)', 'Familie Probe (Tom)']], [3, ['Familie Demo (Sara)', 'Familie Demo (Jan)', 'Familie Sample (Ole)']], null],
+    ['bd-2', 'Burger', [4, ['Familie Beispiel (Ben)', ['Familie Muster (Lia)', '+32 470 00 00 02'], 'Familie Test (Paul)', 'Familie Probe (Emma)']], [2, ['Familie Demo (Ida)']], null],
+    ['bd-3', 'Bons', [2, ['Familie Sample (Greta)', 'Familie Demo (Max)']], [1, []], null],
+    ['bd-4', 'Putzen', null, null, [1, [['Familie Probe (Lena)', '+32 470 00 00 03']]]],
+    ['bd-5', 'Gemüse', [2, ['Familie Muster (Hanna)', 'Familie Test (Felix)']], null, null],
   ];
+  let dutyPersonSeq = 0;
   dutyRows.forEach(([id, name, s1, s2, s3], i) => {
     insert('baseball_duties', { id, year: bbYear, name, sort_order: i + 1 });
-    [s1, s2, s3].forEach((names, j) => {
-      if (names) insert('baseball_duty_assignments', { duty_id: id, shift_id: dutyShifts[j][0], persons: names.join(', ') });
+    [s1, s2, s3].forEach((cell, j) => {
+      if (!cell) return;
+      const [needed, people] = cell;
+      const shiftId = dutyShifts[j][0];
+      const list = people.map((p) => (Array.isArray(p) ? p : [p, '']));
+      insert('baseball_duty_assignments', { duty_id: id, shift_id: shiftId, persons: list.map(([n]) => n).join(', '), needed });
+      list.forEach(([personName, phone], k) => insert('baseball_duty_persons', {
+        id: `bdp-${++dutyPersonSeq}`, duty_id: id, shift_id: shiftId, name: personName, phone, sort_order: k + 1,
+      }));
     });
   });
 
@@ -357,6 +366,8 @@ export function buildSampleStatements() {
   ['Feld 1', 'Feld 2', 'Feld 3', 'Feld 4'].forEach((name, i) => insert('baseball_fields', {
     id: `bf-${i + 1}`, year: bbYear, name, sort_order: i + 1,
   }));
+  // Horis as referees of a field (sample Horis from the list above).
+  [['bf-1', 'h-1'], ['bf-3', 'h-2']].forEach(([field_id, hori_id]) => insert('baseball_field_horis', { field_id, hori_id }));
   const bbTeams = [
     // [name, contacted, paid, field, wins, draws, losses]
     ['Team Beispiel 1', 1, 1, 'bf-1', 3, 0, 1],

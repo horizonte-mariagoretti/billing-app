@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.39.0] - 2026-11-02
+
+### Added
+- **Baseballturnier Schichten:** one card per shift in time order, the five duties as rows, people as chips with phone and optional team, Soll/Ist per duty and a banner for open slots. Shift and person dialogs. Migration 51 moves the old name text into person rows.
+- **Baseballturnier Felder:** fields can be renamed; Horis can be attached to a field as referees (migration 50). The unassigned-teams note can be hidden.
+- **Baseballturnier Sponsoren:** the Art and Werbematerial columns and the library popup with a duplicate check; IBAN is not asked for.
+
+### Changed
+- **Baseballturnier Übersicht:** the to-do list is sorted by due date, done tasks at the bottom.
+- **Dropdowns:** the select trigger uses the same 8px radius as the inputs; Baseball lists are drawn in the page body so no table edge cuts them.
+- **Row icons and row height:** the Horis icon spacing and row height on Baseball, Glühweinbude and Lasagnen.
+
 ## [1.38.0] - 2026-11-02
 
 ### Added

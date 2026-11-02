@@ -56,12 +56,10 @@ export function findDuplicate(library, name) {
 }
 
 /**
- * Material of a per-year row for display, e.g. "Raus: Tische · Rein: Tische"; only non-empty parts; '' if none.
- * @param {{material_out?: string, material_in?: string}} row
+ * Werbematerial of a per-year row for display (the only material field shown); '' if none.
+ * @param {{material_out?: string}} row
  * @returns {string}
  */
 export function materialText(row) {
-  const out = String(row?.material_out ?? '').trim();
-  const back = String(row?.material_in ?? '').trim();
-  return [out && `Raus: ${out}`, back && `Rein: ${back}`].filter(Boolean).join(' · ');
+  return String(row?.material_out ?? '').trim();
 }

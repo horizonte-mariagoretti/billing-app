@@ -58,7 +58,12 @@ const BaseballOverview = ({ action, year, yearLocked, onError }) => {
   }
 
   const disabled = !!yearLocked;
-  const orderedTodos = [...todos.rows.filter((t) => !t.done), ...todos.rows.filter((t) => t.done)];
+  // Open tasks in the order they are due (undated last; ties keep their sort order), done tasks below them.
+  const byDue = (a, b) => (a.due_date || '9999-12-31').localeCompare(b.due_date || '9999-12-31');
+  const orderedTodos = [
+    ...todos.rows.filter((t) => !t.done).sort(byDue),
+    ...todos.rows.filter((t) => t.done),
+  ];
   const today = todayKey();
   const openTodos = todos.rows.filter((t) => !t.done).length;
 

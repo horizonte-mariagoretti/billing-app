@@ -57,3 +57,103 @@
   vertical-align: middle;
   cursor: help;
 }
+
+/* Field name with its warning icon: one centred row, so the icon sits in the middle of the text line. */
+.baseball-field-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Editable field name: click the text or the pencil; the input keeps the title's font. */
+.baseball-field-name-text { cursor: text; }
+.baseball-field-rename {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: -4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.baseball-field-rename:hover,
+.baseball-field-rename:focus-visible { color: var(--color-primary); background: var(--color-primary-alpha); }
+.baseball-field-name-input {
+  width: 16em;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-light-surface);
+  color: var(--color-text-dark-primary);
+  font: inherit;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+/* Schiedsrichter (Horis) of a field: label, chips with a remove button, add select. */
+.baseball-field-refs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light-theme);
+}
+.baseball-field-refs-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-dark-tertiary);
+}
+.baseball-field-refs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.baseball-field-refs-empty { font-size: 0.85rem; color: var(--color-text-dark-tertiary); }
+.baseball-field-ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 4px;
+}
+.baseball-field-ref-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+}
+.baseball-field-ref-remove:hover,
+.baseball-field-ref-remove:focus-visible { color: var(--color-danger); background: rgba(255, 77, 77, 0.1); }
+.baseball-field-ref-add { width: 200px; max-width: 100%; }
+.baseball-field-ref-add .ss-trigger { padding-top: 5px; padding-bottom: 5px; font-size: 0.85rem; }
+
+/* Close button at the end of the unassigned-teams note. */
+.baseball-fields-note-close {
+  margin-left: auto;
+}
+
+/* Rename pencil in the top-right corner of its field card. */
+.baseball-field-card {
+  position: relative;
+}
+.baseball-field-card > .baseball-field-head .baseball-field-rename {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}

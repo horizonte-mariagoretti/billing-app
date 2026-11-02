@@ -27,9 +27,8 @@ test('findDuplicate: trimmed, case-insensitive', () => {
 });
 
 test('materialText', () => {
-  assert.equal(materialText({ material_out: 'Tische', material_in: 'Bänke' }), 'Raus: Tische · Rein: Bänke');
-  assert.equal(materialText({ material_out: '', material_in: 'Bänke' }), 'Rein: Bänke');
-  assert.equal(materialText({ material_out: ' Zelt ' }), 'Raus: Zelt');
+  assert.equal(materialText({ material_out: ' Tische ' }), 'Tische');
+  assert.equal(materialText({ material_out: '' }), '');
   assert.equal(materialText({}), '');
   assert.equal(materialText(null), '');
 });

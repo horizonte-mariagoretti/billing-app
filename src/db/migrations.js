@@ -2032,6 +2032,52 @@ UPDATE baseball_sponsors SET art = 'Material' WHERE art = '' AND (material_out <
       `);
     },
   },
+  {
+    version: 50,
+    up: (exec) => {
+      // Baseballturnier: Horis as referees (Schiedsrichter) of a field. The field carries the year; a Hori can be on
+      // several fields. Links go away with the field or the Hori.
+      exec(`
+CREATE TABLE IF NOT EXISTS baseball_field_horis (
+  field_id TEXT NOT NULL REFERENCES baseball_fields(id) ON DELETE CASCADE,
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  PRIMARY KEY (field_id, hori_id)
+);
+      `);
+    },
+  },
+  {
+    version: 51,
+    up: (exec) => {
+      // Baseballturnier Schichten: one row per person in a duty x shift slot (name, phone, optional team) and the
+      // number of persons needed per slot. Additive: the old free-text persons column stays (legacy). Backfill splits
+      // that text at commas (trimmed, empty parts skipped) and sets needed = the number of names found.
+      exec(`
+ALTER TABLE baseball_duty_assignments ADD COLUMN needed INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS baseball_duty_persons (
+  id TEXT PRIMARY KEY,
+  duty_id TEXT NOT NULL REFERENCES baseball_duties(id) ON DELETE CASCADE,
+  shift_id TEXT NOT NULL REFERENCES baseball_duty_shifts(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '',
+  team_id TEXT REFERENCES baseball_teams(id) ON DELETE SET NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+WITH RECURSIVE split(duty_id, shift_id, item, rest, n) AS (
+  SELECT duty_id, shift_id, '', COALESCE(persons, '') || ',', 0 FROM baseball_duty_assignments
+  UNION ALL
+  SELECT duty_id, shift_id, trim(substr(rest, 1, instr(rest, ',') - 1)), substr(rest, instr(rest, ',') + 1), n + 1
+  FROM split WHERE rest <> ''
+)
+INSERT INTO baseball_duty_persons (id, duty_id, shift_id, name, sort_order)
+  SELECT lower(hex(randomblob(16))), duty_id, shift_id, item, n FROM split WHERE item <> '';
+UPDATE baseball_duty_assignments SET needed = (
+  SELECT COUNT(*) FROM baseball_duty_persons p
+  WHERE p.duty_id = baseball_duty_assignments.duty_id AND p.shift_id = baseball_duty_assignments.shift_id
+);
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

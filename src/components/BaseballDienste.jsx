@@ -1,228 +1,242 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { AlertCircle, AlertTriangle, Plus } from 'lucide-react';
 import { useBaseballDuties } from '../hooks/useBaseballDuties';
+import { toMinutes } from '../utils/shiftLayout';
 import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
+import BaseballShiftCard from './BaseballShiftCard';
+import BaseballShiftModal from './BaseballShiftModal';
+import BaseballPersonModal from './BaseballPersonModal';
 import './DataTable.css';
+import './BaseballPlanning.css';
 import './BaseballDienste.css';
 
-const fmtShift = (s) => (s.start_time && s.end_time ? `${s.label} (${s.start_time}–${s.end_time} Uhr)` : s.label);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// Shifts in time order: by begin (shifts without a begin last), then by their sort order.
+const byTime = (a, b) => {
+  const ta = toMinutes(a.start_time);
+  const tb = toMinutes(b.start_time);
+  if (ta !== tb) return (ta ?? Infinity) - (tb ?? Infinity);
+  return 0;
+};
 
 /**
- * Parent duties of the Baseballturnier (Elterndienste): one row per duty, one column per shift, the parents'
- * names in each cell. Cells save when the field loses focus. A locked year is read-only.
+ * Baseballturnier "Schichten" (parent duties): one card per shift, one row per duty in each card with the
+ * persons as chips, Soll (needed) and Ist (count). A banner lists the slots that still miss persons.
+ * A locked year is read-only.
  */
 const BaseballDienste = ({ year, yearLocked, onError }) => {
-  const { fetchDuties, addDuty, deleteDuty, addShift, deleteShift, saveCell } = useBaseballDuties();
-  const [data, setData] = useState({ duties: [], shifts: [], cells: new Map() });
-  const [loadedYear, setLoadedYear] = useState(null);
+  const {
+    fetchDuties, addDuty, deleteDuty, addShift, updateShift, deleteShift,
+    addPerson, updatePerson, deletePerson, setNeeded,
+  } = useBaseballDuties(onError);
+  const [data, setData] = useState(null); // { year, duties, shifts, teams, persons, needed }
   const [reloadKey, setReloadKey] = useState(0);
+  const [dutyFormOpen, setDutyFormOpen] = useState(false);
   const [newDuty, setNewDuty] = useState('');
-  const [newShift, setNewShift] = useState({ label: '', start: '', end: '' });
+  const [shiftModal, setShiftModal] = useState(null); // { shift } (shift null = new)
+  const [personModal, setPersonModal] = useState(null); // { person, context }
   const [confirm, setConfirm] = useState(null); // { kind: 'duty'|'shift', id, label }
-  const [busy, setBusy] = useState(false);
-
-  const report = useCallback((err, fallback) => {
-    if (err?.message === 'YEAR_LOCKED') onError?.('Das Jahr ist gesperrt.');
-    else if (err?.message === 'NAME_EMPTY') onError?.('Bitte einen Namen eingeben.');
-    else onError?.(fallback);
-  }, [onError]);
+  const dutyInputRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const d = await fetchDuties(year);
-        if (!cancelled) setData(d);
-      } catch {
-        if (!cancelled) onError?.('Elterndienste konnten nicht geladen werden.');
-      } finally {
-        if (!cancelled) setLoadedYear(year);
-      }
-    })();
+    fetchDuties(year)
+      .then((d) => { if (!cancelled) setData({ year, ...d }); })
+      .catch(() => {
+        if (!cancelled) {
+          onError?.('Schichten konnten nicht geladen werden.');
+          setData({ year, duties: [], shifts: [], teams: [], persons: new Map(), needed: new Map() });
+        }
+      });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchDuties, year, reloadKey]);
 
-  const run = async (fn, fallback) => {
-    if (yearLocked) return;
-    setBusy(true);
-    try {
-      await fn();
-      setReloadKey((k) => k + 1);
-    } catch (err) {
-      report(err, fallback);
-    } finally {
-      setBusy(false);
+  useEffect(() => { if (dutyFormOpen) dutyInputRef.current?.focus(); }, [dutyFormOpen]);
+
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+  // Runs a hook write (resolves true/false) and reloads after a successful one.
+  const write = useCallback(async (promise) => {
+    if (yearLocked) return false;
+    const ok = await promise;
+    if (ok) reload();
+    return ok;
+  }, [yearLocked, reload]);
+
+  const shifts = useMemo(() => (data ? [...data.shifts].sort(byTime) : []), [data]);
+
+  // Open slots (Ist < Soll) grouped per shift, for the banner.
+  const gaps = useMemo(() => {
+    if (!data) return [];
+    return shifts.map((s) => {
+      const open = data.duties
+        .map((d) => {
+          const key = `${d.id}|${s.id}`;
+          return { name: d.name, missing: (data.needed.get(key) || 0) - (data.persons.get(key)?.length || 0) };
+        })
+        .filter((g) => g.missing > 0);
+      return { shift: s, open };
+    }).filter((g) => g.open.length > 0);
+  }, [data, shifts]);
+
+  if (!data || data.year !== year) return <div className="baseball-planning-loading">Lade Schichten…</div>;
+
+  const disabled = !!yearLocked;
+  const personCount = [...data.persons.values()].reduce((n, list) => n + list.length, 0);
+
+  const handleAddDuty = async (e) => {
+    e.preventDefault();
+    const name = newDuty.trim();
+    if (!name) return;
+    if (await write(addDuty(year, name))) {
+      setNewDuty('');
+      dutyInputRef.current?.focus();
     }
   };
 
-  const handleAddDuty = (e) => {
-    e.preventDefault();
-    run(async () => { await addDuty(year, newDuty); setNewDuty(''); }, 'Dienst konnte nicht angelegt werden.');
+  const handleSaveShift = async (patch) => {
+    const target = shiftModal?.shift;
+    const ok = await write(target
+      ? updateShift(target.id, patch)
+      : addShift(year, patch.label, patch.start_time, patch.end_time));
+    if (ok) setShiftModal(null);
+    return ok;
   };
 
-  const handleAddShift = (e) => {
-    e.preventDefault();
-    run(async () => {
-      await addShift(year, newShift.label, newShift.start, newShift.end);
-      setNewShift({ label: '', start: '', end: '' });
-    }, 'Schicht konnte nicht angelegt werden.');
-  };
-
-  const confirmDelete = async () => {
+  const handleConfirmDelete = async () => {
     const target = confirm;
     setConfirm(null);
-    await run(
-      () => (target.kind === 'duty' ? deleteDuty(year, target.id) : deleteShift(year, target.id)),
-      'Löschen fehlgeschlagen.'
-    );
+    await write(target.kind === 'duty' ? deleteDuty(year, target.id) : deleteShift(year, target.id));
   };
 
-  const handleCellBlur = (dutyId, shiftId, value, previous) => {
-    if (value.trim() === (previous || '').trim()) return;
-    run(() => saveCell(year, dutyId, shiftId, value), 'Eintrag konnte nicht gespeichert werden.');
+  const handleSavePerson = async (patch) => {
+    const ok = await write(updatePerson(personModal.person.id, patch));
+    if (ok) setPersonModal(null);
+    return ok;
   };
 
-  if (loadedYear !== year) return <div className="baseball-dienste-loading">Lade Elterndienste…</div>;
+  const handleDeletePerson = async () => {
+    const ok = await write(deletePerson(personModal.person.id));
+    if (ok) setPersonModal(null);
+    return ok;
+  };
 
-  const disabled = !!yearLocked || busy;
+  const gapText = (g) => {
+    const n = g.open.length;
+    const list = g.open.map((o) => `${o.name} ${o.missing === 1 ? 'fehlt 1' : `fehlen ${o.missing}`}`).join(', ');
+    return `${n === 1 ? '1 Dienst' : `${n} Dienste`} in ${g.shift.label} noch unbesetzt (${list})`;
+  };
 
   return (
-    <div className="baseball-dienste">
+    <div className="baseball-planning baseball-dienste">
       {yearLocked && (
         <div className="baseball-dienste-note" role="note">
-          <AlertCircle size={14} /> Dieses Jahr ist abgeschlossen. Die Elterndienste sind nur lesbar.
+          <AlertCircle size={14} /> Dieses Jahr ist abgeschlossen. Die Schichten sind nur lesbar.
         </div>
       )}
 
-      <div className="baseball-dienste-add">
-        <form className="baseball-dienste-form" onSubmit={handleAddDuty}>
+      <div className="baseball-teams-head">
+        <span className="baseball-teams-count">
+          {plural(data.shifts.length, 'Schicht', 'Schichten')} · {plural(data.duties.length, 'Dienst', 'Dienste')} · {plural(personCount, 'Person', 'Personen')}
+        </span>
+        <div className="baseball-dienste-actions">
+          <Button type="button" variant="secondary" size="md" disabled={disabled} onClick={() => setShiftModal({ shift: null })}>
+            <Plus size={16} /> Schicht hinzufügen
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={disabled}
+            aria-expanded={dutyFormOpen}
+            onClick={() => setDutyFormOpen((o) => !o)}
+          >
+            <Plus size={16} /> Dienst hinzufügen
+          </Button>
+        </div>
+      </div>
+
+      {dutyFormOpen && !disabled && (
+        <form className="baseball-add-form" onSubmit={handleAddDuty}>
           <input
+            ref={dutyInputRef}
             type="text"
             className="input-field"
             placeholder="Dienst, z. B. Theke"
             value={newDuty}
             maxLength={40}
-            disabled={disabled}
             onChange={(e) => setNewDuty(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') { setNewDuty(''); setDutyFormOpen(false); } }}
             aria-label="Neuer Dienst"
           />
-          <Button type="submit" variant="secondary" size="md" disabled={disabled || !newDuty.trim()}>
-            <Plus size={16} /> Dienst hinzufügen
+          <Button type="submit" variant="primary" size="md" disabled={!newDuty.trim()}>Hinzufügen</Button>
+          <Button type="button" variant="ghost" size="md" onClick={() => { setNewDuty(''); setDutyFormOpen(false); }}>
+            Abbrechen
           </Button>
         </form>
-        <form className="baseball-dienste-form" onSubmit={handleAddShift}>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Schicht, z. B. Schicht 1"
-            value={newShift.label}
-            maxLength={40}
-            disabled={disabled}
-            onChange={(e) => setNewShift({ ...newShift, label: e.target.value })}
-            aria-label="Neue Schicht"
-          />
-          <input
-            type="time"
-            className="input-field"
-            value={newShift.start}
-            disabled={disabled}
-            onChange={(e) => setNewShift({ ...newShift, start: e.target.value })}
-            aria-label="Beginn"
-          />
-          <input
-            type="time"
-            className="input-field"
-            value={newShift.end}
-            disabled={disabled}
-            onChange={(e) => setNewShift({ ...newShift, end: e.target.value })}
-            aria-label="Ende"
-          />
-          <Button type="submit" variant="secondary" size="md" disabled={disabled || !newShift.label.trim()}>
-            <Plus size={16} /> Schicht hinzufügen
-          </Button>
-        </form>
-      </div>
+      )}
 
-      {data.duties.length === 0 || data.shifts.length === 0 ? (
-        <div className="baseball-dienste-empty card">
-          Noch keine Dienste oder Schichten. Oben einen Dienst und eine Schicht anlegen, dann die Namen eintragen.
+      {gaps.length > 0 && (
+        <div className="baseball-field-warning" role="status">
+          <AlertTriangle size={16} />
+          <span>{gaps.map(gapText).join(' · ')}</span>
+        </div>
+      )}
+
+      {shifts.length === 0 ? (
+        <div className="baseball-planning-loading card baseball-dienste-empty">
+          Noch keine Schichten{data.duties.length === 0 ? ' und Dienste' : ''}. Oben mit „Schicht hinzufügen"
+          {data.duties.length === 0 ? ' und „Dienst hinzufügen"' : ''} anlegen.
         </div>
       ) : (
-        <div className="data-table-container">
-          <table className="data-table baseball-dienste-table">
-            <thead>
-              <tr>
-                <th>Dienst</th>
-                {data.shifts.map((s) => (
-                  <th key={s.id}>
-                    <span className="baseball-dienste-shift">
-                      {fmtShift(s)}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={disabled}
-                        aria-label={`Schicht ${s.label} entfernen`}
-                        title="Schicht entfernen"
-                        onClick={() => setConfirm({ kind: 'shift', id: s.id, label: s.label })}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </span>
-                  </th>
-                ))}
-                <th aria-label="Aktionen" />
-              </tr>
-            </thead>
-            <tbody>
-              {data.duties.map((d) => (
-                <tr key={d.id}>
-                  <td className="baseball-dienste-duty">{d.name}</td>
-                  {data.shifts.map((s) => {
-                    const key = `${d.id}|${s.id}`;
-                    const value = data.cells.get(key) || '';
-                    return (
-                      <td key={s.id}>
-                        <input
-                          type="text"
-                          className="input-field baseball-dienste-cell"
-                          defaultValue={value}
-                          key={`${key}:${value}`}
-                          disabled={disabled}
-                          aria-label={`${d.name}, ${fmtShift(s)}`}
-                          onBlur={(e) => handleCellBlur(d.id, s.id, e.target.value, value)}
-                        />
-                      </td>
-                    );
-                  })}
-                  <td>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={disabled}
-                      aria-label={`Dienst ${d.name} entfernen`}
-                      title="Dienst entfernen"
-                      onClick={() => setConfirm({ kind: 'duty', id: d.id, label: d.name })}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        shifts.map((s) => (
+          <BaseballShiftCard
+            key={s.id}
+            shift={s}
+            duties={data.duties}
+            persons={data.persons}
+            needed={data.needed}
+            disabled={disabled}
+            onEdit={() => setShiftModal({ shift: s })}
+            onDelete={() => setConfirm({ kind: 'shift', id: s.id, label: s.label })}
+            onDeleteDuty={(d) => setConfirm({ kind: 'duty', id: d.id, label: d.name })}
+            onAddPerson={(dutyId, shiftId, name) => write(addPerson(dutyId, shiftId, { name }))}
+            onOpenPerson={(person, duty) => setPersonModal({ person, context: `${duty.name} · ${s.label}` })}
+            onSetNeeded={(dutyId, shiftId, n) => write(setNeeded(dutyId, shiftId, n))}
+          />
+        ))
+      )}
+
+      {shiftModal && (
+        <BaseballShiftModal
+          shift={shiftModal.shift}
+          defaultLabel={`Schicht ${data.shifts.length + 1}`}
+          onSave={handleSaveShift}
+          onCancel={() => setShiftModal(null)}
+        />
+      )}
+
+      {personModal && (
+        <BaseballPersonModal
+          person={personModal.person}
+          context={personModal.context}
+          teams={data.teams}
+          onSave={handleSavePerson}
+          onDelete={handleDeletePerson}
+          onCancel={() => setPersonModal(null)}
+        />
       )}
 
       {confirm && (
         <ConfirmDialog
           title={confirm.kind === 'duty' ? 'Dienst löschen?' : 'Schicht löschen?'}
-          message={`${confirm.label}: Die Namen in dieser ${confirm.kind === 'duty' ? 'Zeile' : 'Spalte'} gehen verloren.`}
+          message={confirm.kind === 'duty'
+            ? `${confirm.label}: Der Dienst wird aus allen Schichten entfernt, die eingetragenen Namen gehen verloren.`
+            : `${confirm.label}: Alle Namen in dieser Schicht gehen verloren.`}
           confirmLabel="Löschen"
-          onConfirm={confirmDelete}
+          onConfirm={handleConfirmDelete}
           onCancel={() => setConfirm(null)}
         />
       )}
