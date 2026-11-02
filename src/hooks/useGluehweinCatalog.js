@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
+import { plannedPortions } from '../utils/gluehweinCatalogMath';
 
 const numOrNull = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
 const numOr = (v, fallback) => {
@@ -22,8 +23,9 @@ export function useGluehweinCatalog() {
 
   const fetchItems = useCallback(async (year) => {
     const items = await query(
-      `SELECT i.id, i.name, i.unit, i.sort_order, i.active,
-              t.sell_price, t.buy_price, t.pack_type, t.pack_size, t.buy_unit, t.buy_pack_price, t.planned_qty
+      `SELECT i.id, i.name, i.unit, i.sort_order, i.active, i.plan_unit, i.liters_per_portion, i.use_recipe,
+              t.sell_price, t.buy_price, t.pack_type, t.pack_size, t.buy_unit, t.buy_pack_price, t.planned_qty, t.pack_liters,
+              t.purchase_qty, t.purchase_unit
          FROM gw_items i
          LEFT JOIN gw_item_terms t ON t.item_id = i.id AND t.year = ?
         ORDER BY i.sort_order, i.name`,
@@ -39,6 +41,12 @@ export function useGluehweinCatalog() {
     }
     return items.map((i) => ({
       ...i,
+      plan_unit: i.plan_unit || 'portion',
+      liters_per_portion: i.liters_per_portion ?? null,
+      use_recipe: !!i.use_recipe,
+      purchase_qty: i.purchase_qty ?? null,
+      purchase_unit: i.purchase_unit ?? null,
+      pack_liters: i.pack_liters ?? null,
       sell_price: i.sell_price ?? null,
       buy_price: i.buy_price ?? null,
       pack_type: i.pack_type ?? 'none',
@@ -46,30 +54,46 @@ export function useGluehweinCatalog() {
       buy_unit: i.buy_unit ?? null,
       buy_pack_price: i.buy_pack_price ?? null,
       planned_qty: i.planned_qty ?? 0,
+      // Planned quantity in selling units (null when a liter or bottle conversion value is missing).
+      portions: plannedPortions({
+        planned_qty: i.planned_qty ?? 0,
+        plan_unit: i.plan_unit || 'portion',
+        liters_per_portion: i.liters_per_portion,
+        pack_size: i.pack_size ?? 1,
+      }),
       recipe: recipes.get(i.id) || [],
     }));
   }, [query]);
 
-  // item: { id?, name, unit, sort_order?, active? }. Without id a new row is created.
-  // On update, omitted sort_order / active keep their stored value.
+  // item: { id?, name, unit, sort_order?, active?, plan_unit?, liters_per_portion? }. Without id a new row is created.
+  // On update, omitted sort_order / active / plan_unit keep their stored value; liters_per_portion is only written
+  // when the key is present (null clears it).
   const saveItem = useCallback(async (item) => {
     const name = String(item.name ?? '').trim();
     const unit = item.unit ? String(item.unit).trim() : 'Stk';
     const sortOrder = item.sort_order === undefined || item.sort_order === null ? null : Number(item.sort_order);
     const active = item.active === undefined || item.active === null ? null : (item.active ? 1 : 0);
+    const planUnit = item.plan_unit ? String(item.plan_unit) : null;
+    const hasLiters = item.liters_per_portion !== undefined ? 1 : 0;
+    const liters = numOrNull(item.liters_per_portion);
+    const useRecipe = item.use_recipe === undefined || item.use_recipe === null ? null : (item.use_recipe ? 1 : 0);
     if (item.id) {
       await run(
         `UPDATE gw_items SET name = ?, unit = ?,
-                sort_order = COALESCE(?, sort_order), active = COALESCE(?, active)
+                sort_order = COALESCE(?, sort_order), active = COALESCE(?, active),
+                plan_unit = COALESCE(?, plan_unit),
+                liters_per_portion = CASE WHEN ? = 1 THEN ? ELSE liters_per_portion END,
+                use_recipe = COALESCE(?, use_recipe)
           WHERE id = ?`,
-        [name, unit, sortOrder, active, item.id]
+        [name, unit, sortOrder, active, planUnit, hasLiters, liters, useRecipe, item.id]
       );
       return item.id;
     }
     const id = crypto.randomUUID();
     await run(
-      "INSERT INTO gw_items (id, name, kind, unit, sort_order, active) VALUES (?, ?, 'drink', ?, ?, ?)",
-      [id, name, unit, sortOrder ?? 0, active ?? 1]
+      `INSERT INTO gw_items (id, name, kind, unit, sort_order, active, plan_unit, liters_per_portion, use_recipe)
+       VALUES (?, ?, 'drink', ?, ?, ?, ?, ?, ?)`,
+      [id, name, unit, sortOrder ?? 0, active ?? 1, planUnit ?? 'portion', liters, useRecipe ?? 0]
     );
     return id;
   }, [run]);
@@ -84,6 +108,7 @@ export function useGluehweinCatalog() {
   // terms: { sell_price, buy_unit, buy_pack_price, pack_size (content), planned_qty } for one item in one scout year
   // (upsert). Legacy columns for compatibility (migration 39): pack_type is always 'none' (its CHECK only knows four
   // fixed values) and buy_price = buy_pack_price / pack_size, i.e. the price per selling unit as before.
+  // Eingekauft: purchase_qty in purchase_unit (Kasten, Flasche, Liter), entered by hand.
   // Recipe products may pass keepBuy: true to leave the stored (ignored) buy fields untouched.
   const saveTerms = useCallback(async (year, itemId, terms) => {
     await assertYearOpen(year);
@@ -91,24 +116,29 @@ export function useGluehweinCatalog() {
     const packPrice = numOrNull(terms.buy_pack_price);
     const buyUnit = terms.buy_unit ? String(terms.buy_unit).trim() || null : null;
     const legacyUnitPrice = packPrice == null ? null : Math.round((packPrice / content) * 1e4) / 1e4;
+    const purchaseQty = numOrNull(terms.purchase_qty);
+    const purchaseUnit = terms.purchase_unit ? String(terms.purchase_unit).trim() || null : null;
     if (terms.keepBuy) {
       await run(
-        `INSERT INTO gw_item_terms (item_id, year, sell_price, pack_type, pack_size, planned_qty)
-         VALUES (?, ?, ?, 'none', 1, ?)
+        `INSERT INTO gw_item_terms (item_id, year, sell_price, pack_type, pack_size, planned_qty, purchase_qty, purchase_unit)
+         VALUES (?, ?, ?, 'none', 1, ?, ?, ?)
          ON CONFLICT(item_id, year) DO UPDATE SET
-           sell_price = excluded.sell_price, planned_qty = excluded.planned_qty`,
-        [itemId, year, numOrNull(terms.sell_price), numOr(terms.planned_qty, 0)]
+           sell_price = excluded.sell_price, planned_qty = excluded.planned_qty,
+           purchase_qty = excluded.purchase_qty, purchase_unit = excluded.purchase_unit`,
+        [itemId, year, numOrNull(terms.sell_price), numOr(terms.planned_qty, 0), purchaseQty, purchaseUnit]
       );
       return;
     }
     await run(
       `INSERT INTO gw_item_terms
-         (item_id, year, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty)
-       VALUES (?, ?, ?, ?, 'none', ?, ?, ?, ?)
+         (item_id, year, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty,
+          purchase_qty, purchase_unit, pack_liters)
+       VALUES (?, ?, ?, ?, 'none', ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(item_id, year) DO UPDATE SET
          sell_price = excluded.sell_price, buy_price = excluded.buy_price, pack_type = excluded.pack_type,
          pack_size = excluded.pack_size, buy_unit = excluded.buy_unit, buy_pack_price = excluded.buy_pack_price,
-         planned_qty = excluded.planned_qty`,
+         planned_qty = excluded.planned_qty, purchase_qty = excluded.purchase_qty, purchase_unit = excluded.purchase_unit,
+         pack_liters = excluded.pack_liters`,
       [
         itemId,
         year,
@@ -118,6 +148,9 @@ export function useGluehweinCatalog() {
         buyUnit,
         packPrice,
         numOr(terms.planned_qty, 0),
+        purchaseQty,
+        purchaseUnit,
+        numOrNull(terms.pack_liters),
       ]
     );
   }, [run, assertYearOpen]);

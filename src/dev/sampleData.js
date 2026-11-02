@@ -281,6 +281,130 @@ export function buildSampleStatements() {
     aluschalen: 50, deckel: 30, bolo_lasagne: 5,
   }).forEach(([key, value]) => setting(`lasagna_stock_${key}`, value));
 
+  /* ── glühweinbude: period, sales days, shifts and Sortiment terms ── */
+  const gwYear = currentYear;
+  Object.entries({
+    gluehwein_action_date: `${gwYear}-12-04`,
+    gluehwein_end_action_date: `${gwYear}-12-06`,
+    gluehwein_mandatory_shifts: '2',
+    gluehwein_bonus_enabled: '1',
+    gluehwein_bonus_factor: '100',
+  }).forEach(([key, value]) => statements.push({
+    sql: 'INSERT INTO year_settings (year, key, value) VALUES (?, ?, ?) ON CONFLICT(year, key) DO UPDATE SET value = excluded.value',
+    params: [gwYear, key, String(value)],
+  }));
+
+  // Sortiment terms of the current year. Liter products are planned in liters and bought in packs of 6 l
+  // (pack_liters); pack_size = Tassen per Pack at 0,2 l per Tasse. Bottles and beers are bought in cases.
+  // [item, sell_price, buy_unit, buy_pack_price, pack_size, pack_liters, planned_qty, purchase_qty, purchase_unit]
+  [
+    ['gw-gluehwein-weiss', 4, 'Pack', 14, 30, 6, 120, 20, 'Pack'],
+    ['gw-gluehwein-rot', 4, 'Pack', 14, 30, 6, 90, 15, 'Pack'],
+    ['gw-heisse-schokolade', 3.5, 'Pack', 12, 30, 6, 60, 10, 'Pack'],
+    ['gw-gluehgin', 4.5, 'Pack', 16, 30, 6, 48, 8, 'Pack'],
+    ['gw-baileys', 2.5, 'Kiste', 60, 6, null, 12, 2, 'Kiste'],
+    ['gw-amaretto', 2.5, 'Kiste', 54, 6, null, 6, 1, 'Kiste'],
+    ['gw-stella', 3.5, 'Kiste', 26, 24, null, 30, 2, 'Kiste'],
+    ['gw-jupiler', 3.5, 'Kiste', 24, 24, null, 24, 1, 'Kiste'],
+    ['gw-tongerlo-christmas', 5, 'Kiste', 60, 24, null, 48, 2, 'Kiste'],
+  ].forEach(([item, sell, buyUnit, packPrice, packSize, packLiters, planned, purchase, purchaseUnit]) => insert('gw_item_terms', {
+    item_id: item, year: gwYear, sell_price: sell, buy_price: Math.round((packPrice / packSize) * 10000) / 10000,
+    pack_type: 'none', pack_size: packSize, buy_unit: buyUnit, buy_pack_price: packPrice,
+    pack_liters: packLiters, planned_qty: planned, purchase_qty: purchase, purchase_unit: purchaseUnit,
+  }));
+
+  // Sale days of the period (action 'gluehwein') with shifts; Horis from the list above.
+  const gwDays = [
+    ['sd-gw-1', `${gwYear}-12-04`, [['16:00', '19:00', ['h-1', 'h-2']], ['19:00', '22:00', ['h-3']]]],
+    ['sd-gw-2', `${gwYear}-12-05`, [['14:00', '17:00', ['h-4', 'h-5']], ['17:00', '20:00', []]]],
+    ['sd-gw-3', `${gwYear}-12-06`, [['12:00', '15:00', ['h-6']]]],
+  ];
+  let shiftSeq = 0;
+  gwDays.forEach(([dayId, date, shifts]) => {
+    insert('sales_days', { id: dayId, action: 'gluehwein', year: gwYear, date });
+    shifts.forEach(([start, end, horisOnShift]) => {
+      const shiftId = `gws-${++shiftSeq}`;
+      insert('gw_shifts', { id: shiftId, day_id: dayId, start_time: start, end_time: end });
+      horisOnShift.forEach((hori) => insert('gw_shift_assignments', { shift_id: shiftId, hori_id: hori }));
+    });
+  });
+
+  /* ── baseballturnier: parent duties (fictional names, no real contacts) ── */
+  const bbYear = currentYear;
+  const dutyShifts = [
+    ['bs-1', 'Schicht 1', '09:00', '14:30'],
+    ['bs-2', 'Schicht 2', '14:00', '18:00'],
+    ['bs-3', 'Schicht 3', '16:30', null],
+  ];
+  dutyShifts.forEach(([id, label, start, end], i) => insert('baseball_duty_shifts', {
+    id, year: bbYear, label, start_time: start, end_time: end, sort_order: i + 1,
+  }));
+  const dutyRows = [
+    ['bd-1', 'Theke', ['Familie Beispiel (Mia)', 'Familie Muster (Leo)', 'Familie Test (Nina)', 'Familie Probe (Tom)'], ['Familie Demo (Sara), Familie Demo (Jan)', 'Familie Sample (Ole)'], null],
+    ['bd-2', 'Burger', ['Familie Beispiel (Ben)', 'Familie Muster (Lia)', 'Familie Test (Paul)', 'Familie Probe (Emma)'], ['Familie Demo (Ida)'], null],
+    ['bd-3', 'Bons', ['Familie Sample (Greta)', 'Familie Demo (Max)'], null, null],
+    ['bd-4', 'Putzen', null, null, ['Familie Probe (Lena)']],
+    ['bd-5', 'Gemüse', ['Familie Muster (Hanna)', 'Familie Test (Felix)'], null, null],
+  ];
+  dutyRows.forEach(([id, name, s1, s2, s3], i) => {
+    insert('baseball_duties', { id, year: bbYear, name, sort_order: i + 1 });
+    [s1, s2, s3].forEach((names, j) => {
+      if (names) insert('baseball_duty_assignments', { duty_id: id, shift_id: dutyShifts[j][0], persons: names.join(', ') });
+    });
+  });
+
+  /* ── baseballturnier: planning (fictional teams/sponsors, no contacts) ── */
+  ['Feld 1', 'Feld 2', 'Feld 3', 'Feld 4'].forEach((name, i) => insert('baseball_fields', {
+    id: `bf-${i + 1}`, year: bbYear, name, sort_order: i + 1,
+  }));
+  const bbTeams = [
+    // [name, contacted, fee, paid, field, wins, draws, losses]
+    ['Team Beispiel 1', 1, 40, 1, 'bf-1', 3, 0, 1],
+    ['Team Beispiel 2', 1, 40, 1, 'bf-1', 2, 1, 1],
+    ['Team Beispiel 3', 1, 40, 0, 'bf-2', 1, 1, 2],
+    ['Team Beispiel 4', 1, 40, 1, 'bf-2', 2, 0, 2],
+    ['Team Beispiel 5', 0, 40, 0, 'bf-3', 0, 2, 2],
+    ['Team Beispiel 6', 1, 40, 0, 'bf-3', 1, 0, 3],
+    ['Team Beispiel 7', 0, 40, 0, null, 0, 0, 0],
+  ];
+  bbTeams.forEach(([name, contacted, fee, paid, field_id, wins, draws, losses], i) => insert('baseball_teams', {
+    id: `bt-${i + 1}`, year: bbYear, name, contacted, fee, paid, field_id, wins, draws, losses, sort_order: i + 1,
+  }));
+  const bbSponsors = [
+    // [name, status, level_amount, special, amount, invoiced, paid, material_out, material_in]
+    ['Sponsor Demo A', 'zugesagt', 250, 'Banner am Feld 1', 250, 1, 1, 'Banner', ''],
+    ['Sponsor Demo B', 'zugesagt', 100, '', 100, 1, 0, '', ''],
+    ['Sponsor Demo C', 'angefragt', 100, 'Getränkespende', 0, 0, 0, '', ''],
+    ['Sponsor Demo D', 'offen', 50, '', 0, 0, 0, '', ''],
+    ['Sponsor Demo E', 'abgesagt', 0, '', 0, 0, 0, '', ''],
+  ];
+  bbSponsors.forEach(([name, status, level_amount, special, amount, invoiced, paid, material_out, material_in], i) => insert('baseball_sponsors', {
+    id: `bsp-${i + 1}`, year: bbYear, name, status, level_amount, special, amount, invoiced, paid, material_out, material_in, sort_order: i + 1,
+  }));
+  const bbTodos = [
+    // [task, owner, place, due_date, done, note]
+    ['Felder reservieren', 'Leitung', 'Sportplatz', `${bbYear + 1}-03-01`, 1, ''],
+    ['Teams einladen', 'Leitung', '', `${bbYear + 1}-04-01`, 1, ''],
+    ['Sponsoren anfragen', 'Hori A', '', `${bbYear + 1}-04-15`, 0, 'Liste vom Vorjahr'],
+    ['Grill und Theke organisieren', 'Hori B', 'Lager', `${bbYear + 1}-05-20`, 0, ''],
+    ['Spielplan drucken', 'Hori C', '', `${bbYear + 1}-06-01`, 0, ''],
+  ];
+  bbTodos.forEach(([task, owner, place, due_date, done, note], i) => insert('baseball_todos', {
+    id: `btd-${i + 1}`, year: bbYear, task, owner, place, due_date, done, note, sort_order: i + 1,
+  }));
+  const bbShopping = [
+    // [item, qty, unit_price, category, source, bought, used]
+    ['Burgerbrötchen (Pack 6)', 20, 1.99, 'Essen', 'Supermarkt', 20, 17],
+    ['Burger-Patties (Pack 4)', 30, 3.49, 'Essen', 'Großmarkt', 30, 26],
+    ['Wasser (Kiste)', 10, 4.5, 'Getränke', 'Getränkemarkt', 10, 7],
+    ['Limonade (Kiste)', 8, 9.9, 'Getränke', 'Getränkemarkt', 8, 8],
+    ['Servietten', 4, 1.5, 'Material', 'Supermarkt', 4, 2],
+    ['Grillkohle (10 kg)', 3, 8.99, 'Material', 'Baumarkt', 2, 2],
+  ];
+  bbShopping.forEach(([item, qty, unit_price, category, source, bought, used], i) => insert('baseball_shopping', {
+    id: `bsh-${i + 1}`, year: bbYear, item, qty, unit_price, category, source, bought, used, sort_order: i + 1,
+  }));
+
   /* ── numbering counters follow the generated docs ────────── */
   setting('invoice_next_number', invSeq + 1);
   setting('quote_next_number', qteSeq + 1);

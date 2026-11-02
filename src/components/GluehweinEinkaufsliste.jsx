@@ -37,10 +37,16 @@ const ShoppingTable = ({ products, ingredients, t, formatCurrency }) => {
   const { sort, toggleSort, sortRows } = useTableSort({ key: null, dir: null });
 
   const { rows, total } = useMemo(() => {
-    const productTerms = new Map(products.map((p) => [p.id, p]));
+    // The shopping list works in portions (selling units); planned quantities in liters or bottles are converted.
+    // Liter products are planned and bought in liters: need in l, a pack holds pack_liters. Others work in portions.
+    const isLiter = (p) => p.plan_unit === 'liter';
+    const shopProducts = products.map((p) => (isLiter(p) ? { ...p, unit: 'l' } : p));
+    const productTerms = new Map(products.map((p) => [p.id, isLiter(p)
+      ? { ...p, planned_qty: Number(p.planned_qty) || 0, pack_size: Number(p.pack_liters) || 1 }
+      : { ...p, planned_qty: p.portions ?? 0 }]));
     const ingredientTerms = new Map(ingredients.map((g) => [g.id, g]));
     const recipe = products.flatMap((p) => (p.recipe || []).map((r) => ({ product_id: p.id, ...r })));
-    const result = buildShoppingList({ products, ingredients, productTerms, ingredientTerms, recipe });
+    const result = buildShoppingList({ products: shopProducts, ingredients, productTerms, ingredientTerms, recipe });
     // Unsorted: ingredients first, then products, each by name.
     const list = [...result.rows].sort((a, b) => (
       (a.source === b.source ? 0 : a.source === 'ingredient' ? -1 : 1) || a.name.localeCompare(b.name, LOCALE)
@@ -222,7 +228,7 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
   const sorted = useMemo(() => sortRows(visible, {
     name: (p) => lower(p.name),
     count: (p) => p.recipe?.length || 0,
-    planned: (p) => Number(p.planned_qty) || 0,
+    planned: (p) => Number(p.portions) || 0,
   }, { tieBreak: (p) => p.name, locale: LOCALE }), [visible, sortRows]);
 
   if (visible.length === 0) {
@@ -265,7 +271,7 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
                 })
                 : <span className="dt-muted">{t('gw_recipe_none_buy', 'Kein Rezept – wird selbst eingekauft')}</span>}
             </td>
-            <td className="dt-mono">{fmtQty(p.planned_qty)} <span className="dt-muted">{p.unit || 'Stk'}</span></td>
+            <td className="dt-mono">{p.portions == null ? '–' : fmtQty(p.portions)} <span className="dt-muted">{p.unit || 'Stk'}</span></td>
             <td className="gw-recipes-action">
               <button
                 type="button"

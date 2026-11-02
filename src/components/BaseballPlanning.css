@@ -1,0 +1,107 @@
+/* Baseballturnier planning tabs (Übersicht, Teams, Tabelle, Sponsoren, Felder, Einkaufsliste). */
+.baseball-planning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.baseball-planning-loading {
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.9rem;
+}
+
+.baseball-add-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.baseball-add-form .input-field { width: 200px; }
+
+.baseball-cell {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+.baseball-cell--num { text-align: right; }
+
+.baseball-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-indigo);
+  cursor: pointer;
+}
+.baseball-check:disabled { cursor: default; }
+
+.baseball-table { table-layout: fixed; }
+.baseball-table td,
+.baseball-table th { white-space: nowrap; }
+.baseball-table td.num { text-align: right; font-family: var(--font-mono); }
+.baseball-table td.center,
+.baseball-table th.center { text-align: center; }
+
+.baseball-foot-total {
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.baseball-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+.baseball-stat {
+  padding: var(--space-md);
+}
+.baseball-stat-label {
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+}
+.baseball-stat-value {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+  margin-top: 4px;
+}
+.baseball-stat-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+  margin-top: 2px;
+}
+
+.baseball-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+.baseball-field-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+.baseball-field-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.baseball-field-head .baseball-cell { font-weight: 600; }
+.baseball-field-teams {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}
+.baseball-field-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+@media (max-width: 1100px) {
+  .baseball-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .baseball-stats { grid-template-columns: 1fr; }
+}

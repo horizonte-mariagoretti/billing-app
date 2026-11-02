@@ -1,0 +1,58 @@
+/* Baseballturnier parent duties (BaseballDienste.jsx): add forms, duty x shift grid. */
+.baseball-dienste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.baseball-dienste-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.baseball-dienste-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.baseball-dienste-form .input-field { width: 180px; }
+.baseball-dienste-form input[type='time'].input-field { width: 130px; }
+
+.baseball-dienste-table { table-layout: fixed; }
+.baseball-dienste-table th:first-child,
+.baseball-dienste-table td:first-child { width: 160px; }
+
+.baseball-dienste-shift {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.baseball-dienste-duty {
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+
+.baseball-dienste-cell {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.baseball-dienste-loading,
+.baseball-dienste-empty {
+  color: var(--color-text-dark-tertiary);
+  font-size: 0.9rem;
+}
+.baseball-dienste-empty { padding: var(--space-lg); }
+
+.baseball-dienste-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}

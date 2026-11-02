@@ -13,7 +13,25 @@ const numOrNull = (v) => {
 };
 
 /**
- * { sell_price, buy_pack_price, pack_size, planned_qty, recipeCost } -> { cost, margin, marginPct, packsToBuy,
+ * Planned quantity in selling units (portions). plan_unit: 'portion' = planned_qty is portions; 'liter' = planned_qty
+ * is total liters, one portion holds liters_per_portion; 'buy' = planned_qty is buying units (bottles), content =
+ * pack_size portions each. Returns null when the conversion value is missing (never 0).
+ */
+export function plannedPortions({ planned_qty, plan_unit, liters_per_portion, pack_size } = {}) {
+  const planned = numOrNull(planned_qty) ?? 0;
+  if (plan_unit === 'liter') {
+    const liters = numOrNull(liters_per_portion);
+    return liters > 0 ? planned / liters : null;
+  }
+  if (plan_unit === 'buy') {
+    const content = numOrNull(pack_size);
+    return content > 0 ? planned * content : null;
+  }
+  return planned;
+}
+
+/**
+ * { sell_price, buy_pack_price, pack_size, planned_qty, recipeCost } ->{ cost, margin, marginPct, packsToBuy,
  * revenue, profit }. recipeCost (per selling unit) given => recipe product: cost = recipeCost, packsToBuy = null.
  * Missing values give null (never 0) so the UI can render "–" and totals can skip them.
  */

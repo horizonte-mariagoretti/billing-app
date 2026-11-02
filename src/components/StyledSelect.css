@@ -95,3 +95,24 @@
 }
 
 .ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }
+
+/* Delete button per option (StyledSelect onRemove) */
+.ss-option-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ss-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+}
+.ss-remove:hover { color: var(--color-danger); background: var(--color-light-bg); }

@@ -1,5 +1,351 @@
 # Changelog
 
+## [1.34.1] - 2026-11-02
+
+### Added
+- **Baseballturnier planning tabs:** Übersicht (key figures + ToDo list), Teams (Beitrag, bezahlt, kontaktiert, Feld), Tabelle (standings from wins/draws/losses), Sponsoren (status + totals), Felder (assigned teams), Einkaufsliste (totals + remaining stock); Finanzen uses the shared Glühwein finance component.
+- New tables `baseball_fields`, `baseball_teams`, `baseball_sponsors`, `baseball_todos`, `baseball_shopping` (migration 48).
+- Offline sample data for the new tables with fictional names (`src/dev/sampleData.js`).
+
+## [1.34.0] - 2026-11-02
+
+### Added
+- **Baseballturnier Kasse tab:** same component as the Glühweinbude Kasse (`GluehweinKasse`), so layout and logic stay shared. Changes apply to both pages.
+- **Baseballturnier Schichten = Elterndienste:** one row per duty (Theke, Burger, Bons, Putzen, Gemüse), one column per shift with its time, parents' names in each cell (saved on blur). Duties and shifts can be added and removed; a locked year is read-only. New tables `baseball_duties`, `baseball_duty_shifts`, `baseball_duty_assignments` (migration 47).
+- **Offline sample data:** Glühweinbude period (04.–06.12., shifts, items, prices) and Baseball parent duties with fictional family names, for the web dev in-memory DB (`src/dev/sampleData.js`).
+
+### Changed
+- Baseball tab bar: Kasse and Schichten are the new tab bodies; Übersicht, Teams, Tabelle, Sponsoren, Felder, Einkaufsliste and Finanzen remain placeholders.
+
+## [1.33.12] - 2026-11-02
+
+### Fixed
+- **Equal gaps between hour sections:** each grey hour section now ends 4 px above the next one, so the gaps match the first one, including where a day row sits between hours.
+
+## [1.33.11] - 2026-11-02
+
+### Changed
+- **Schichten widths:** shift blocks, hour sections and the "Keine Schichten" placeholder share the same 4 px inset from the lane edges.
+
+## [1.33.10] - 2026-11-02
+
+### Changed
+- **Schichten hour sections** are grey rounded blocks (light background, same radius as the shift blocks) instead of hour lines. Shift blocks sit on top of them.
+
+## [1.33.9] - 2026-11-02
+
+### Changed
+- **Schichten calendar back to the state before the Google Calendar reference.** Hour labels are small mono again, hour lines plain, shift blocks the light tint with dark text, and the block padding and heading sizes are the earlier ones. The 1.33.5 to 1.33.7 styling changes are undone.
+
+## [1.33.8] - 2026-11-02
+
+### Changed
+- **Reverted the hour-section change of 1.33.7.** The calendar is back to 72 px per hour, centred hour labels and the previous line and lane styling. Everything else from 1.33.6 stays.
+
+## [1.33.7] - 2026-11-02
+
+### Changed
+- **Schichten hour sections:** taller (88 px per hour). Hour labels sit at the top of their section just under the line, not centred on it. Hour lines are a clear light grey, and the lane column has a white surface. (Reverted in 1.33.8.)
+
+## [1.33.6] - 2026-11-02
+
+### Changed
+- **Schichten calendar sizes:** hour labels larger and medium weight; hour lines fully visible; shift blocks have more padding and larger text.
+
+## [1.33.5] - 2026-11-02
+
+### Changed
+- **Schichten calendar, Google Calendar look:** hour labels are right-aligned in the sans font and a little larger; hour lines are softer. Shift blocks use a muted solid fill with white text (indigo, and dark amber for empty blocks). Contrast is kept high for the text.
+
+## [1.33.4] - 2026-11-02
+
+### Changed
+- **Schichten blocks** use the light tint of the accent colour (empty blocks the light warning tint), with the normal dark text. The left outline is removed. The earlier full colour was too strong and hurt the text contrast.
+
+## [1.33.3] - 2026-11-02
+
+### Changed
+- **Schichten blocks** are filled with the accent colour (empty blocks with the warning colour). The left outline is removed.
+- **Add-person icon** inside a shift is smaller (16 px, icon 11 px).
+
+## [1.33.2] - 2026-11-02
+
+### Added
+- **Glühweinbude sample data** in the offline dev sample (`src/dev/sampleData.js`): period 04.–06.12. of the current scout year, Schicht settings, Sortiment terms for the current year (liter products bought in 6 l packs, bottles and beers in cases), three sale days with shifts and Horis.
+
+### Changed
+- **Schichten plan more airy:** taller hour scale (72 px), day rows (56 px) and empty days (72 px).
+
+## [1.33.1] - 2026-11-02
+
+### Changed
+- **Schichten split ratio:** the shift calendar takes one third and the Hori table two thirds of the width (on screens 1200 px and wider).
+
+## [1.33.0] - 2026-11-02
+
+### Changed
+- **Schicht-Einstellungen moved to the tab row** (right side, like the Sortiment buttons). It opens through the page header action mechanism, and the button in the Schichten content is removed.
+- **Schichten day row:** the date and the shift count are centred on the same line.
+
+## [1.32.11] - 2026-11-02
+
+### Changed
+- **Schichten day row:** the date and the shift count are centred on the same line (same 20 px box, text centred in it). Baselines are no longer the goal.
+
+## [1.32.10] - 2026-11-02
+
+### Changed
+- **Schichten day row:** the date and the shift count share one text line (same line height, no box padding).
+
+## [1.32.9] - 2026-11-02
+
+### Changed
+- **Schichten day row:** date, shift count and icons (add, copy, delete) sit on one horizontal line, centred on the same height. The earlier lane-edge inset is reverted.
+
+## [1.32.8] - 2026-11-02
+
+### Removed
+- The hint "Ende vor Beginn = nach Mitternacht (endet am Folgetag)." in the Schicht hinzufügen popup.
+
+## [1.32.7] - 2026-11-02
+
+### Changed
+- **Schichten day rows:** the day date and its icons (add, copy, delete) start and end on the lane edges, so they line up with the shifts instead of sitting over the time axis.
+
+## [1.32.6] - 2026-11-02
+
+### Changed
+- **Schichten day dates:** no pill border. The date shows again on every new day band, including after midnight.
+- **Day separator line** is grey instead of purple.
+
+## [1.32.5] - 2026-11-02
+
+### Changed
+- **Schichten dates** (block title and day names) use the same small muted style as the "N Schichten" text.
+- **Midnight bands** no longer show an empty day pill.
+
+## [1.32.4] - 2026-11-02
+
+### Fixed
+- **Schichten did not follow the event dates.** The page read the period once on opening, so changing the dates while on the tab showed stale days. The period now comes from the header, so the days update with it.
+
+## [1.32.3] - 2026-11-02
+
+### Removed
+- **Schichten calendar:** the "Pause" strip for empty gaps, the "Mitternacht" label, and the large date on the midnight continuation bands.
+
+## [1.32.2] - 2026-11-02
+
+### Removed
+- The hint texts in Schicht-Einstellungen: the description line, the hints under Pflichtschichten and Bonus-Faktor, and the hint under the Glühwein-Bonus switch. Error messages still show.
+
+## [1.32.1] - 2026-11-02
+
+### Changed
+- **Schichten Hori table** shows only Hori, Schichten and Anteil %. The Pflicht, Extra and Bonus % columns and the "unter Pflicht" badge are removed.
+
+## [1.32.0] - 2026-11-02
+
+### Changed
+- **Schichten:** sale days are generated from the event period in the header (start to end). The manual day form is gone.
+- **Schicht-Einstellungen** has only Pflichtschichten and Bonus. Shift times are no longer set there; shifts are added by hand per day. The "Schichten anlegen" template button is removed.
+- **Schichten split view:** on screens 1200 px and wider, the calendar is on the left and the Hori table on the right. Narrower screens keep them stacked.
+- **Schicht-Einstellungen button** uses the same size as the header buttons.
+
+## [1.31.18] - 2026-11-02
+
+### Added
+- **Plural units.** Units next to a quantity use the plural when the quantity is not 1: "1 Kasten" / "5 Kästen", "1 Flasche" / "5 Flaschen", "1 Glas" / "5 Gläser" (helper `utils/gwUnits.js`). Applies to Einkauf, Verkauft, the popup fields and "Zu kaufen". Liter, Stk and Becher stay the same.
+
+## [1.31.17] - 2026-11-02
+
+### Changed
+- **Sortiment rows** have one unified height (the row and every cell, 56 px); separator lines are straight.
+- **Einkauf unit** is shown next to the quantity in a readable colour ("–" when no unit is set).
+- **Schichten:** sale days are generated automatically for every date from the event start to the end set in the header. The manual "Verkaufstag" form is removed. Days outside the period are not shown.
+- **Schichten buttons:** Schicht-Einstellungen uses the same button size as the header actions.
+
+## [1.31.16] - 2026-11-02
+
+### Fixed
+- **Sortiment table row lines** no longer jump at Verkaufspreis and Verkauft. Every cell in a row has the same height (56 px), and the inline number inputs have a fixed height.
+
+## [1.31.15] - 2026-11-02
+
+### Changed
+- **Sortiment table, second pass:** Verkaufspreis, Einkauf and Verkauft share one column width and are all left-aligned, header and values alike.
+
+## [1.31.14] - 2026-11-02
+
+### Changed
+- **Sortiment table layout pass:** fixed column widths for Verkaufspreis, Einkauf, Verkauft and actions; the price and unit cells are aligned right; one gap size and one input width throughout; actions header aligned right.
+
+## [1.31.13] - 2026-11-02
+
+### Removed
+- The "= N Stk" hint under the Verkauft value in the Sortiment table.
+
+## [1.31.12] - 2026-11-02
+
+### Changed
+- **Sortiment table:** the Einkauf column has its title again ("Einkauf", was "Eingekauft" and then no title).
+
+## [1.31.11] - 2026-11-02
+
+### Changed
+- **Sortiment table column order:** Einkauf now comes before Verkauft.
+
+## [1.31.10] - 2026-11-02
+
+### Removed
+- The "Eingekauft" column header in the Sortiment table. The column with the quantity stays.
+
+## [1.31.9] - 2026-11-02
+
+### Changed
+- **The purchase quantity label in the item popup is "Einkauf"** (was "Eingekauft"). The table column header keeps "Eingekauft".
+
+## [1.31.8] - 2026-11-02
+
+### Removed
+- The "Eingekauft" title in the item popup. The fields stay in the Einkauf section.
+
+## [1.31.7] - 2026-11-02
+
+### Changed
+- **Final verkauft moves with Einheit.** Both sit together at the bottom of the item popup, side by side, after the Einkauf section.
+
+## [1.31.6] - 2026-11-02
+
+### Changed
+- **Item popup sections** (Verkauf, Einkauf) use the same small uppercase heading as the Eingekauft block. The divider lines above the sections are removed.
+
+## [1.31.5] - 2026-11-02
+
+### Changed
+- **"Geplant in" is now "Einheit" and sits at the bottom of the item popup,** below the Einkauf section. It is filled in after the event, to check the calculation and adjust for the next year.
+
+## [1.31.4] - 2026-11-02
+
+### Removed
+- The hint "So wird verkauft, z. B. Glas, Becher oder Flasche." under Verkaufseinheit in the item popup.
+
+## [1.31.3] - 2026-11-02
+
+### Changed
+- **Item popup section headings** use the sidebar section style (`nav-section-label`).
+- **"Geplant" is now "Final verkauft"** in the item popup.
+
+## [1.31.2] - 2026-11-02
+
+### Changed
+- **Item popup in two sections: Verkauf and Einkauf.** The "Konditionen" heading is removed. Verkauf holds name, Verkaufspreis and Verkaufseinheit, Rezept, Geplant and Geplant in. Einkauf holds Einkaufseinheit, Preis, Inhalt (or Liter pro Einkaufseinheit) and Eingekauft. A locked year is shown in the Einkauf heading.
+
+## [1.31.1] - 2026-11-02
+
+### Changed
+- **Verkaufspreis sits next to the Verkaufseinheit** in the item popup: price input first ("€ pro"), then the unit dropdown. It is no longer in the Verkauf block.
+
+## [1.31.0] - 2026-11-02
+
+### Changed
+- **Liter products: no Tassen conversion.** "Liter pro Verkaufseinheit" is removed from the popup. Glühwein and Heiße Schokolade are planned in liters and bought in "Liter pro Einkaufseinheit" (Pack = 6 l). The shopping list uses liters and pack liters for them. Migration 46 adds the shared "Geplant in" list.
+- **"Geplant in" options are removable** from the shared list, with a confirmation. At least one option always remains.
+- **Artikel hinzufügen and Aus Jahr kopieren** sit in the Glühwein tab row, right aligned.
+
+### Known gaps
+- Revenue for liter products (price per Tasse vs. liters) is not calculated yet; it shows "–".
+
+## [1.30.0] - 2026-11-02
+
+### Added
+- **Remove units from the dropdowns.** Every Verkaufseinheit and Einkaufseinheit entry has a delete button (after a confirmation). Removing only takes the unit off the shared list; items keep their unit. `StyledSelect` takes an `onRemove` prop for this; `<option fixed>` gets no button.
+- **Liter products bought in liters per Einkaufseinheit.** For Glühwein and Heiße Schokolade, the popup asks for "Liter pro Einkaufseinheit" (e.g. Pack = 6 l). The Inhalt in selling units is derived from it and the liters per Verkaufseinheit. Migration 45 adds `gw_item_terms.pack_liters`.
+
+## [1.29.2] - 2026-11-02
+
+### Changed
+- **Eingekauft uses the Einkaufseinheit.** The fixed Kasten / Flasche / Liter toggle is gone; the quantity is entered in the item's Einkaufseinheit (from the shared list, e.g. Kiste, Pack, Liter).
+- **Shared units:** Tasse (Verkaufseinheit) and Pack (Einkaufseinheit) added (migration 44).
+
+## [1.29.1] - 2026-11-02
+
+### Changed
+- **Glühwein popup uses the app's shared components.** Unit dropdowns and "Geplant in" use `StyledSelect`; the new-unit field uses `Button`; numeric fields (prices, content, planned, liters, Eingekauft, table cells) use `DecimalInput`; the Kasten / Flasche / Liter choice uses `SegmentedToggle`; the period picker reuses the `DatePicker` look. The custom unit-toggle styles are removed.
+
+## [1.29.0] - 2026-11-02
+
+### Added
+- **Shared Glühwein units.** Verkaufseinheit and Einkaufseinheit are dropdowns of a shared list (table `gw_units`, migration 43, not in Settings). "Neue Einheit anlegen…" adds a unit from the dropdown, like "Neuen Kunden anlegen". Seeded: Stk, Glas, Becher, Flasche, Shot (sell); Kasten, Flasche, Paket, Fass, Kiste, Liter (buy). New component `UnitPicker`, hook `useGluehweinUnits`.
+- **Modular Konditionen in the item popup.** Three blocks, each its own `TermsBlock`: Verkauf (Verkaufspreis, Geplant, Geplant in, Liter pro Verkaufseinheit), Einkauf (Einkaufseinheit, Preis, Inhalt or recipe cost) and Eingekauft (quantity + Kasten / Flasche / Liter).
+
+### Changed
+- **Rezept switch and "Rezept anlegen" button** are one block in the item popup.
+- **"Artikel hinzufügen"** sits in the toolbar right above the Sortiment table instead of the page header.
+
+### Removed
+- The "Liter fehlt" badge in the table. The portion count still shows when it can be calculated.
+
+## [1.28.2] - 2026-11-02
+
+### Changed
+- **Glühwein Sortiment: Verkaufspreis shows as X,XX €.** The "/ Stk" suffix is removed from the price cell, and prices are always shown with two decimals and a € sign.
+
+## [1.28.1] - 2026-11-02
+
+### Fixed
+- **Glühwein Sortiment: empty number fields were invisible.** Inline fields (Verkauft, Eingekauft, Verkaufspreis) had no border or background when empty. They now show a border, a surface background and a "–" placeholder.
+
+## [1.28.0] - 2026-11-02
+
+### Changed
+- **Glühweinbude: one date picker for the period.** The header has a single range field ("TT.MM.JJJJ – TT.MM.JJJJ") instead of separate Start and Ende fields. Click a day for the start, a second day for the end; "Zurücksetzen" clears both. The start is stored in `gluehwein_action_date` as before, the end in `gluehwein_end_action_date`.
+
+## [1.27.0] - 2026-11-02
+
+### Changed
+- **Glühwein Sortiment: Rezept and Eingekauft unit moved into the item popup.** The table no longer has a Rezept column. The Rezept switch and recipe button, and the Eingekauft quantity with its Kasten / Flasche / Liter toggle, are in "Artikel bearbeiten". The table shows only the chosen unit next to the Eingekauft quantity.
+
+## [1.26.0] - 2026-11-02
+
+### Added
+- **Glühweinbude date setter.** Start and Ende date fields in the page header, like the Lasagnen and Baseball date, with the same scout-year range check. Start uses the existing `gluehwein_action_date` (Dashboard month fallback); the end is stored in `gluehwein_end_action_date`. Neither is copied by "Start new year". Ende before Start (or the reverse) is refused.
+
+## [1.25.1] - 2026-11-02
+
+### Fixed
+- **Glühwein Sortiment: overlapping columns.** Wider fixed column widths and no-wrap for the Eingekauft (quantity + Kasten/Flasche/Liter toggle) and Rezept (switch + button) cells. Verkauft shows a "Liter fehlt" badge instead of the long hint; Baileys and Amaretto show their unit instead of "Einkauf".
+
+## [1.25.0] - 2026-11-02
+
+### Added
+- **Baseballturnier tabs set up.** Übersicht, Teams, Tabelle, Sponsoren, Felder, Einkaufsliste, Schichten and Finanzen, switched like the Glühwein tabs. Bodies are placeholders for now. `SalesActionPage` takes children below its header.
+
+## [1.24.0] - 2026-11-02
+
+### Changed
+- **Glühwein Sortiment table reworked.** Columns: Name, Verkaufspreis (€ per Tasse / Glas / Flasche), Verkauft (portions, planned unit), Eingekauft (total bought, entered by hand, with a Kasten / Flasche / Liter toggle), Rezept (switch + recipe button), actions. The old Einkauf pack cell is gone from the table; content and pack price stay in the popup.
+- **Rezept switch per product.** Off = bought directly by the Einkaufsliste; on = need comes from the recipe. Migration 42 switches on products that had a recipe.
+- **Starting a new year loads Verkauft from the previous year** (same unit). Eingekauft starts empty.
+
+### Added
+- Migration 42: `gw_items.use_recipe`, `gw_item_terms.purchase_qty` and `purchase_unit`.
+
+## [1.23.0] - 2026-11-02
+
+### Added
+- **Glühwein Sortiment: plan in total liters or bottles.** Each item has "Geplant in": Verkaufseinheit (portions, as before), Liter (total liters, with "Liter pro Verkaufseinheit", e.g. 0,2 l per Glas) or Einkaufseinheit (bottles). Portions, Umsatz, Rohgewinn and the Einkaufsliste are calculated from it; the table shows the portion count under the planned value. Migration 40 adds `gw_items.plan_unit` and `liters_per_portion`. Migration 41 sets the seeded products: Glühwein weiß/rot, Heiße Schokolade and Glühgin in liters, Baileys and Amaretto in bottles. Liters per Glas still to be entered.
+
+## [1.22.1] - 2026-11-02
+
+### Fixed
+- **Glühwein Sortiment: content can be a decimal.** Buying and selling sizes differ (e.g. 0,7 l bottle sold as 0,2 l glasses = 3,5 per bottle); the Inhalt field in the popup and the table now accepts comma decimals.
+
+## [1.22.0] - 2026-11-02
+
+### Changed
+- **Glühwein Sortiment table simplified.** Only Name, Verkaufspreis, Einkauf (unit, content, price), Geplant, Rezept and the edit/archive actions remain. Kosten/Einheit, Marge €/%, Zu kaufen, Umsatz, Rohgewinn, the Status column and the totals row are gone; the economics still show in the "Artikel bearbeiten" popup. Inactive products stay dimmed and are restored via the archive button.
+
 ## [1.21.0] - 2026-10-30
 
 ### Added

@@ -1,0 +1,14 @@
+/* Baseballturnier page (Baseball.jsx): tab switcher and the placeholder body of each tab. */
+.baseball-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.baseball-tab-placeholder {
+  padding: var(--space-2xl) var(--space-lg);
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-dark-tertiary);
+}

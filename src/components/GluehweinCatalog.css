@@ -41,17 +41,21 @@
 
 /* ── Table ── */
 /* Fixed column widths: columns must not jump when search or filter changes the rows. */
-.gw-catalog-table { table-layout: fixed; min-width: 1760px; }
+.gw-catalog-table { table-layout: fixed; min-width: 980px; }
 .gw-catalog-table th:first-child { min-width: 0; }
-.gw-col-sell      { width: 160px; }
-.gw-col-buy       { width: 190px; }
-.gw-col-money     { width: 130px; }
-.gw-col-pct       { width: 100px; }
-.gw-col-planned   { width: 110px; }
-.gw-col-packs     { width: 150px; }
-.gw-col-recipe    { width: 130px; }
-.gw-col-status    { width: 90px; }
+.gw-col-sell      { width: 150px; }
+.gw-col-planned   { width: 170px; }
+.gw-col-buy       { width: 290px; }
+.gw-col-recipe    { width: 270px; }
 .gw-col-actions   { width: 90px; }
+
+.gw-bought-cell,
+.gw-recipe-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  white-space: nowrap;
+}
 
 .gw-catalog-table .negative { color: var(--color-danger); }
 .gw-unit-suffix { font-family: var(--font-sans); font-size: 0.8rem; }
@@ -70,20 +74,64 @@
   cursor: help;
 }
 
+/* Rezept switch and the Kasten / Flasche / Liter toggle (GluehweinCatalog.jsx) */
+.gw-switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.gw-switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.gw-switch-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--color-border-light-theme);
+  transition: background var(--transition-fast);
+  pointer-events: none;
+}
+.gw-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform var(--transition-fast);
+}
+.gw-switch input:checked + .gw-switch-track { background: var(--color-primary); }
+.gw-switch input:checked + .gw-switch-track::after { transform: translateX(14px); }
+.gw-switch input:focus-visible + .gw-switch-track { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+
 /* Number fields edited in place (CopyTermsModal / InlineField in GluehweinCatalog.jsx) */
 .gw-inline-input {
   width: 72px;
   padding: 2px 6px;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border-light-theme);
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--color-light-surface);
   font: inherit;
   font-family: var(--font-mono);
   color: inherit;
   text-align: right;
   transition: all var(--transition-fast);
 }
-.gw-inline-input:hover { border-color: var(--color-border-light-theme); }
+.gw-inline-input:hover { border-color: var(--color-text-dark-tertiary); }
+.gw-inline-input::placeholder { color: var(--color-text-dark-tertiary); }
 .gw-inline-input:focus { outline: none; border-color: var(--color-primary); background: var(--color-light-surface); }
 .gw-inline-input:disabled { opacity: 0.7; cursor: not-allowed; }
 
@@ -105,16 +153,6 @@
 
 .gw-row-inactive td { opacity: 0.6; }
 
-.gw-status {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.78rem;
-  font-weight: 600;
-  background-color: var(--color-light-bg);
-  color: var(--color-text-dark-tertiary);
-}
-.gw-status.active { background: var(--stat-green-bg); color: var(--stat-green-icon); }
 
 .gw-row-actions {
   text-align: right;
@@ -222,6 +260,70 @@
 }
 .gw-item-recipe-cost strong { color: var(--color-text-dark-primary); }
 
+/* Two sections of the item popup: Verkauf and Einkauf */
+.gw-popup-section {
+  margin-top: var(--space-lg);
+}
+/* Same heading look as the Eingekauft block title (.gw-terms-block-title). */
+.gw-popup-section-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.gw-popup-section .gw-item-terms { margin-top: 0; }
+
+/* Verkaufspreis next to the Verkaufseinheit dropdown (product section of the item popup) */
+.gw-price-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-md);
+  align-items: end;
+}
+.gw-price-unit-price,
+.gw-price-unit-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .gw-price-unit { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Konditionen blocks of the item popup (TermsBlock in GluehweinCatalog.jsx) */
+.gw-terms-block {
+  margin-top: var(--space-md);
+}
+.gw-terms-block-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-dark-tertiary);
+}
+
+/* Rezept switch and recipe button in the item popup */
+.gw-item-recipe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm) var(--space-md);
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+}
+.gw-item-recipe-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
 /* Live preview of the economics */
 .gw-item-preview {
   display: grid;
@@ -249,4 +351,99 @@
 .gw-item-preview strong.negative { color: var(--color-danger); }
 @media (max-width: 560px) {
   .gw-item-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* "Einheit" field at the bottom of the item popup (filled after the event) */
+.gw-unit-bottom {
+  margin-top: var(--space-lg);
+}
+
+/* Final verkauft and Einheit move together as one group at the bottom of the item popup */
+.gw-unit-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-md);
+  align-items: end;
+}
+@media (max-width: 560px) {
+  .gw-unit-group { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Sortiment table: one spacing system for the value columns (layout pass) */
+.gw-catalog-table { min-width: 760px; }
+.gw-col-sell    { width: 190px; }
+.gw-col-buy     { width: 210px; }
+.gw-col-planned { width: 210px; }
+.gw-col-actions { width: 96px; }
+.gw-catalog-table thead th:last-child { text-align: right; }
+
+.gw-price-cell,
+.gw-sold-cell,
+.gw-buy-cell-td .gw-bought-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.gw-price-cell { justify-content: flex-end; }
+.gw-price-cell .gw-unit-suffix { min-width: 14px; }
+.gw-catalog-table .gw-inline-input { width: 88px; }
+.gw-catalog-table .gw-row-actions { text-align: right; }
+
+/* Sortiment table, second layout pass: value columns share one width and one alignment (all left) */
+.gw-col-sell    { width: 200px; }
+.gw-col-buy     { width: 200px; }
+.gw-col-planned { width: 200px; }
+.gw-price-cell { justify-content: flex-start; }
+
+/* Row lines: every cell in a body row has the same height, so the separator lines stay straight (layout pass 3) */
+.gw-catalog-table tbody td {
+  height: 56px;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+.gw-catalog-table .gw-inline-input {
+  height: 30px;
+  line-height: 1.2;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
+}
+
+/* One unified row height: the whole row (tr) and every cell in it are 56 px, borders included */
+.gw-catalog-table tbody tr {
+  height: 56px;
+}
+.gw-catalog-table tbody td {
+  height: 56px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Separate borders: each body cell carries its own 1 px line inside its 56 px, so rows cannot round to 56.5 px */
+.gw-catalog-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.gw-catalog-table tbody td {
+  border-bottom: 1px solid var(--color-border-light-theme);
+}
+
+/* Einkauf units must stay visible: the cell does not clip, and the quantity input leaves room for the unit */
+.gw-catalog-table tbody td {
+  overflow: visible;
+}
+.gw-buy-cell-td .gw-inline-input {
+  width: 72px;
+}
+.gw-buy-cell-td .gw-bought-cell span {
+  white-space: nowrap;
+}
+
+/* Einkauf unit next to the quantity: always shown, in the secondary text colour so it reads clearly */
+.gw-unit-label {
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+  white-space: nowrap;
 }

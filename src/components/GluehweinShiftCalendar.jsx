@@ -7,9 +7,9 @@ import {
 } from '../utils/shiftLayout';
 import './GluehweinShiftCalendar.css';
 
-const HOUR_H = 56; // px per hour
-const BAND_H = 44; // px of a day row (label + actions)
-const EMPTY_H = 56; // extra px of an empty day ("Keine Schichten")
+const HOUR_H = 72; // px per hour
+const BAND_H = 56; // px of a day row (label + actions)
+const EMPTY_H = 72; // extra px of an empty day ("Keine Schichten")
 const PAUSE_H = 24; // px of a collapsed gap without shifts (> 3 h)
 const SHORT_BLOCK = 70; // below this height the Horis are listed as text, editing happens in the popover
 
@@ -41,15 +41,15 @@ const slotTime = (slot, openEnd) => `${fmtTime(slot.start_time)}–${openEnd ? '
  * a shift crossing midnight is drawn once over that row, gaps over 3 h without shifts collapse into a "Pause" strip.
  * Overlapping shifts share the width (lanes). Separate blocks (e.g. two weekends) are drawn one under the other.
  *
- * Props: days, shiftsByDay (Map day_id → shifts), horiById (Map), activeHoris, templates ("HH:MM-HH:MM"[]),
- * disabled, yearLocked, busy, onAssign(shiftId, horiId), onUnassign(shiftId, horiId), onAddTemplates(dayId),
+ * Props: days, shiftsByDay (Map day_id → shifts), horiById (Map), activeHoris,
+ * disabled, yearLocked, busy, onAssign(shiftId, horiId), onUnassign(shiftId, horiId),
  * onSaveSlot(dayId, slotId | null, start, end) → Promise (throws Error(code)), onCopySlots(fromDayId, toDayId),
  * onRemoveSlot(slot, label), onRemoveDay(day, label).
  */
 const GluehweinShiftCalendar = ({
-  days, shiftsByDay, horiById, activeHoris, templates,
+  days, shiftsByDay, horiById, activeHoris,
   disabled, yearLocked, busy,
-  onAssign, onUnassign, onAddTemplates, onSaveSlot, onCopySlots, onRemoveSlot, onRemoveDay,
+  onAssign, onUnassign, onSaveSlot, onCopySlots, onRemoveSlot, onRemoveDay,
 }) => {
   const [popover, setPopover] = useState(null); // shift id
   const [copyMenu, setCopyMenu] = useState(null); // day id with the "Schichten kopieren von…" menu open
@@ -218,7 +218,7 @@ const GluehweinShiftCalendar = ({
                 title="Hori einteilen"
                 onClick={open}
               >
-                <Plus size={13} />
+                <Plus size={11} />
               </button>
             )}
           </div>
@@ -253,7 +253,6 @@ const GluehweinShiftCalendar = ({
 
   const renderBand = (band, day) => {
     const slots = shiftsByDay.get(day.id) || [];
-    const missing = templates.filter((tpl) => !slots.some((s) => fmtTime(s.start_time) === tpl.split('-')[0]));
     const open = slots.filter((s) => !(s.horis || []).length).length;
     const label = fmtDayLong(day.date);
     return (
@@ -264,7 +263,6 @@ const GluehweinShiftCalendar = ({
       >
         <div className="gw-cal-band-row">
           <span className="gw-cal-daypill">
-            {band.dayIndex > 0 && <span className="gw-cal-midnight">Mitternacht · </span>}
             <span className="gw-cal-dayname">{fmtDayHead(day.date)}</span>
           </span>
           <span className="gw-cal-daymeta">
@@ -277,18 +275,6 @@ const GluehweinShiftCalendar = ({
           </span>
           {!yearLocked && (
             <span className="gw-cal-dayactions">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="gw-cal-fill"
-                disabled={disabled || missing.length === 0}
-                title={missing.length === 0 ? 'Alle Schichten aus den Einstellungen sind angelegt.' : `Legt an: ${missing.join(', ')}`}
-                aria-label={`Schichten am ${label} anlegen`}
-                onClick={() => onAddTemplates(day.id)}
-              >
-                <CalendarPlus size={14} /> <span className="gw-cal-fill-label">Schichten anlegen</span>
-              </Button>
               <button
                 type="button"
                 className="gw-cal-icon-btn"
@@ -370,12 +356,12 @@ const GluehweinShiftCalendar = ({
             ))}
           </div>
           <div className="gw-cal-lanes">
-            {scale.hours.map((h) => <div key={h.min} className="gw-cal-line" style={{ top: h.y }} />)}
-            {scale.pauses.map((p) => (
-              <div key={`p-${p.from}`} className="gw-cal-pause" style={{ top: p.y, height: p.height }}>
-                Pause · {fmtMinutes(p.from)}–{fmtMinutes(p.to)}
-              </div>
-            ))}
+            {scale.hours.map((h, i) => {
+              // Every hour section ends 4 px above the next one, so all gaps between sections are the same size.
+              const next = scale.hours[i + 1];
+              const height = (next ? next.y - h.y : HOUR_H) - 4;
+              return <div key={h.min} className="gw-cal-section" style={{ top: h.y + 2, height }} />;
+            })}
             {items.map((it) => renderBlock(it, dayById.get(it.shift.day_id) || first))}
             {items.flatMap((it) => scale.bands
               .filter((b) => b.dayIndex > 0 && b.at > it.start && b.at < it.end)

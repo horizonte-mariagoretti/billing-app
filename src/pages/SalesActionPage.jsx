@@ -8,9 +8,9 @@ import './SalesActionPage.css';
 
 /**
  * Base page of a Verkaufsaktion (Glühwein, Baseball): header with search bar, action date and year switcher.
- * The content below is still empty. action: an entry of SALES_ACTIONS (utils/lasagnaFinance.js).
+ * children: the page content below the header. action: an entry of SALES_ACTIONS (utils/lasagnaFinance.js).
  */
-const SalesActionPage = ({ action }) => {
+const SalesActionPage = ({ action, children = null }) => {
   const t = useT();
   const [search, setSearch] = useState('');
   const { year, date, loaded, locked, setDate, error } = useActionDate(action.dateKey);
@@ -49,6 +49,8 @@ const SalesActionPage = ({ action }) => {
           <span>{error}</span>
         </div>
       )}
+
+      {children}
     </div>
   );
 };

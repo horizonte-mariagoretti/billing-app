@@ -128,11 +128,11 @@ const useYear = () => {
         params: [newYear, currentYear],
       },
       {
-        // Glühwein catalog prices and packs carry over; planned quantities start at 0.
-        // Days, shifts, Kasse and entries belong to their year and are not copied.
+        // Glühwein catalog prices and packs carry over; Verkauft is loaded in from the previous year (same unit).
+        // Eingekauft, days, shifts, Kasse and entries belong to their year and are not copied.
         sql: `INSERT OR IGNORE INTO gw_item_terms
                 (item_id, year, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty)
-              SELECT item_id, ?, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, 0
+              SELECT item_id, ?, sell_price, buy_price, pack_type, pack_size, buy_unit, buy_pack_price, planned_qty
                 FROM gw_item_terms
               WHERE year = ?`,
         params: [newYear, currentYear],

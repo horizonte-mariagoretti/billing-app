@@ -1,0 +1,37 @@
+/* Range variant of the shared DatePicker (DateRangeField.jsx). Trigger, popup, header and day cells come from
+   DatePicker.css (.datepicker-input-wrap, .datepicker-popup, .dp-day, .selected); only the range parts live here. */
+.daterange-wrap {
+  position: relative;
+  width: 260px;
+}
+
+.daterange-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.daterange-empty { color: var(--color-text-dark-tertiary); }
+
+.daterange-popup {
+  width: 280px;
+  right: 0;
+  left: auto;
+  padding: var(--space-sm);
+}
+
+.daterange-popup .datepicker-grid { gap: 2px; }
+
+.daterange-in-range {
+  background: var(--color-indigo-alpha);
+  border-radius: 0;
+}
+
+.daterange-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  font-size: 0.78rem;
+  color: var(--color-text-dark-tertiary);
+}

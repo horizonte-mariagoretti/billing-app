@@ -87,3 +87,11 @@
 @media (max-width: 600px) {
   .gw-summary { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Tab row actions (add / copy) on the right of the Gluehwein tabs */
+.gw-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}

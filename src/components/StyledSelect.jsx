@@ -1,11 +1,12 @@
 import React from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Trash2 } from 'lucide-react';
 import './StyledSelect.css';
 
 // Fully custom-rendered dropdown (not a native <select>) so the open list
 // matches the app's own styling instead of the OS-native popup — used
 // anywhere a <select>'s unstylable native dropdown would look out of place.
-const StyledSelect = ({ value, onChange, children, placeholder, className = '', disabled = false }) => {
+// onRemove(value): when given, each option shows a delete button; an <option fixed> gets none.
+const StyledSelect = ({ value, onChange, onRemove, children, placeholder, className = '', disabled = false }) => {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
   React.useEffect(() => {
@@ -16,7 +17,7 @@ const StyledSelect = ({ value, onChange, children, placeholder, className = '', 
   }, [open]);
   const options = React.Children.toArray(children)
     .filter((c) => c.type === 'option')
-    .map((c) => ({ value: c.props.value ?? '', label: c.props.children }));
+    .map((c) => ({ value: c.props.value ?? '', label: c.props.children, fixed: !!c.props.fixed }));
   const sel = options.find((o) => String(o.value) === String(value));
   const isEmpty = !sel || String(sel.value) === '';
   return (
@@ -36,7 +37,20 @@ const StyledSelect = ({ value, onChange, children, placeholder, className = '', 
               onMouseDown={(e) => { e.preventDefault(); onChange({ target: { value: opt.value } }); setOpen(false); }}
             >
               {opt.label}
-              {String(opt.value) === String(value) && <Check size={12} className="ss-check" />}
+              <span className="ss-option-end">
+                {String(opt.value) === String(value) && <Check size={12} className="ss-check" />}
+                {onRemove && !opt.fixed && (
+                  <button
+                    type="button"
+                    className="ss-remove"
+                    title="Entfernen"
+                    aria-label={`Entfernen: ${opt.label}`}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(opt.value); setOpen(false); }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </span>
             </li>
           ))}
         </ul>

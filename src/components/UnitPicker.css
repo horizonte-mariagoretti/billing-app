@@ -1,0 +1,15 @@
+/* Unit dropdown with "Neue Einheit anlegen" and per-unit delete (UnitPicker.jsx). Dropdown is StyledSelect,
+   buttons are Button. */
+.unit-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.unit-picker-new {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.unit-picker-new .input-field { flex: 1; min-width: 0; }

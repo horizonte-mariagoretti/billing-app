@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import useActionDate from '../hooks/useActionDate';
+import DateRangeField from '../components/DateRangeField';
 import {
-  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Plus, Copy,
+  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Copy, Plus, Settings2,
 } from 'lucide-react';
 import useSettings from '../hooks/useSettings';
 import useYear from '../hooks/useYear';
@@ -22,6 +24,9 @@ import './SalesActionPage.css';
 import './Gluehwein.css';
 
 const ACTION = SALES_ACTIONS.find((a) => a.key === 'gluehwein');
+// Start = the action's date (Dashboard month fallback when no sale day is set); end = last day of the Glühweinbude.
+// Both end in _action_date so "Start new year" does not copy them.
+const END_DATE_KEY = 'gluehwein_end_action_date';
 
 const TABS = [
   { value: 'overview', label: 'Übersicht', icon: <LayoutList size={15} /> },
@@ -42,6 +47,9 @@ const HEADER_ACTIONS = {
   catalog: [
     { key: 'copy', label: 'Aus Jahr kopieren', icon: Copy, variant: 'secondary' },
     { key: 'add', label: 'Artikel hinzufügen', icon: Plus, variant: 'primary' },
+  ],
+  shifts: [
+    { key: 'settings', label: 'Schicht-Einstellungen', icon: Settings2, variant: 'secondary' },
   ],
 };
 
@@ -111,6 +119,15 @@ const Gluehwein = () => {
   const [view, setView] = useState('overview');
   const [search, setSearch] = useState('');
   const [error, setError] = useState(null);
+  const start = useActionDate(ACTION.dateKey);
+  const end = useActionDate(END_DATE_KEY);
+
+  // One picker for the period; the field keeps start <= end (a day before the start restarts the period).
+  const setPeriod = (s, e) => {
+    start.setDate(s);
+    end.setDate(e);
+  };
+  const dateError = start.error || end.error;
   const [settings, setSettings] = useState(null);
   const [addRequest, setAddRequest] = useState(null); // { tab, key, n, triggerRef }
   const headerBtnRefs = useRef({});
@@ -150,31 +167,22 @@ const Gluehwein = () => {
           />
         </div>
         <div className="page-header-end">
-          {(HEADER_ACTIONS[view] || []).map((a) => (
-            <Button
-              key={a.key}
-              ref={(el) => { headerBtnRefs.current[`${view}:${a.key}`] = el; }}
-              variant={a.variant}
-              size="md"
-              icon={a.icon}
-              onClick={() => setAddRequest((r) => ({
-                tab: view,
-                key: a.key,
-                n: (r?.n || 0) + 1,
-                triggerRef: { current: headerBtnRefs.current[`${view}:${a.key}`] },
-              }))}
-            >
-              {a.label}
-            </Button>
-          ))}
+          <DateRangeField
+            title="Zeitraum der Glühweinbude (Start und Ende; der Start bestimmt den Monat im Umsatz auf dem Dashboard)"
+            start={start.date}
+            end={end.date}
+            initialView={`${selectedYear}-12-01`}
+            disabled={!start.loaded || start.locked}
+            onChange={setPeriod}
+          />
           <YearSwitcher />
         </div>
       </div>
 
-      {error && (
+      {(error || dateError) && (
         <div className="page-error" role="alert">
           <AlertCircle size={16} />
-          <span>{error}</span>
+          <span>{error || dateError}</span>
         </div>
       )}
 
@@ -186,6 +194,27 @@ const Gluehwein = () => {
           onChange={changeView}
           options={TABS}
         />
+        {(HEADER_ACTIONS[view] || []).length > 0 && (
+          <div className="gw-toolbar-actions">
+            {(HEADER_ACTIONS[view] || []).map((a) => (
+              <Button
+                key={a.key}
+                ref={(el) => { headerBtnRefs.current[`${view}:${a.key}`] = el; }}
+                variant={a.variant}
+                size="md"
+                icon={a.icon}
+                onClick={() => setAddRequest((r) => ({
+                  tab: view,
+                  key: a.key,
+                  n: (r?.n || 0) + 1,
+                  triggerRef: { current: headerBtnRefs.current[`${view}:${a.key}`] },
+                }))}
+              >
+                {a.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       {view === 'overview' && <GluehweinOverview key={selectedYear} year={selectedYear} onError={setError} />}
@@ -198,7 +227,17 @@ const Gluehwein = () => {
         />
       )}
       {view === 'kasse' && <GluehweinKasse key={selectedYear} {...common} onError={setError} />}
-      {view === 'shifts' && <GluehweinSchichten key={selectedYear} {...common} settings={settings} onError={setError} />}
+      {view === 'shifts' && (
+        <GluehweinSchichten
+          key={selectedYear}
+          {...common}
+          settings={settings}
+          periodFrom={start.date}
+          periodTo={end.date}
+          addRequest={addRequest?.tab === 'shifts' ? addRequest : null}
+          onError={setError}
+        />
+      )}
       {view === 'shopping' && <GluehweinEinkaufsliste {...common} />}
       {view === 'finance' && <GluehweinFinanzen key={selectedYear} {...common} search={search} onError={setError} />}
     </div>

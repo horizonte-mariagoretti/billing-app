@@ -110,7 +110,6 @@ const GluehweinShiftModal = ({ dayLabel, slot, defaultStart = '', existingStarts
                 ) : <span className="gw-shift-modal-muted">Dauer —</span>}
                 {liveError === 'SLOT_TOO_LONG' && <span className="input-error">max. 12 h</span>}
               </div>
-              <span className="settings-fields-modal-hint">Ende vor Beginn = nach Mitternacht (endet am Folgetag).</span>
             </div>
           </div>
           <div className="modal-actions">

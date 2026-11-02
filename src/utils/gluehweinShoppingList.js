@@ -46,7 +46,8 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
     if (!isActive(p)) continue;
     const planned = num(termsOf(productTerms, p.id).planned_qty);
     if (!(planned > 0)) continue;
-    const rows = recipeOf.get(p.id);
+    // Rezept toggle off: the product is bought itself, even if recipe rows are kept.
+    const rows = p.use_recipe ? recipeOf.get(p.id) : null;
     if (rows && rows.length) rows.forEach((r) => addIng(r.ingredient_id, planned * num(r.qty_per_unit)));
     else prodNeed.set(p.id, planned);
   }
