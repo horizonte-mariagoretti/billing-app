@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.39.1] - 2026-11-02
+
+### Changed
+- **Glühweinbude Einkaufsliste uses Einkauf for products without a recipe.** Such a product shows its Einkauf (packs in the Einkaufseinheit) and cost = packs × pack price, instead of the planned Verkauft quantity. A product with no Einkauf has no row. Compare the list with the Verkauft figures after the event to check the order quantities. Recipe products are unchanged: their planned Verkauft quantity feeds the ingredients.
+
 ## [1.39.0] - 2026-11-02
 
 ### Added

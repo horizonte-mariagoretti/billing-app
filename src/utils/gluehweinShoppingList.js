@@ -1,11 +1,12 @@
 // Glühwein Einkaufsliste: pure helper (no DB).
 //
 // Every active product with planned_qty > 0 is expanded through its recipe
-// (ingredient need += planned_qty × qty_per_unit); a product without recipe rows is bought itself (need += planned_qty,
-// e.g. beers). An active ingredient adds its extra_qty (Zusatzbedarf). Stock on hand (ingredients only) is subtracted
-// (floor 0), the rest is rounded up to whole packs. Ingredients: buy_price is per unit, so a pack costs
-// pack_size × buy_price. Products without recipe are bought per buying unit (buy_unit, e.g. Kasten) holding pack_size
-// selling units; a pack costs buy_pack_price (fallback for legacy rows: pack_size × buy_price).
+// (ingredient need += planned_qty × qty_per_unit). An active ingredient adds its extra_qty (Zusatzbedarf). Stock on hand
+// (ingredients only) is subtracted (floor 0), the rest is rounded up to whole packs. Ingredients: buy_price is per unit,
+// so a pack costs pack_size × buy_price.
+// Products without recipe show what was bought (Einkauf, purchase_qty in buy units, e.g. Kasten): packs = purchase_qty,
+// a product with no Einkauf has no row. Cost = packs × pack price. Products without recipe are bought per buying unit
+// holding pack_size selling units; a pack costs buy_pack_price (fallback for legacy rows: pack_size × buy_price).
 
 const round2 = (n) => Math.round(n * 100) / 100;
 // Trims float noise (0.1 × 3) so Math.ceil does not add a pack.
@@ -41,15 +42,20 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
     if (!ingById.has(id) || !(qty > 0)) return;
     ingNeed.set(id, (ingNeed.get(id) || 0) + qty);
   };
-  const prodNeed = new Map();
+  const prodBought = new Map();
   for (const p of prodList) {
     if (!isActive(p)) continue;
-    const planned = num(termsOf(productTerms, p.id).planned_qty);
-    if (!(planned > 0)) continue;
-    // Rezept toggle off: the product is bought itself, even if recipe rows are kept.
+    const t = termsOf(productTerms, p.id);
+    // Rezept toggle on: the planned quantity goes into the ingredients.
     const rows = p.use_recipe ? recipeOf.get(p.id) : null;
-    if (rows && rows.length) rows.forEach((r) => addIng(r.ingredient_id, planned * num(r.qty_per_unit)));
-    else prodNeed.set(p.id, planned);
+    if (rows && rows.length) {
+      const planned = num(t.planned_qty);
+      if (planned > 0) rows.forEach((r) => addIng(r.ingredient_id, planned * num(r.qty_per_unit)));
+      continue;
+    }
+    // Rezept toggle off: the product is bought itself; the list shows the Einkauf (buy units).
+    const bought = num(t.purchase_qty);
+    if (bought > 0) prodBought.set(p.id, bought);
   }
   for (const g of ingList) {
     if (isActive(g)) addIng(g.id, num(termsOf(ingredientTerms, g.id).extra_qty));
@@ -85,9 +91,14 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
       const t = termsOf(ingredientTerms, g.id);
       return row('ingredient', g, t, ingNeed.get(g.id), Math.max(0, num(t.stock_qty)));
     }),
-    ...prodList.filter((p) => prodNeed.has(p.id)).map((p) => (
-      row('product', p, termsOf(productTerms, p.id), prodNeed.get(p.id), 0)
-    )),
+    ...prodList.filter((p) => prodBought.has(p.id)).map((p) => {
+      const t = termsOf(productTerms, p.id);
+      const bought = prodBought.get(p.id);
+      const size = num(t.pack_size) > 0 ? num(t.pack_size) : 1;
+      const r = row('product', p, t, bought * size, 0);
+      // Einkauf is already counted in buy units: packs = bought, no rounding.
+      return { ...r, toBuy: round6(bought * size), packs: bought, cost: round2(bought * r.packPrice) };
+    }),
   ];
   return { rows, total: round2(rows.reduce((s, r) => s + r.cost, 0)) };
 }
