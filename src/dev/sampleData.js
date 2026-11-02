@@ -366,6 +366,7 @@ export function buildSampleStatements() {
     ['Team Beispiel 5', 0, 40, 0, 'bf-3', 0, 2, 2],
     ['Team Beispiel 6', 1, 40, 0, 'bf-3', 1, 0, 3],
     ['Team Beispiel 7', 0, 40, 0, null, 0, 0, 0],
+    ['Team Beispiel 8', 1, 40, 0, null, 0, 0, 0],
   ];
   bbTeams.forEach(([name, contacted, fee, paid, field_id, wins, draws, losses], i) => insert('baseball_teams', {
     id: `bt-${i + 1}`, year: bbYear, name, contacted, fee, paid, field_id, wins, draws, losses, sort_order: i + 1,

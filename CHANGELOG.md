@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.36.0] - 2026-11-02
+### Added
+- **Baseballturnier Felder:** group phase as cards. Always four fields (Feld 1 to 4); the teams are split into groups of 4 in their list order (Gruppe A to D), each group plays on its own field. Each card shows its four teams and the round-robin schedule (6 matches, each pair once), as tiles. Empty fields say so. The team count must be a multiple of 4; otherwise a warning shows and only complete groups get a schedule. More than 16 teams: extra groups as Feld 5, 6, ...
+### Changed
+- **Baseballturnier Teams:** the Feld column is removed, the field follows from the group.
+### Removed
+- **Baseballturnier Tabelle tab** removed from the page.
+
 ## [1.35.2] - 2026-11-02
 
 ### Changed

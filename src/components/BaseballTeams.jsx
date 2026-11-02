@@ -3,21 +3,19 @@ import { Plus } from 'lucide-react';
 import { useBaseballRows } from '../hooks/useBaseballRows';
 import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
-import StyledSelect from './StyledSelect';
 import { TextCell, CheckCell, DeleteButton } from './BaseballCells';
 import './DataTable.css';
 import './BaseballPlanning.css';
 
 /**
- * Baseballturnier Teams (Excel "Teams"): contact, contacted, Beitrag, paid, and the field the team plays on.
+ * Baseballturnier Teams (Excel "Teams"): contact, contacted, Beitrag and paid. The field follows from the list order (groups of 4, see Felder).
  */
 const BaseballTeams = ({ year, yearLocked, onError }) => {
   const teams = useBaseballRows('baseball_teams', year, yearLocked, onError);
-  const fields = useBaseballRows('baseball_fields', year, yearLocked, onError);
   const [name, setName] = useState('');
   const [pending, setPending] = useState(null);
 
-  if (!teams.rows || !fields.rows) return <div className="baseball-planning-loading">Lade Teams…</div>;
+  if (!teams.rows) return <div className="baseball-planning-loading">Lade Teams…</div>;
 
   const disabled = !!yearLocked;
 
@@ -59,7 +57,6 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
               <col style={{ width: '90px' }} />
               <col style={{ width: '100px' }} />
               <col style={{ width: '80px' }} />
-              <col style={{ width: '170px' }} />
               <col style={{ width: '48px' }} />
             </colgroup>
             <thead>
@@ -71,7 +68,6 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
                 <th className="center">Kontaktiert</th>
                 <th className="num">Beitrag €</th>
                 <th className="center">Bezahlt</th>
-                <th>Feld</th>
                 <th aria-label="Aktionen" />
               </tr>
             </thead>
@@ -92,17 +88,6 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
                     <CheckCell checked={t.paid} disabled={disabled} label={`${t.name} bezahlt`} onChange={(v) => teams.update(t.id, { paid: v ? 1 : 0 })} />
                   </td>
                   <td>
-                    <StyledSelect
-                      value={t.field_id ?? ''}
-                      disabled={disabled}
-                      placeholder="–"
-                      onChange={(e) => teams.update(t.id, { field_id: e.target.value || null })}
-                    >
-                      <option value="">–</option>
-                      {fields.rows.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                    </StyledSelect>
-                  </td>
-                  <td>
                     <DeleteButton disabled={disabled} label={`Team ${t.name} entfernen`} onClick={() => setPending(t)} />
                   </td>
                 </tr>
@@ -115,7 +100,7 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
       {pending && (
         <ConfirmDialog
           title="Team löschen?"
-          message={`„${pending.name}“ wird mit Kontakt, Beitrag und Feld entfernt.`}
+          message={`„${pending.name}“ wird mit Kontakt und Beitrag entfernt.`}
           confirmLabel="Löschen"
           onConfirm={() => { const id = pending.id; setPending(null); teams.remove(id); }}
           onCancel={() => setPending(null)}

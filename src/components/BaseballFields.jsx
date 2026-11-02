@@ -1,84 +1,85 @@
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useBaseballRows } from '../hooks/useBaseballRows';
-import Button from './Button';
-import ConfirmDialog from './ConfirmDialog';
-import { TextCell, DeleteButton } from './BaseballCells';
+import { groupTeams, roundRobin } from '../utils/baseballGroups';
 import './BaseballPlanning.css';
 
+/** The tournament always has at least this many fields. */
+const MIN_FIELDS = 4;
+
 /**
- * Baseballturnier Felder (Excel "Felder"): one card per field, named as the field (e.g. sponsor name),
- * with the teams that play on it. Teams are assigned in the Teams tab.
+ * Baseballturnier Felder: group phase only. The teams (in their list order) form groups of 4;
+ * group N plays on Feld N (Feld 1 = Gruppe A, Feld 2 = Gruppe B, ...). Always shows at least
+ * four stacked field cards (Feld 1–4); a field without a complete group shows an empty state.
+ * More than four complete groups (> 16 teams) add Feld 5, 6, ... so no group is lost.
+ * A filled card shows its teams as chips and the round-robin schedule (6 matches) as match tiles.
+ * A warning above the cards flags a team count that is not a multiple of 4.
  */
 const BaseballFields = ({ year, yearLocked, onError }) => {
-  const fields = useBaseballRows('baseball_fields', year, yearLocked, onError);
   const teams = useBaseballRows('baseball_teams', year, yearLocked, onError);
-  const [name, setName] = useState('');
-  const [pending, setPending] = useState(null);
 
-  if (!fields.rows || !teams.rows) return <div className="baseball-planning-loading">Lade Felder…</div>;
+  if (!teams.rows) return <div className="baseball-planning-loading">Lade Felder…</div>;
 
-  const disabled = !!yearLocked;
-
-  const handleAdd = (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    fields.add({ name: name.trim() });
-    setName('');
-  };
+  const { count, valid, groups } = groupTeams(teams.rows);
+  const fieldCount = Math.max(MIN_FIELDS, groups.length);
+  const fields = Array.from({ length: fieldCount }, (_, i) => ({
+    number: i + 1,
+    letter: String.fromCharCode(65 + i),
+    group: groups[i] || null,
+  }));
 
   return (
     <div className="baseball-planning">
-      <form className="baseball-add-form" onSubmit={handleAdd}>
-        <input
-          type="text"
-          className="input-field"
-          placeholder="Feldname"
-          value={name}
-          maxLength={60}
-          disabled={disabled}
-          aria-label="Neues Feld"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button type="submit" variant="secondary" size="md" disabled={disabled || !name.trim()}>
-          <Plus size={16} /> Feld hinzufügen
-        </Button>
-      </form>
-
-      {fields.rows.length === 0 ? (
-        <div className="card baseball-planning-loading">Noch keine Felder angelegt.</div>
-      ) : (
-        <div className="baseball-field-grid">
-          {fields.rows.map((f) => {
-            const onField = teams.rows.filter((t) => t.field_id === f.id);
-            return (
-              <div key={f.id} className="card baseball-field-card">
-                <div className="baseball-field-head">
-                  <TextCell value={f.name} disabled={disabled} label="Feldname" onSave={(v) => v && fields.update(f.id, { name: v })} />
-                  <DeleteButton disabled={disabled} label={`Feld ${f.name} entfernen`} onClick={() => setPending(f)} />
-                </div>
-                {onField.length === 0 ? (
-                  <div className="baseball-field-empty">Noch kein Team zugeordnet.</div>
-                ) : (
-                  <ul className="baseball-field-teams">
-                    {onField.map((t) => <li key={t.id}>{t.name}</li>)}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+      {count > 0 && !valid && (
+        <div className="baseball-field-warning" role="alert">
+          <AlertTriangle size={16} aria-hidden="true" />
+          <span>Anzahl Teams muss ein Vielfaches von 4 sein (aktuell {count}).</span>
         </div>
       )}
 
-      {pending && (
-        <ConfirmDialog
-          title="Feld löschen?"
-          message={`„${pending.name}“ wird entfernt. Teams auf diesem Feld bleiben, sind dann ohne Feld.`}
-          confirmLabel="Löschen"
-          onConfirm={() => { const id = pending.id; setPending(null); fields.remove(id); }}
-          onCancel={() => setPending(null)}
-        />
-      )}
+      {fields.map(({ number, letter, group }) => {
+        const matches = group ? roundRobin(group.teams) : [];
+        return (
+          <section key={letter} className="card baseball-field-card" aria-label={`Feld ${number}, Gruppe ${letter}`}>
+            <header className="baseball-field-head">
+              <h3 className="baseball-field-name">Feld {number}</h3>
+              <span className="baseball-field-group">Gruppe {letter}</span>
+              <span className="baseball-field-meta">
+                {group ? group.teams.length : 0} Teams · {matches.length} Spiele
+              </span>
+            </header>
+
+            {group ? (
+              <>
+                <div className="baseball-field-chips" role="list" aria-label={`Teams Gruppe ${letter}`}>
+                  {group.teams.map((t) => (
+                    <span key={t.id} className="baseball-field-chip" role="listitem">{t.name}</span>
+                  ))}
+                </div>
+
+                <div className="baseball-matches" role="list" aria-label={`Spielplan Feld ${number}`}>
+                  {matches.map(([home, away], n) => (
+                    <div
+                      key={`${home.id}-${away.id}`}
+                      className="baseball-match"
+                      role="listitem"
+                      aria-label={`Spiel ${n + 1}: ${home.name} gegen ${away.name}`}
+                    >
+                      <span className="baseball-match-no" aria-hidden="true">{n + 1}</span>
+                      <span className="baseball-match-teams" aria-hidden="true">
+                        <span className="baseball-match-team">{home.name}</span>
+                        <span className="baseball-match-vs">vs</span>
+                        <span className="baseball-match-team">{away.name}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="baseball-field-empty">Noch keine Gruppe. Teams im Tab Teams anlegen.</p>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 };
