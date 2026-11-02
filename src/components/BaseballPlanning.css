@@ -17,6 +17,49 @@
   gap: var(--space-sm);
 }
 .baseball-add-form .input-field { width: 200px; }
+.baseball-add-form .baseball-todo-input { width: 360px; max-width: 100%; }
+.baseball-add-form .baseball-todo-owner-input { width: 180px; max-width: 100%; }
+.baseball-add-form .baseball-todo-date-input { width: 160px; max-width: 100%; }
+
+.baseball-todo-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-xs) var(--space-md);
+}
+.baseball-todo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 4px 0;
+}
+.baseball-todo + .baseball-todo { border-top: 1px solid var(--color-border-light-theme); }
+.baseball-todo .baseball-cell {
+  flex: 1;
+  border-color: transparent;
+  background: transparent;
+}
+.baseball-todo .baseball-cell:focus { border-color: var(--color-indigo); background: var(--color-light-surface); }
+.baseball-todo--done .baseball-cell {
+  text-decoration: line-through;
+  color: var(--color-text-dark-tertiary);
+}
+/* Was | Wer | Bis wann line up in columns; they wrap on narrow widths. */
+.baseball-todo-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-sm);
+}
+.baseball-todo-fields > span { display: flex; min-width: 0; }
+.baseball-todo-task { flex: 1 1 260px; }
+.baseball-todo-owner { flex: 0 1 180px; }
+.baseball-todo-date { flex: 0 0 150px; }
+.baseball-todo-date--overdue .baseball-cell {
+  color: var(--color-danger);
+  font-weight: 600;
+}
 
 .baseball-cell {
   width: 100%;

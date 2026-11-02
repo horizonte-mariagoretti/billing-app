@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.35.2] - 2026-11-02
+
+### Changed
+- **Baseballturnier Übersicht:** the ToDo list shows what to do (Was), who does it (Wer) and when it is due (Bis wann). Done tasks move down and are struck through; a task past its date shows the date in red.
+
 ## [1.35.1] - 2026-11-02
 
 ### Changed
