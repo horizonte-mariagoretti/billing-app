@@ -1786,6 +1786,298 @@ UPDATE gw_item_terms SET
       }
     },
   },
+  {
+    version: 40,
+    up: (exec) => {
+      // Glühwein Sortiment: planned quantity can be entered in portions (selling units, default), in liters
+      // (liters_per_portion = volume of one selling unit) or in buying units (bottles). Per item, not year-bound.
+      exec('BEGIN');
+      try {
+        exec(`
+ALTER TABLE gw_items ADD COLUMN plan_unit TEXT NOT NULL DEFAULT 'portion';
+ALTER TABLE gw_items ADD COLUMN liters_per_portion REAL;
+        `);
+        exec('COMMIT');
+      } catch (e) {
+        try { exec('ROLLBACK'); } catch { /* nothing to roll back */ }
+        console.error('Migration 40 failed:', e.message);
+        throw e;
+      }
+    },
+  },
+  {
+    version: 41,
+    up: (exec) => {
+      // Seeded Glühwein products: liquids are planned in liters, Baileys and Amaretto in bottles (buying unit).
+      // liters_per_portion stays empty until the volume per Glas/Becher is entered.
+      exec(`
+UPDATE gw_items SET plan_unit = 'liter'
+ WHERE id IN ('gw-gluehwein-weiss', 'gw-gluehwein-rot', 'gw-heisse-schokolade', 'gw-gluehgin');
+UPDATE gw_items SET plan_unit = 'buy'
+ WHERE id IN ('gw-baileys', 'gw-amaretto');
+      `);
+    },
+  },
+  {
+    version: 42,
+    up: (exec) => {
+      // Glühwein Sortiment: use_recipe is the Rezept toggle (products with a recipe today start switched on).
+      // Eingekauft = total bought per scout year, in purchase_unit (Kasten, Flasche or Liter), entered by hand.
+      exec('BEGIN');
+      try {
+        exec(`
+ALTER TABLE gw_items ADD COLUMN use_recipe INTEGER NOT NULL DEFAULT 0;
+UPDATE gw_items SET use_recipe = 1 WHERE id IN (SELECT product_id FROM gw_recipe);
+ALTER TABLE gw_item_terms ADD COLUMN purchase_qty REAL;
+ALTER TABLE gw_item_terms ADD COLUMN purchase_unit TEXT;
+        `);
+        exec('COMMIT');
+      } catch (e) {
+        try { exec('ROLLBACK'); } catch { /* nothing to roll back */ }
+        console.error('Migration 42 failed:', e.message);
+        throw e;
+      }
+    },
+  },
+  {
+    version: 43,
+    up: (exec) => {
+      // Glühwein units shared by all products (not in Settings): selling units (Verkaufseinheit) and buying units
+      // (Einkaufseinheit). Units are added from the dropdown of the item popup.
+      exec(`
+CREATE TABLE IF NOT EXISTS gw_units (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('sell', 'buy')),
+  name TEXT NOT NULL,
+  UNIQUE (kind, name)
+);
+INSERT OR IGNORE INTO gw_units (id, kind, name) VALUES
+  ('gwu-sell-stk', 'sell', 'Stk'),
+  ('gwu-sell-glas', 'sell', 'Glas'),
+  ('gwu-sell-becher', 'sell', 'Becher'),
+  ('gwu-sell-flasche', 'sell', 'Flasche'),
+  ('gwu-sell-shot', 'sell', 'Shot'),
+  ('gwu-buy-kasten', 'buy', 'Kasten'),
+  ('gwu-buy-flasche', 'buy', 'Flasche'),
+  ('gwu-buy-paket', 'buy', 'Paket'),
+  ('gwu-buy-fass', 'buy', 'Fass'),
+  ('gwu-buy-kiste', 'buy', 'Kiste'),
+  ('gwu-buy-liter', 'buy', 'Liter');
+      `);
+    },
+  },
+  {
+    version: 44,
+    up: (exec) => {
+      // Units from real use: Glühwein is sold in Tasse; Glühwein is bought in Packs (6 l); Tongerlo is bought in
+      // Kisten (24 Flaschen). Added as shared units, so the dropdowns offer them.
+      exec(`
+INSERT OR IGNORE INTO gw_units (id, kind, name) VALUES
+  ('gwu-sell-tasse', 'sell', 'Tasse'),
+  ('gwu-buy-pack', 'buy', 'Pack');
+      `);
+    },
+  },
+  {
+    version: 45,
+    up: (exec) => {
+      // Liter products (Glühwein, Heiße Schokolade) are bought in liters per Einkaufseinheit (e.g. Pack = 6 l).
+      // pack_liters is that content; pack_size (selling units per buy unit) is derived from it in the popup.
+      exec('ALTER TABLE gw_item_terms ADD COLUMN pack_liters REAL;');
+    },
+  },
+  {
+    version: 46,
+    up: (exec) => {
+      // Shared list of "Geplant in" modes that can be offered in the item popup (portion, liter, buy). The labels and
+      // the conversion of each mode stay in code; the list only decides which modes are offered. At least one remains.
+      exec(`
+CREATE TABLE IF NOT EXISTS gw_plan_modes (key TEXT PRIMARY KEY);
+INSERT OR IGNORE INTO gw_plan_modes (key) VALUES ('portion'), ('liter'), ('buy');
+      `);
+    },
+  },
+  {
+    version: 47,
+    up: (exec) => {
+      // Baseballturnier parent duties (Elterndienste): duties (rows) x shifts (columns) with the parent names per cell.
+      // Per scout year; the names are free text, as on the Excel sheet.
+      exec(`
+CREATE TABLE IF NOT EXISTS baseball_duties (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (year, name)
+);
+CREATE TABLE IF NOT EXISTS baseball_duty_shifts (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  label TEXT NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS baseball_duty_assignments (
+  duty_id TEXT NOT NULL REFERENCES baseball_duties(id) ON DELETE CASCADE,
+  shift_id TEXT NOT NULL REFERENCES baseball_duty_shifts(id) ON DELETE CASCADE,
+  persons TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (duty_id, shift_id)
+);
+      `);
+    },
+  },
+  {
+    version: 48,
+    up: (exec) => {
+      // Baseballturnier planning tables: Fields, Teams (Teams + Tabelle), Sponsors, ToDo (Übersicht), Einkaufsliste. Per scout year.
+      exec(`
+CREATE TABLE IF NOT EXISTS baseball_fields (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS baseball_teams (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  contact_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  contacted INTEGER NOT NULL DEFAULT 0,
+  fee REAL NOT NULL DEFAULT 0,
+  paid INTEGER NOT NULL DEFAULT 0,
+  field_id TEXT REFERENCES baseball_fields(id) ON DELETE SET NULL,
+  wins INTEGER NOT NULL DEFAULT 0,
+  draws INTEGER NOT NULL DEFAULT 0,
+  losses INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS baseball_sponsors (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  contact_name TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'offen',
+  level_amount REAL NOT NULL DEFAULT 0,
+  special TEXT NOT NULL DEFAULT '',
+  amount REAL NOT NULL DEFAULT 0,
+  invoiced INTEGER NOT NULL DEFAULT 0,
+  paid INTEGER NOT NULL DEFAULT 0,
+  material_out TEXT NOT NULL DEFAULT '',
+  material_in TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS baseball_todos (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  task TEXT NOT NULL,
+  owner TEXT NOT NULL DEFAULT '',
+  place TEXT NOT NULL DEFAULT '',
+  due_date TEXT,
+  done INTEGER NOT NULL DEFAULT 0,
+  note TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS baseball_shopping (
+  id TEXT PRIMARY KEY,
+  year INTEGER NOT NULL,
+  item TEXT NOT NULL,
+  qty REAL NOT NULL DEFAULT 0,
+  unit_price REAL NOT NULL DEFAULT 0,
+  category TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT '',
+  bought REAL NOT NULL DEFAULT 0,
+  used REAL NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+      `);
+    },
+  },
+  {
+    version: 49,
+    up: (exec) => {
+      // Baseballturnier sponsor library: one global list of sponsors (identity + billing data), linked from the
+      // per-year rows in baseball_sponsors (sponsor_id). Additive: the old columns of baseball_sponsors stay; name is
+      // kept as a snapshot. art = kind of sponsoring (Material | Geld | Feld). Existing rows are backfilled into the
+      // library (one entry per case-insensitive name) and linked; art is derived from amounts / material.
+      exec(`
+CREATE TABLE IF NOT EXISTS sponsors (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  contact_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  address_street TEXT NOT NULL DEFAULT '',
+  address_zip TEXT NOT NULL DEFAULT '',
+  address_city TEXT NOT NULL DEFAULT '',
+  address_country TEXT NOT NULL DEFAULT '',
+  vat_number TEXT NOT NULL DEFAULT '',
+  iban TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsors_name_ci ON sponsors(lower(name));
+ALTER TABLE baseball_sponsors ADD COLUMN sponsor_id TEXT REFERENCES sponsors(id) ON DELETE SET NULL;
+ALTER TABLE baseball_sponsors ADD COLUMN art TEXT NOT NULL DEFAULT '';
+INSERT OR IGNORE INTO sponsors (id, name, contact_name)
+  SELECT lower(hex(randomblob(16))), trim(name), contact_name
+  FROM baseball_sponsors WHERE trim(name) <> '' GROUP BY lower(trim(name));
+UPDATE baseball_sponsors
+  SET sponsor_id = (SELECT s.id FROM sponsors s WHERE lower(s.name) = lower(trim(baseball_sponsors.name)))
+  WHERE sponsor_id IS NULL;
+UPDATE baseball_sponsors SET art = 'Geld' WHERE art = '' AND (amount > 0 OR level_amount > 0);
+UPDATE baseball_sponsors SET art = 'Material' WHERE art = '' AND (material_out <> '' OR material_in <> '');
+      `);
+    },
+  },
+  {
+    version: 50,
+    up: (exec) => {
+      // Baseballturnier: Horis as referees (Schiedsrichter) of a field. The field carries the year; a Hori can be on
+      // several fields. Links go away with the field or the Hori.
+      exec(`
+CREATE TABLE IF NOT EXISTS baseball_field_horis (
+  field_id TEXT NOT NULL REFERENCES baseball_fields(id) ON DELETE CASCADE,
+  hori_id TEXT NOT NULL REFERENCES horis(id) ON DELETE CASCADE,
+  PRIMARY KEY (field_id, hori_id)
+);
+      `);
+    },
+  },
+  {
+    version: 51,
+    up: (exec) => {
+      // Baseballturnier Schichten: one row per person in a duty x shift slot (name, phone, optional team) and the
+      // number of persons needed per slot. Additive: the old free-text persons column stays (legacy). Backfill splits
+      // that text at commas (trimmed, empty parts skipped) and sets needed = the number of names found.
+      exec(`
+ALTER TABLE baseball_duty_assignments ADD COLUMN needed INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS baseball_duty_persons (
+  id TEXT PRIMARY KEY,
+  duty_id TEXT NOT NULL REFERENCES baseball_duties(id) ON DELETE CASCADE,
+  shift_id TEXT NOT NULL REFERENCES baseball_duty_shifts(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '',
+  team_id TEXT REFERENCES baseball_teams(id) ON DELETE SET NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+WITH RECURSIVE split(duty_id, shift_id, item, rest, n) AS (
+  SELECT duty_id, shift_id, '', COALESCE(persons, '') || ',', 0 FROM baseball_duty_assignments
+  UNION ALL
+  SELECT duty_id, shift_id, trim(substr(rest, 1, instr(rest, ',') - 1)), substr(rest, instr(rest, ',') + 1), n + 1
+  FROM split WHERE rest <> ''
+)
+INSERT INTO baseball_duty_persons (id, duty_id, shift_id, name, sort_order)
+  SELECT lower(hex(randomblob(16))), duty_id, shift_id, item, n FROM split WHERE item <> '';
+UPDATE baseball_duty_assignments SET needed = (
+  SELECT COUNT(*) FROM baseball_duty_persons p
+  WHERE p.duty_id = baseball_duty_assignments.duty_id AND p.shift_id = baseball_duty_assignments.shift_id
+);
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

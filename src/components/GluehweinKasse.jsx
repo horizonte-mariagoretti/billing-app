@@ -210,9 +210,6 @@ const GluehweinKasse = ({ action, year, yearLocked, onError }) => {
               <div className="gw-kasse-icon"><Coins size={20} /></div>
               <h3 className="gw-kasse-title">Bargeldkasse</h3>
             </div>
-            <p className="gw-kasse-help">
-              Anzahl je Münze/Schein zu Beginn (Start) und am Ende zählen. Eingenommen = Ende − Start.
-            </p>
 
             <div className="data-table-container gw-kasse-table-wrap">
               <table className="data-table gw-kasse-table">
@@ -297,10 +294,6 @@ const GluehweinKasse = ({ action, year, yearLocked, onError }) => {
                 <span className={`dt-mono${grandTotal < 0 ? ' gw-kasse-negative' : ''}`}>{formatCurrency(grandTotal)}</span>
               </div>
             </div>
-            <div className="gw-kasse-note">
-              <span>Bargeld und Kartenzahlung zählen automatisch als Einnahmen im Tab Finanzen.</span>
-            </div>
-
             {readOnly ? (
               <div className="gw-kasse-note">
                 <Lock size={16} />

@@ -50,3 +50,22 @@
 .gw-shifts-inactive td { color: var(--color-text-dark-tertiary); }
 .gw-shifts-inactive .dt-strong,
 .gw-shifts-inactive .dt-heat .dt-mono { color: var(--color-text-dark-tertiary) !important; }
+
+/* Split view: calendar on the left, Hori table on the right when the screen is wide enough; stacked otherwise */
+.gw-shifts-split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-width: 0;
+}
+.gw-shifts-main,
+.gw-shifts-side {
+  min-width: 0;
+}
+@media (min-width: 1200px) {
+  .gw-shifts-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}

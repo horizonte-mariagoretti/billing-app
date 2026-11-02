@@ -1,0 +1,29 @@
+/* Baseballturnier page (Baseball.jsx): tab row and the placeholder body of each tab. */
+.baseball-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* The toggle slides its thumb horizontally only, so on very narrow widths it scrolls instead of breaking lines. */
+.baseball-toolbar .seg-toggle {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.baseball-toolbar .seg-toggle-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.baseball-tab-placeholder {
+  padding: var(--space-2xl) var(--space-lg);
+  border: 1px dashed var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-dark-tertiary);
+}

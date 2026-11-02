@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // useGluehweinShifts / useSalesDays take the action key ('gluehwein' | 'baseball'); this component gets the SALES_ACTIONS entry.
-import { CalendarPlus, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import { useGluehweinShifts } from '../hooks/useGluehweinShifts';
 import { useSalesDays } from '../hooks/useSalesDays';
 import useHoris from '../hooks/useHoris';
@@ -15,7 +15,18 @@ import SortableTh from './SortableTh';
 import './DataTable.css';
 import './GluehweinSchichten.css';
 
-const DEFAULT_TEMPLATES = ['16:00-19:00', '19:00-22:00'];
+
+// Every date from start to end (both included), 'YYYY-MM-DD'.
+const datesBetween = (start, end) => {
+  const out = [];
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const last = Date.UTC(ey, em - 1, ed);
+  for (let t = Date.UTC(sy, sm - 1, sd); t <= last; t += 86400000) {
+    out.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return out;
+};
 
 const ERROR_TEXT = {
   YEAR_LOCKED: 'Dieses Jahr ist abgeschlossen und kann nicht mehr geändert werden.',
@@ -33,14 +44,6 @@ const errorText = (err, fallback) => {
   return code ? ERROR_TEXT[code] : fallback;
 };
 
-const parseTemplates = (raw) => {
-  try {
-    const list = JSON.parse(raw ?? '');
-    if (Array.isArray(list) && list.length) return list.map(String);
-  } catch { /* default below */ }
-  return DEFAULT_TEMPLATES;
-};
-
 const isActive = (h) => h.active === 1 || h.active === true || h.active === '1';
 const horiName = (h) => [h.first_name, h.last_name].filter(Boolean).join(' ') || '—';
 const fmtPct = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`;
@@ -50,12 +53,13 @@ const fmtPct = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { maximumFract
  * and a per-Hori table (Schichten, Pflicht, Extra, Anteil %, Bonus %).
  * Props: action (SALES_ACTIONS entry), year, yearLocked, settings (year settings from loadYearSettings), onError(text).
  */
-const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => {
+const GluehweinSchichten = ({ action, year, yearLocked, settings, periodFrom, periodTo, addRequest = null, onError }) => {
   const actionKey = action?.key ?? action;
   const {
-    fetchShifts, addSlots, addSlot, updateSlot, copySlots, removeSlot, assign, unassign,
+    fetchShifts, addSlot, updateSlot, copySlots, removeSlot, assign, unassign,
   } = useGluehweinShifts(actionKey);
   const { fetchDays, addDay, deleteDay } = useSalesDays(actionKey);
+  // Event period comes from the page header (start, end) and updates live. The sale days are generated from it.
   const { fetchHoriStats } = useHoris();
 
   const [days, setDays] = useState([]);
@@ -63,9 +67,15 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
   const [horis, setHoris] = useState([]);
   const [loadedYear, setLoadedYear] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [newDate, setNewDate] = useState('');
   const [confirm, setConfirm] = useState(null); // { kind: 'day'|'slot', id, label, shifts?, assignments? }
   const [showSettings, setShowSettings] = useState(false);
+  // The header button "Schicht-Einstellungen" (Glühwein page) bumps addRequest; a new n opens the popup.
+  const seenSettingsRef = useRef(addRequest?.n ?? 0);
+  useEffect(() => {
+    if (!addRequest || addRequest.n === seenSettingsRef.current) return;
+    seenSettingsRef.current = addRequest.n;
+    setShowSettings(true);
+  }, [addRequest]);
   const [settingsPatch, setSettingsPatch] = useState({});
   // Shared table sort: none → asc → desc → none. Default Hori A→Z.
   const { sort, toggleSort, sortRows } = useTableSort({ key: 'name', dir: 'asc' });
@@ -95,6 +105,31 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
     return () => { cancelled = true; };
   }, [fetchDays, fetchShifts, fetchHoriStats, year, report, reloadKey]);
 
+  // Sale days follow the event period: every date from start to end gets a day, added automatically.
+  // A failed insert is reported and not retried in a loop (the reload only happens after a successful insert).
+  const periodDays = useMemo(() => {
+    if (!periodFrom || !periodTo) return [];
+    return days.filter((d) => d.date >= periodFrom && d.date <= periodTo);
+  }, [days, periodFrom, periodTo]);
+
+  useEffect(() => {
+    if (yearLocked || loadedYear !== year || !periodFrom || !periodTo || periodFrom > periodTo) return undefined;
+    const have = new Set(days.map((d) => d.date));
+    const missing = datesBetween(periodFrom, periodTo).filter((d) => !have.has(d));
+    if (!missing.length) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        for (const date of missing) await addDay(year, date);
+        if (!cancelled) setReloadKey((k) => k + 1);
+      } catch (err) {
+        if (!cancelled) report(err, 'Verkaufstage konnten nicht angelegt werden.');
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodFrom, periodTo, loadedYear, year, days, yearLocked]);
+
   const run = async (fn, fallback) => {
     if (yearLocked) return false;
     setBusy(true);
@@ -110,7 +145,6 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
     }
   };
 
-  const templates = useMemo(() => parseTemplates(localSettings.gluehwein_shift_templates), [localSettings]);
   const bonus = useMemo(() => gluehweinBonusFromSettings(localSettings), [localSettings]);
   const horiById = useMemo(() => new Map(horis.map((h) => [h.id, h])), [horis]);
   const activeHoris = useMemo(() => horis.filter(isActive), [horis]);
@@ -147,13 +181,6 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
       };
     });
   }, [horis, counts, bonus]);
-
-  const handleAddDay = async (e) => {
-    e.preventDefault();
-    const date = newDate.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { onError?.(ERROR_TEXT.INVALID_DATE); return; }
-    if (await run(() => addDay(year, date), 'Datum konnte nicht hinzugefügt werden.')) setNewDate('');
-  };
 
   // Saves a shift from the shift modal; errors are thrown on so the modal can show them.
   const handleSaveSlot = async (dayId, slotId, start, end) => {
@@ -204,49 +231,29 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
 
   return (
     <div className="gw-shifts">
-      <div className="gw-shifts-toolbar">
-        <form className="gw-shifts-add-day" onSubmit={handleAddDay}>
-          <label className="input-label" htmlFor="gw-new-day">Verkaufstag</label>
-          <input
-            id="gw-new-day"
-            type="date"
-            className="input-field"
-            value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
-            disabled={disabled}
-          />
-          <Button type="submit" variant="primary" size="sm" disabled={disabled || !newDate}>
-            <CalendarPlus size={16} /> Tag hinzufügen
-          </Button>
-        </form>
-        <Button type="button" variant="secondary" size="sm" onClick={() => setShowSettings(true)}>
-          <Settings2 size={16} /> Schicht-Einstellungen
-        </Button>
-      </div>
-
       {yearLocked && (
         <div className="gw-shifts-note" role="note">
           Dieses Jahr ist abgeschlossen. Tage und Schichten sind nur lesbar.
         </div>
       )}
 
-      {days.length === 0 ? (
+      <div className="gw-shifts-split">
+      <div className="gw-shifts-main">
+      {periodDays.length === 0 ? (
         <div className="gw-shifts-empty card">
-          Noch keine Verkaufstage{action?.label ? ` für ${action.label}` : ''}. Füge oben ein Datum hinzu.
+          Noch keine Verkaufstage{action?.label ? ` für ${action.label}` : ''}. Den Zeitraum oben im Kopf setzen, dann werden die Tage angelegt.
         </div>
       ) : (
         <GluehweinShiftCalendar
-          days={days}
+          days={periodDays}
           shiftsByDay={shiftsByDay}
           horiById={horiById}
           activeHoris={activeHoris}
-          templates={templates}
           disabled={disabled}
           yearLocked={!!yearLocked}
           busy={busy}
           onAssign={(shiftId, horiId) => run(() => assign(shiftId, horiId), 'Hori konnte nicht eingeteilt werden.')}
           onUnassign={(shiftId, horiId) => run(() => unassign(shiftId, horiId), 'Hori konnte nicht ausgetragen werden.')}
-          onAddTemplates={(dayId) => run(() => addSlots(dayId, templates), 'Schichten konnten nicht angelegt werden.')}
           onSaveSlot={handleSaveSlot}
           onCopySlots={(fromId, toId) => run(async () => {
             const copied = await copySlots(fromId, toId);
@@ -256,22 +263,21 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
           onRemoveDay={handleRemoveDay}
         />
       )}
+      </div>
 
+      <div className="gw-shifts-side">
       <div className="data-table-container gw-shifts-table">
         <table className="data-table gw-shifts-data">
           <thead>
             <tr>
               {sortTh('name', 'Hori')}
               {sortTh('count', 'Schichten')}
-              {sortTh('mandatory', 'Pflicht')}
-              {sortTh('extra', 'Extra')}
               {sortTh('share', 'Anteil %')}
-              {bonus.enabled && sortTh('reduction', 'Bonus %')}
             </tr>
           </thead>
           <tbody>
             {sortedRows.length === 0 ? (
-              <tr><td colSpan={bonus.enabled ? 6 : 5} className="dt-muted">Keine aktiven Horis in diesem Jahr.</td></tr>
+              <tr><td colSpan={3} className="dt-muted">Keine aktiven Horis in diesem Jahr.</td></tr>
             ) : sortedRows.map((r) => {
               const active = isActive(r.hori);
               const share = r.share ? Math.max(0, Math.min(100, Number(r.share.sharePct) || 0)) : null;
@@ -285,12 +291,7 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
                   </td>
                   <td>
                     <span className={`dt-mono ${active ? 'dt-strong' : 'dt-muted'}`}>{r.count}</span>
-                    {active && r.count < bonus.mandatory && (
-                      <span className="gw-shifts-under">unter Pflicht</span>
-                    )}
                   </td>
-                  <td className="dt-mono">{bonus.mandatory}</td>
-                  <td className="dt-mono">{r.extra}</td>
                   <td>
                     {share != null ? (
                       <div className="dt-heat">
@@ -301,14 +302,13 @@ const GluehweinSchichten = ({ action, year, yearLocked, settings, onError }) => 
                       </div>
                     ) : <span className="dt-muted">—</span>}
                   </td>
-                  {bonus.enabled && (
-                    <td className="dt-mono">{r.reduction != null ? fmtPct(r.reduction) : <span className="dt-muted">—</span>}</td>
-                  )}
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
+      </div>
       </div>
 
       {confirm && (

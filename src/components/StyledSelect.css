@@ -8,7 +8,7 @@
   gap: 8px;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--color-text-dark-primary);
   font-size: 0.9rem;
   font-family: var(--font-sans);
@@ -64,6 +64,15 @@
   overflow-y: auto;
 }
 
+/* portal: list lives in document.body, position fixed (top/bottom/left/width/max-height set inline). */
+.ss-dropdown.ss-dropdown--portal {
+  top: auto;
+  bottom: auto;
+  right: auto;
+  z-index: 3000;
+  box-sizing: border-box;
+}
+
 .ss-option {
   display: flex;
   align-items: center;
@@ -95,3 +104,32 @@
 }
 
 .ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }
+
+/* <option disabled>: shown, not selectable */
+.ss-option--disabled,
+.ss-option--disabled:hover {
+  background-color: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: not-allowed;
+}
+
+/* Delete button per option (StyledSelect onRemove) */
+.ss-option-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ss-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+}
+.ss-remove:hover { color: var(--color-danger); background: var(--color-light-bg); }

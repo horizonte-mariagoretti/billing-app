@@ -1,0 +1,4 @@
+/* Baseballturnier: edit dialog of one team (overlay/content come from ClientModal.css). */
+.baseball-team-modal {
+  max-width: 520px;
+}

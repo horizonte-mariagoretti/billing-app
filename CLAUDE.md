@@ -95,7 +95,7 @@ Billing_App/
 │   │   ├── Lasagnen.jsx / .css       # Per-Hori lasagne orders: Bolo/Veggie counts, Anteil %, Bonus % (if on), Betrag min, Betrag final (red when < calculated Betrag min), Bezahlt (locks the row). Übersicht (3 summary boxes, price box opens SettingsFieldsModal) / Einkaufsliste (Veggie ingredient totals, `utils/lasagnaShoppingList.js`) / Finanzen (`LasagnenFinance`)
 │   │   ├── SalesActionPage.jsx / .css # Base page of a Verkaufsaktion: search bar, action date picker (`ActionDateField`), year switcher; content still empty. Prop: action (entry of `SALES_ACTIONS`)
 │   │   ├── Gluehwein.jsx / .css      # Glühweinbude: search bar (Sortiment, Finanzen), year switcher, tabs Übersicht (Verkaufstage, Kasse, Saldo) / Sortiment / Kasse / Schichten / Einkaufsliste / Finanzen
-│   │   ├── Baseball.jsx              # Baseballturnier: thin wrapper around `SalesActionPage` (blank for now)
+│   │   ├── Baseball.jsx              # Baseballturnier: 4 grouped areas (Übersicht; Teams = Teams/Tabelle/Felder; Geld = Sponsoren/Kasse/Finanzen; Turniertag = Schichten/Einkaufsliste), sub-tab row per area, last sub-tab remembered; reuses `GluehweinKasse` + `GluehweinFinanzen` (shared with Glühweinbude)
 │   │   └── Settings.jsx / .css       # Tabbed settings: Company / Billing / Numbering / Translations
 │   ├── hooks/
 │   │   ├── useDatabase.js      # query(sql,params), run(sql,params), transaction([ops])

@@ -1,0 +1,14 @@
+/* Status icon of a Baseball sponsor row (SponsorStatusIcon.jsx). Icon only, label in the tooltip. */
+.sponsor-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.sponsor-status-icon--open      { color: var(--color-text-dark-tertiary); }
+.sponsor-status-icon--contacted { color: #EA580C; }
+.sponsor-status-icon--approved  { color: #16A34A; }
+.sponsor-status-icon--refused   { color: var(--color-danger); }

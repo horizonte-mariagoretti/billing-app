@@ -47,6 +47,10 @@
   white-space: nowrap;
 }
 
+.lasagnen-exp-row-actions button + button {
+  margin-left: var(--space-xs);
+}
+
 .lasagnen-exp-row-actions button {
   background: transparent;
   border: none;

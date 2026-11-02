@@ -1,0 +1,136 @@
+/* Add / edit popup of a Baseball sponsor (BaseballSponsorModal.jsx). Modal shell from ClientModal.css. */
+.bb-sponsor-modal { max-width: 680px; }
+
+.bb-sponsor-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.bb-sponsor-ident,
+.bb-sponsor-library,
+.bb-sponsor-year {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.bb-sponsor-year {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light-theme);
+}
+
+.bb-sponsor-section-title {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-dark-secondary);
+}
+
+.bb-sponsor-ident .input-field[readonly] {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-secondary);
+  cursor: default;
+}
+
+.bb-sponsor-ident .input-field[readonly]:focus {
+  border-color: var(--color-border-light-theme);
+  box-shadow: none;
+}
+
+.bb-sponsor-lib-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* Library option already added this year */
+.bb-sponsor-option--used {
+  color: var(--color-text-dark-tertiary);
+  cursor: not-allowed;
+}
+
+.bb-sponsor-option--used:hover,
+.bb-sponsor-option--used.is-focused {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-dark-tertiary);
+}
+
+.bb-sponsor-used-tag {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-light-bg);
+  border: 1px solid var(--color-border-light-theme);
+  color: var(--color-text-dark-tertiary);
+}
+
+/* Hints and duplicate banner */
+.bb-sponsor-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-dark-tertiary);
+}
+
+.bb-sponsor-hint svg { flex-shrink: 0; margin-top: 2px; }
+.bb-sponsor-hint--warn { color: #C2410C; }
+
+.bb-sponsor-duplicate {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  background-color: rgba(234, 88, 12, 0.08);
+  color: #9A3412;
+  font-size: 0.85rem;
+}
+
+.bb-sponsor-duplicate > svg { flex-shrink: 0; }
+.bb-sponsor-duplicate-text { flex: 1 1 220px; min-width: 0; }
+.bb-sponsor-duplicate-actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+
+/* Year section */
+.bb-sponsor-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.bb-sponsor-status .bb-sponsor-select { flex: 1; min-width: 0; }
+
+.bb-sponsor-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+
+.bb-sponsor-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--color-text-dark-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.bb-sponsor-check input { accent-color: var(--color-primary); width: 16px; height: 16px; }
+.bb-sponsor-check--small { font-size: 0.8rem; color: var(--color-text-dark-secondary); }
+.bb-sponsor-fieldset:disabled .bb-sponsor-check { cursor: default; opacity: 0.7; }
