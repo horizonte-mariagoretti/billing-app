@@ -70,7 +70,7 @@ const ShoppingTable = ({ products, ingredients, t, formatCurrency }) => {
       <Empty
         icon={ShoppingCart}
         title={t('gw_shop_empty', 'Noch keine geplanten Mengen')}
-        desc={t('gw_shop_empty_desc2', 'Trage im Sortiment bei mindestens einem Produkt eine geplante Menge über 0 ein oder bei einer Zutat einen Zusatzbedarf.')}
+        desc={t('gw_shop_empty_desc2', 'Trage im Sortiment bei einem Rezept-Produkt eine Verkauft-Menge über 0 ein, bei einem Produkt ohne Rezept eine Einkauf-Menge, oder bei einer Zutat einen Zusatzbedarf.')}
       />
     );
   }
@@ -293,8 +293,8 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
 
 /**
  * Einkaufsliste of a Verkaufsaktion (generic on `action`), three sub-views:
- *  - Einkaufsliste: computed by buildShoppingList from the Sortiment's planned quantities + recipes, the ingredients'
- *    Zusatzbedarf and Bestand (read-only).
+ *  - Einkaufsliste: computed by buildShoppingList from the Sortiment's planned quantities + recipes (ingredients), the
+ *    Einkauf of products without recipe, and the ingredients' Zusatzbedarf and Bestand (read-only).
  *  - Zutaten: ingredient management (useGluehweinIngredients); row click opens GluehweinIngredientModal.
  *  - Rezepte: recipe per Sortiment product (RecipeEditor).
  * Locked year: terms (price, pack, Zusatzbedarf, Bestand) read-only; names/units and recipes stay editable.

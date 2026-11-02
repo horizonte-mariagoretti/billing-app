@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { buildShoppingList } from './gluehweinShoppingList.js';
 
 const products = [
-  { id: 'rot', name: 'Glühwein rot', unit: 'Becher' },
-  { id: 'stella', name: 'Stella', unit: 'Fl.' },
+  { id: 'rot', name: 'Glühwein rot', unit: 'Becher', use_recipe: true },
+  { id: 'stella', name: 'Stella', unit: 'Fl.', use_recipe: true },
   { id: 'leffe', name: 'Leffe', unit: 'Fl.' },
 ];
 const ingredients = [
@@ -17,8 +17,8 @@ const ingredients = [
 test('recipe expansion + direct purchase, pack rounding, null price', () => {
   const productTerms = new Map([
     ['rot', { planned_qty: 30 }],
-    ['stella', { planned_qty: 25, pack_size: 24, buy_price: 1.1 }], // no recipe -> bought itself, 2 packs
-    ['leffe', { planned_qty: 0, pack_size: 1, buy_price: 2 }], // not planned -> no row
+    ['stella', { planned_qty: 25, pack_size: 24, buy_price: 1.1, purchase_qty: 2 }], // no recipe -> bought itself, Einkauf 2 packs
+    ['leffe', { planned_qty: 0, pack_size: 1, buy_price: 2 }], // no Einkauf -> no row
   ]);
   const ingredientTerms = new Map([
     ['wein', { pack_size: 6, buy_price: 4.5 }], // 30 × 0.2 = 6 l -> 1 pack
@@ -33,7 +33,7 @@ test('recipe expansion + direct purchase, pack rounding, null price', () => {
   assert.deepEqual(rows.map((r) => r.key), ['ingredient:wein', 'ingredient:gewuerz', 'product:stella']);
   assert.deepEqual([by.wein.need, by.wein.packs, by.wein.packPrice, by.wein.cost], [6, 1, 27, 27]);
   assert.deepEqual([by.gewuerz.need, by.gewuerz.packs, by.gewuerz.cost], [3, 3, 0]);
-  assert.deepEqual([by.stella.source, by.stella.need, by.stella.stock, by.stella.packs, by.stella.cost], ['product', 25, 0, 2, 52.8]);
+  assert.deepEqual([by.stella.source, by.stella.need, by.stella.stock, by.stella.packs, by.stella.cost], ['product', 48, 0, 2, 52.8]);
   assert.equal(total, 79.8);
 });
 
@@ -92,16 +92,16 @@ test('empty input', () => {
   assert.deepEqual(buildShoppingList({}), { rows: [], total: 0 });
 });
 
-test('products: pack cost = buy_pack_price, content-based packs, buy_unit label, legacy fallback', () => {
+test('products: list shows Einkauf in buy units, cost = packs × pack price, buy_unit label, legacy fallback', () => {
   const prods = [
     { id: 'baileys', name: 'Baileys', unit: 'Shot' },
     { id: 'stella', name: 'Stella', unit: 'Flasche' },
     { id: 'leffe', name: 'Leffe', unit: 'Flasche' },
   ];
   const productTerms = {
-    baileys: { planned_qty: 160, buy_unit: 'Flasche', buy_pack_price: 14, pack_size: 20 }, // 160 / 20 = 8 Flaschen
-    stella: { planned_qty: 50, buy_unit: 'Kasten', buy_pack_price: 14.4, pack_size: 24, buy_price: 99 }, // 3 Kästen
-    leffe: { planned_qty: 13, pack_size: 12, buy_price: 1.5 }, // legacy: no pack price -> 12 × 1.5 = 18 per pack
+    baileys: { planned_qty: 160, buy_unit: 'Flasche', buy_pack_price: 14, pack_size: 20, purchase_qty: 8 }, // planned ignored
+    stella: { planned_qty: 50, buy_unit: 'Kasten', buy_pack_price: 14.4, pack_size: 24, buy_price: 99, purchase_qty: 3 },
+    leffe: { planned_qty: 13, pack_size: 12, buy_price: 1.5, purchase_qty: 2 }, // legacy: no pack price -> 12 × 1.5 = 18 per pack
   };
   const { rows, total } = buildShoppingList({ products: prods, ingredients: [], productTerms, ingredientTerms: {}, recipe: [] });
   const by = Object.fromEntries(rows.map((r) => [r.id, r]));
@@ -109,4 +109,23 @@ test('products: pack cost = buy_pack_price, content-based packs, buy_unit label,
   assert.deepEqual([by.stella.packs, by.stella.packPrice, by.stella.cost, by.stella.packLabel], [3, 14.4, 43.2, 'Kasten']);
   assert.deepEqual([by.leffe.packs, by.leffe.packPrice, by.leffe.cost, by.leffe.packLabel], [2, 18, 36, null]);
   assert.equal(total, 191.2);
+});
+
+test('products without Einkauf get no row, even when planned; Einkauf 0 is no row', () => {
+  const productTerms = {
+    baileys: { planned_qty: 160, pack_size: 20, buy_pack_price: 14 },
+    stella: { planned_qty: 50, pack_size: 24, buy_pack_price: 14.4, purchase_qty: 0 },
+  };
+  const { rows, total } = buildShoppingList({ products, ingredients: [], productTerms, ingredientTerms: {}, recipe: [] });
+  assert.deepEqual(rows, []);
+  assert.equal(total, 0);
+});
+
+test('recipe products ignore Einkauf and use planned quantity for ingredients', () => {
+  const productTerms = { rot: { planned_qty: 10, purchase_qty: 99 } };
+  const recipe = [{ product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 0.2 }];
+  const { rows } = buildShoppingList({
+    products, ingredients, productTerms, ingredientTerms: { wein: { pack_size: 1, buy_price: 2 } }, recipe,
+  });
+  assert.deepEqual(rows.map((r) => [r.key, r.need, r.packs]), [['ingredient:wein', 2, 2]]);
 });
