@@ -64,6 +64,15 @@
   overflow-y: auto;
 }
 
+/* portal: list lives in document.body, position fixed (top/bottom/left/width/max-height set inline). */
+.ss-dropdown.ss-dropdown--portal {
+  top: auto;
+  bottom: auto;
+  right: auto;
+  z-index: 3000;
+  box-sizing: border-box;
+}
+
 .ss-option {
   display: flex;
   align-items: center;
@@ -95,6 +104,14 @@
 }
 
 .ss-disabled .ss-trigger { opacity: 0.6; cursor: not-allowed; }
+
+/* <option disabled>: shown, not selectable */
+.ss-option--disabled,
+.ss-option--disabled:hover {
+  background-color: transparent;
+  color: var(--color-text-dark-tertiary);
+  cursor: not-allowed;
+}
 
 /* Delete button per option (StyledSelect onRemove) */
 .ss-option-end {

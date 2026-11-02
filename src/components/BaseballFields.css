@@ -1,0 +1,59 @@
+/* Baseballturnier Felder: additions to the field cards in BaseballPlanning.css. */
+
+/* Note above the cards: teams without a field (neutral, not an error). */
+.baseball-fields-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-alpha);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+}
+.baseball-fields-note svg { flex-shrink: 0; color: var(--color-primary); }
+
+/* Warning inside a card whose team count is not 4 (no schedule). */
+.baseball-fields-card-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px dashed var(--color-danger);
+  border-radius: var(--radius-md);
+  background: rgba(255, 77, 77, 0.06);
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+.baseball-fields-card-warning svg { flex-shrink: 0; }
+
+/* Feld select in the Teams table and the team dialog. */
+.baseball-field-select { width: 100%; min-width: 0; }
+.baseball-teams-table .baseball-field-select .ss-trigger { padding-top: 5px; padding-bottom: 5px; font-size: 0.85rem; }
+/* The open Feld list is portaled to document.body (StyledSelect portal), so the scrolling table container
+   cannot cut it off; in the Teams table it is compact like the trigger. */
+.baseball-field-list--compact .ss-option { padding: 6px 10px; font-size: 0.85rem; }
+
+/* Placeholder team (display only) filling an incomplete field: muted, dashed chip, italic in match tiles. */
+.baseball-field-chip.baseball-fields-placeholder {
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-text-dark-tertiary);
+  font-style: italic;
+}
+.baseball-match-team.baseball-fields-placeholder {
+  color: var(--color-text-dark-tertiary);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Warning icon next to a field name: an incomplete field (its tooltip says how many teams it has). */
+.baseball-field-warn-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  color: var(--color-danger);
+  vertical-align: middle;
+  cursor: help;
+}

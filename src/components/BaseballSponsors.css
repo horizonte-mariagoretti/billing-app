@@ -1,0 +1,18 @@
+/* Baseballturnier Sponsoren table (BaseballSponsors.jsx). Fixed layout: the small columns have fixed widths,
+   Sponsor / Kontakt / Material share the rest. Below the min width the container scrolls sideways itself. */
+.bb-sponsors-table { min-width: 880px; }
+.bb-sponsors-table th,
+.bb-sponsors-table td { padding-left: 12px; padding-right: 12px; }
+.bb-sponsors-table th:first-child { min-width: 0; }
+
+.bb-sponsors-col-contact { width: 18%; }
+.bb-sponsors-col-status { width: 76px; }
+.bb-sponsors-col-art { width: 92px; }
+.bb-sponsors-col-amount { width: 116px; }
+.bb-sponsors-col-check { width: 104px; }
+.bb-sponsors-col-paid { width: 120px; }
+.bb-sponsors-col-material { width: 22%; }
+.bb-sponsors-col-actions { width: 104px; }
+
+.bb-sponsors-table td.center .sponsor-status-icon { vertical-align: middle; }
+.bb-sponsors-table tfoot td { overflow: hidden; text-overflow: ellipsis; }

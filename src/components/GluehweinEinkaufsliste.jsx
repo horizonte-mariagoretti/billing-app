@@ -9,6 +9,7 @@ import { buildShoppingList } from '../utils/gluehweinShoppingList';
 import SegmentedToggle from './SegmentedToggle';
 import SortableTh from './SortableTh';
 import Button from './Button';
+import { editableRowProps } from './editableRow';
 import RecipeEditor from './RecipeEditor';
 import GluehweinIngredientModal from './GluehweinIngredientModal';
 import './DataTable.css';
@@ -254,7 +255,7 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
       </thead>
       <tbody>
         {sorted.map((p) => (
-          <tr key={p.id}>
+          <tr key={p.id} {...editableRowProps(() => onEdit(p), `${t('gw_recipe_title', 'Rezept')} bearbeiten: ${p.name}`)}>
             <td className="gw-shop-name">{p.name}</td>
             <td className="gw-recipes-parts">
               {p.recipe?.length

@@ -17,49 +17,46 @@
   gap: var(--space-sm);
 }
 .baseball-add-form .input-field { width: 200px; }
-.baseball-add-form .baseball-todo-input { width: 360px; max-width: 100%; }
-.baseball-add-form .baseball-todo-owner-input { width: 180px; max-width: 100%; }
-.baseball-add-form .baseball-todo-date-input { width: 160px; max-width: 100%; }
 
-.baseball-todo-list {
-  list-style: none;
-  margin: 0;
-  padding: var(--space-xs) var(--space-md);
+/* Übersicht to-do table: Erledigt | Was | Wer | Bis wann | actions, empty add row at the bottom.
+   The container does not clip, so the date picker popup of the last rows can open below the table;
+   the columns shrink instead of scrolling sideways. */
+.baseball-todo-table-wrap { overflow: visible; }
+.baseball-todo-table { width: 100%; }
+.baseball-todo-table th:first-child { min-width: 0; }
+.baseball-todo-col-done { width: 84px; }
+.baseball-todo-col-owner { width: 24%; }
+.baseball-todo-col-date { width: 200px; }
+.baseball-todo-col-actions { width: 56px; }
+@media (max-width: 700px) {
+  .baseball-todo-col-done { width: 78px; }
+  .baseball-todo-col-owner { width: 16%; }
+  .baseball-todo-col-date { width: 176px; }
+  .baseball-todo-col-actions { width: 48px; }
+  .baseball-todo-table th,
+  .baseball-todo-table td { padding-left: 6px; padding-right: 6px; }
 }
-.baseball-todo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 4px 0;
-}
-.baseball-todo + .baseball-todo { border-top: 1px solid var(--color-border-light-theme); }
-.baseball-todo .baseball-cell {
-  flex: 1;
+.baseball-todo-table td { overflow: visible; }
+.baseball-todo-table tbody tr:not(.baseball-add-row) .baseball-cell {
   border-color: transparent;
   background: transparent;
 }
-.baseball-todo .baseball-cell:focus { border-color: var(--color-indigo); background: var(--color-light-surface); }
-.baseball-todo--done .baseball-cell {
+.baseball-todo-table tbody tr:not(.baseball-add-row) .baseball-cell:focus {
+  border-color: var(--color-primary);
+  background: var(--color-light-surface);
+}
+.baseball-todo--done .baseball-cell,
+.baseball-todo--done .datepicker-input {
   text-decoration: line-through;
   color: var(--color-text-dark-tertiary);
 }
-/* Was | Wer | Bis wann line up in columns; they wrap on narrow widths. */
-.baseball-todo-fields {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-xs) var(--space-sm);
-}
-.baseball-todo-fields > span { display: flex; min-width: 0; }
-.baseball-todo-task { flex: 1 1 260px; }
-.baseball-todo-owner { flex: 0 1 180px; }
-.baseball-todo-date { flex: 0 0 150px; }
-.baseball-todo-date--overdue .baseball-cell {
+.baseball-todo-date .datepicker-wrap { min-width: 0; }
+.baseball-todo-date--overdue .datepicker-input {
   color: var(--color-danger);
   font-weight: 600;
 }
+.baseball-todo-table .baseball-add-row td:first-child { border-bottom-left-radius: var(--radius-lg); }
+.baseball-todo-table .baseball-add-row td:last-child { border-bottom-right-radius: var(--radius-lg); }
 
 .baseball-cell {
   width: 100%;
@@ -69,13 +66,137 @@
 }
 .baseball-cell--num { text-align: right; }
 
+/* Check mark (CheckCell): rounded square, accent fill + white tick when checked. */
 .baseball-check {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-indigo);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1.5px solid var(--color-border-light-theme);
+  border-radius: 5px;
+  background: var(--color-light-surface);
+  color: #fff;
   cursor: pointer;
+  vertical-align: middle;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-.baseball-check:disabled { cursor: default; }
+.baseball-check:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-alpha);
+}
+.baseball-check--on,
+.baseball-check--on:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.baseball-check--on:hover:not(:disabled) { background: var(--color-primary-hover); }
+.baseball-check:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-border-mid);
+}
+.baseball-check:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  background: var(--color-light-bg);
+}
+.baseball-check--on:disabled { background: var(--color-text-dark-tertiary); border-color: var(--color-text-dark-tertiary); }
+
+/* Teams: count + fee button above the table. */
+.baseball-teams-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.baseball-teams-count {
+  font-size: 0.85rem;
+  color: var(--color-text-dark-secondary);
+}
+.baseball-fee-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-full);
+  background: var(--color-light-surface);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+.baseball-fee-btn strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-dark-primary);
+}
+.baseball-fee-btn:hover:not(:disabled) {
+  border-color: var(--color-primary-border-mid);
+  background: var(--color-primary-soft);
+}
+.baseball-fee-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-border-mid);
+}
+.baseball-fee-btn:disabled { cursor: default; opacity: 0.7; }
+
+.baseball-table td.baseball-text-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Row height as on the Horis page (about 57px): the 36px inputs in the rows need less vertical padding. */
+.data-table.baseball-table td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.baseball-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  white-space: nowrap;
+}
+.baseball-row-btn {
+  background: transparent;
+  border: none;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dark-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--transition-fast);
+}
+.baseball-row-btn:hover:not(:disabled) {
+  color: var(--color-text-dark-primary);
+  background-color: var(--color-light-bg);
+}
+.baseball-row-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.baseball-add-row td { background: var(--color-light-bg); }
+.baseball-add-row .baseball-cell { background: var(--color-light-surface); }
+/* Teams add row: full-size fields (36px, like an input-field). Narrower cell padding puts the typed text on the
+   column's text edge; the minimum widths fit the colgroup in BaseballTeams.jsx (col − 2 × 12px). */
+.baseball-teams-table .baseball-add-row td { padding: 8px 12px; }
+.baseball-teams-table .baseball-add-row .baseball-cell,
+.baseball-teams-table .baseball-add-row .baseball-field-select .ss-trigger {
+  height: 36px;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+.baseball-teams-table .baseball-add-row td:nth-child(1) .baseball-cell,
+.baseball-teams-table .baseball-add-row td:nth-child(3) .baseball-cell,
+.baseball-teams-table .baseball-add-row td:nth-child(5) .baseball-cell { min-width: 160px; }
+.baseball-teams-table .baseball-add-row td:nth-child(4) .baseball-cell { min-width: 130px; }
+.baseball-teams-table .baseball-add-row td.baseball-add-hint { padding-left: var(--space-lg); }
+.baseball-add-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-dark-tertiary);
+}
 
 .baseball-table { table-layout: fixed; }
 .baseball-table td,
@@ -89,30 +210,6 @@
   color: var(--color-text-dark-primary);
 }
 
-.baseball-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-md);
-}
-.baseball-stat {
-  padding: var(--space-md);
-}
-.baseball-stat-label {
-  font-size: 0.8rem;
-  color: var(--color-text-dark-tertiary);
-}
-.baseball-stat-value {
-  font-family: var(--font-heading);
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: var(--color-text-dark-primary);
-  margin-top: 4px;
-}
-.baseball-stat-sub {
-  font-size: 0.8rem;
-  color: var(--color-text-dark-secondary);
-  margin-top: 2px;
-}
 
 /* Felder: one full-width card per field (= group), stacked. */
 .baseball-field-card {
@@ -235,12 +332,6 @@
 }
 .baseball-field-warning svg { flex-shrink: 0; }
 
-@media (max-width: 1100px) {
-  .baseball-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 600px) {
-  .baseball-stats { grid-template-columns: 1fr; }
-}
 @media (max-width: 700px) {
   .baseball-matches { grid-template-columns: 1fr; }
 }

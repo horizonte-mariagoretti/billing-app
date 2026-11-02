@@ -1995,6 +1995,43 @@ CREATE TABLE IF NOT EXISTS baseball_shopping (
       `);
     },
   },
+  {
+    version: 49,
+    up: (exec) => {
+      // Baseballturnier sponsor library: one global list of sponsors (identity + billing data), linked from the
+      // per-year rows in baseball_sponsors (sponsor_id). Additive: the old columns of baseball_sponsors stay; name is
+      // kept as a snapshot. art = kind of sponsoring (Material | Geld | Feld). Existing rows are backfilled into the
+      // library (one entry per case-insensitive name) and linked; art is derived from amounts / material.
+      exec(`
+CREATE TABLE IF NOT EXISTS sponsors (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  contact_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  address_street TEXT NOT NULL DEFAULT '',
+  address_zip TEXT NOT NULL DEFAULT '',
+  address_city TEXT NOT NULL DEFAULT '',
+  address_country TEXT NOT NULL DEFAULT '',
+  vat_number TEXT NOT NULL DEFAULT '',
+  iban TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sponsors_name_ci ON sponsors(lower(name));
+ALTER TABLE baseball_sponsors ADD COLUMN sponsor_id TEXT REFERENCES sponsors(id) ON DELETE SET NULL;
+ALTER TABLE baseball_sponsors ADD COLUMN art TEXT NOT NULL DEFAULT '';
+INSERT OR IGNORE INTO sponsors (id, name, contact_name)
+  SELECT lower(hex(randomblob(16))), trim(name), contact_name
+  FROM baseball_sponsors WHERE trim(name) <> '' GROUP BY lower(trim(name));
+UPDATE baseball_sponsors
+  SET sponsor_id = (SELECT s.id FROM sponsors s WHERE lower(s.name) = lower(trim(baseball_sponsors.name)))
+  WHERE sponsor_id IS NULL;
+UPDATE baseball_sponsors SET art = 'Geld' WHERE art = '' AND (amount > 0 OR level_amount > 0);
+UPDATE baseball_sponsors SET art = 'Material' WHERE art = '' AND (material_out <> '' OR material_in <> '');
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

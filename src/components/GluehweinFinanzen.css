@@ -109,6 +109,10 @@
   white-space: nowrap;
 }
 
+.gw-fin-row-actions button + button {
+  margin-left: var(--space-xs);
+}
+
 .gw-fin-row-actions button {
   background: transparent;
   border: none;

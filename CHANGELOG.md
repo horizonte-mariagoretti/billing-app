@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.38.0] - 2026-11-02
+
+### Added
+- **Baseballturnier Sponsoren:** sponsor library (database table `sponsors`, migration 49) with billing data. Add a sponsor from the library or create a new one; an existing name is proposed instead of creating a duplicate. Status shown as icons (open, contacted, approved, refused), Art (Material, Geld, Feld), Material.
+- **Baseballturnier Teams:** each team gets a Feld (1 to 4). Felder shows four stacked field cards with their teams, a round-robin schedule per field and placeholders for missing teams.
+- **Baseballturnier Übersicht:** to-do list with headers and an always-empty last row; three summary cards (To-Do's, Teams, Saldo) in the Glühweinbude style.
+- **Row click to edit** on Baseball and Glühweinbude rows that have an edit action.
+
+### Changed
+- **Baseballturnier:** Tabelle tab removed. Kasse and Sponsoren back in the top row; the Finanzen tab is the money list.
+- **Glühweinbude Kasse:** the two explanatory texts are removed.
+- **Row icons and row height:** edit and delete icons use the Horis spacing on Baseball, Glühweinbude and Lasagnen.
+- **Dropdowns:** the open list of a select is drawn in the page body on Baseball, so table edges no longer cut its rounded corners.
+
+## [1.37.0] - 2026-11-02
+### Added
+- **Baseballturnier Teams:** teams are added in the table itself: an empty row at the bottom becomes a team as soon as its name is entered (Enter or leaving the row). Edit dialog next to delete. Custom check marks for Kontaktiert and Bezahlt.
+- **Baseballturnier Beitrag:** the team fee is a year setting (baseball_team_fee), edited in a popup from the Teams tab. The Übersicht counts paid teams × fee.
+### Changed
+- **Baseballturnier Teams:** columns are Gruppenname, Ansprechpartner, Telefon, E-Mail, Kontaktiert, Bezahlt. Only the check marks are clickable in the table.
+- **Baseballturnier Übersicht:** the to-do due date uses the app's date picker.
+
 ## [1.36.0] - 2026-11-02
 ### Added
 - **Baseballturnier Felder:** group phase as cards. Always four fields (Feld 1 to 4); the teams are split into groups of 4 in their list order (Gruppe A to D), each group plays on its own field. Each card shows its four teams and the round-robin schedule (6 matches, each pair once), as tiles. Empty fields say so. The team count must be a multiple of 4; otherwise a warning shows and only complete groups get a schedule. More than 16 teams: extra groups as Feld 5, 6, ...

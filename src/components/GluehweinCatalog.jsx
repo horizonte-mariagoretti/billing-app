@@ -18,6 +18,7 @@ import { pluralUnit } from '../utils/gwUnits';
 import StyledSelect from './StyledSelect';
 import { itemEconomics, plannedPortions, recipeCostPerUnit } from '../utils/gluehweinCatalogMath';
 import Button from './Button';
+import { editableRowProps } from './editableRow';
 import './DataTable.css';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal-*)
@@ -840,7 +841,14 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
               {sorted.map((i) => {
                 const unit = unitOf(i);
                 return (
-                  <tr key={i.id} className={i.active ? undefined : 'gw-row-inactive'}>
+                  <tr
+                    key={i.id}
+                    {...editableRowProps(
+                      () => setModal({ item: i, triggerRef: null }),
+                      `${t('btn_edit', 'Bearbeiten')}: ${i.name}`,
+                      i.active ? undefined : 'gw-row-inactive',
+                    )}
+                  >
                     <td className="gw-name-cell">{i.name}</td>
                     <td className="dt-mono gw-price-cell">
                       <InlineField

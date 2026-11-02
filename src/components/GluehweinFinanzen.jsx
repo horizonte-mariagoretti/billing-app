@@ -10,6 +10,7 @@ import SegmentedToggle from './SegmentedToggle';
 import ConfirmDialog from './ConfirmDialog';
 import FinanceEntryModal from './FinanceEntryModal';
 import Button from './Button';
+import { editableRowProps } from './editableRow';
 import './DataTable.css';
 import './GluehweinFinanzen.css';
 
@@ -281,7 +282,13 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
             </thead>
             <tbody>
               {sorted.map((x) => (
-                <tr key={x.key}>
+                <tr
+                  key={x.key}
+                  {...(yearLocked || x.isKasse ? {} : editableRowProps(
+                    () => setModal({ kind: x.kind, entry: x.raw, triggerRef: null }),
+                    `Bearbeiten: ${x.description}`,
+                  ))}
+                >
                   <td className="gw-fin-desc-cell">{x.description}</td>
                   <td>{x.category}</td>
                   <td className={`num dt-mono ${x.kind === 'income' ? 'gw-fin-amount-in' : 'gw-fin-amount-out'}`}>{formatCurrency(x.amount)}</td>

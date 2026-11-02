@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import useDatabase from './useDatabase';
 
+// Year setting (year_settings) with the fee every team pays; the Übersicht counts paid teams × fee.
+export const TEAM_FEE_KEY = 'baseball_team_fee';
+
 // Rows of one Baseballturnier planning table (migration 48: baseball_fields, baseball_teams, baseball_sponsors,
 // baseball_todos, baseball_shopping), per scout year. `table` is always one of those names from our own code.
 // Writes are refused in a locked year (YEAR_LOCKED); `rows` is null while the year is loading.
@@ -28,15 +31,18 @@ export function useBaseballRows(table, year, yearLocked, onError) {
     if (rows[0]?.locked) throw new Error('YEAR_LOCKED');
   }, [query, year]);
 
+  // Resolves to true when the write went through (errors go to onError and resolve to false).
   const write = useCallback(async (fn, fallback) => {
-    if (yearLocked) return;
+    if (yearLocked) return false;
     try {
       await assertYearOpen();
       await fn();
       setReloadKey((k) => k + 1);
+      return true;
     } catch (err) {
       if (err?.message === 'YEAR_LOCKED') onError?.('Das Jahr ist gesperrt.');
       else onError?.(fallback);
+      return false;
     }
   }, [yearLocked, assertYearOpen, onError]);
 

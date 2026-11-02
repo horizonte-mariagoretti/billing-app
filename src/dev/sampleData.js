@@ -353,34 +353,49 @@ export function buildSampleStatements() {
     });
   });
 
-  /* ── baseballturnier: planning (fictional teams/sponsors, no contacts) ── */
+  /* ── baseballturnier: planning (fictional teams/sponsors, example contacts only) ── */
   ['Feld 1', 'Feld 2', 'Feld 3', 'Feld 4'].forEach((name, i) => insert('baseball_fields', {
     id: `bf-${i + 1}`, year: bbYear, name, sort_order: i + 1,
   }));
   const bbTeams = [
-    // [name, contacted, fee, paid, field, wins, draws, losses]
-    ['Team Beispiel 1', 1, 40, 1, 'bf-1', 3, 0, 1],
-    ['Team Beispiel 2', 1, 40, 1, 'bf-1', 2, 1, 1],
-    ['Team Beispiel 3', 1, 40, 0, 'bf-2', 1, 1, 2],
-    ['Team Beispiel 4', 1, 40, 1, 'bf-2', 2, 0, 2],
-    ['Team Beispiel 5', 0, 40, 0, 'bf-3', 0, 2, 2],
-    ['Team Beispiel 6', 1, 40, 0, 'bf-3', 1, 0, 3],
-    ['Team Beispiel 7', 0, 40, 0, null, 0, 0, 0],
-    ['Team Beispiel 8', 1, 40, 0, null, 0, 0, 0],
+    // [name, contacted, paid, field, wins, draws, losses]
+    ['Team Beispiel 1', 1, 1, 'bf-1', 3, 0, 1],
+    ['Team Beispiel 2', 1, 1, 'bf-1', 2, 1, 1],
+    ['Team Beispiel 3', 1, 0, 'bf-2', 1, 1, 2],
+    ['Team Beispiel 4', 1, 1, 'bf-2', 2, 0, 2],
+    ['Team Beispiel 5', 0, 0, 'bf-3', 0, 2, 2],
+    ['Team Beispiel 6', 1, 0, 'bf-3', 1, 0, 3],
+    ['Team Beispiel 7', 0, 0, null, 0, 0, 0],
+    ['Team Beispiel 8', 1, 0, null, 0, 0, 0],
   ];
-  bbTeams.forEach(([name, contacted, fee, paid, field_id, wins, draws, losses], i) => insert('baseball_teams', {
-    id: `bt-${i + 1}`, year: bbYear, name, contacted, fee, paid, field_id, wins, draws, losses, sort_order: i + 1,
+  bbTeams.forEach(([name, contacted, paid, field_id, wins, draws, losses], i) => insert('baseball_teams', {
+    id: `bt-${i + 1}`, year: bbYear, name, contacted, paid, field_id, wins, draws, losses, sort_order: i + 1,
+  }));
+  // One fee per team and scout year (Teams tab, "Beitrag" button).
+  statements.push({
+    sql: 'INSERT INTO year_settings (year, key, value) VALUES (?, ?, ?) ON CONFLICT(year, key) DO UPDATE SET value = excluded.value',
+    params: [bbYear, 'baseball_team_fee', '35'],
+  });
+  // Sponsor library (global, all years): fictional names and contact data only.
+  const bbSponsorLibrary = [
+    // [id, name, contact_name, phone, email, street, zip, city, country]
+    ['sp-a', 'Sponsor Demo A', 'Kontakt A', '+352 000 001', 'a@example.com', 'Beispielstraße 1', '1000', 'Musterstadt', 'LU'],
+    ['sp-b', 'Sponsor Demo B', 'Kontakt B', '+352 000 002', 'b@example.com', 'Beispielstraße 2', '1000', 'Musterstadt', 'LU'],
+    ['sp-c', 'Sponsor Demo C', 'Kontakt C', '+352 000 003', 'c@example.com', 'Beispielweg 3', '2000', 'Beispieldorf', 'LU'],
+    ['sp-d', 'Sponsor Demo D', '', '', 'd@example.com', '', '', '', ''],
+  ];
+  bbSponsorLibrary.forEach(([id, name, contact_name, phone, email, address_street, address_zip, address_city, address_country]) => insert('sponsors', {
+    id, name, contact_name, phone, email, address_street, address_zip, address_city, address_country,
   }));
   const bbSponsors = [
-    // [name, status, level_amount, special, amount, invoiced, paid, material_out, material_in]
-    ['Sponsor Demo A', 'zugesagt', 250, 'Banner am Feld 1', 250, 1, 1, 'Banner', ''],
-    ['Sponsor Demo B', 'zugesagt', 100, '', 100, 1, 0, '', ''],
-    ['Sponsor Demo C', 'angefragt', 100, 'Getränkespende', 0, 0, 0, '', ''],
-    ['Sponsor Demo D', 'offen', 50, '', 0, 0, 0, '', ''],
-    ['Sponsor Demo E', 'abgesagt', 0, '', 0, 0, 0, '', ''],
+    // [sponsor_id, name, art, status, special, amount, invoiced, paid, material_out, material_in]
+    ['sp-a', 'Sponsor Demo A', 'Geld', 'zugesagt', 'Banner am Feld 1', 250, 1, 1, 'Banner', 'Banner'],
+    ['sp-b', 'Sponsor Demo B', 'Material', 'angefragt', 'Getränkespende', 0, 0, 0, '', 'Getränke'],
+    ['sp-c', 'Sponsor Demo C', 'Feld', 'offen', '', 100, 1, 0, '', ''],
+    ['sp-d', 'Sponsor Demo D', 'Geld', 'abgesagt', '', 0, 0, 0, '', ''],
   ];
-  bbSponsors.forEach(([name, status, level_amount, special, amount, invoiced, paid, material_out, material_in], i) => insert('baseball_sponsors', {
-    id: `bsp-${i + 1}`, year: bbYear, name, status, level_amount, special, amount, invoiced, paid, material_out, material_in, sort_order: i + 1,
+  bbSponsors.forEach(([sponsor_id, name, art, status, special, amount, invoiced, paid, material_out, material_in], i) => insert('baseball_sponsors', {
+    id: `bsp-${i + 1}`, year: bbYear, sponsor_id, name, art, status, special, amount, invoiced, paid, material_out, material_in, sort_order: i + 1,
   }));
   const bbTodos = [
     // [task, owner, place, due_date, done, note]
