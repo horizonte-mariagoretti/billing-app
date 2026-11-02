@@ -17,43 +17,98 @@ import './Baseball.css';
 
 const ACTION = SALES_ACTIONS.find((a) => a.key === 'baseball');
 
-// Each tab body takes the same props; the view decides which one is shown.
-const VIEWS = {
-  overview: { label: 'Übersicht', icon: <LayoutList size={15} />, Body: BaseballOverview },
-  teams: { label: 'Teams', icon: <Users size={15} />, Body: BaseballTeams },
-  table: { label: 'Tabelle', icon: <ListOrdered size={15} />, Body: BaseballTable },
-  sponsors: { label: 'Sponsoren', icon: <Handshake size={15} />, Body: BaseballSponsors },
-  fields: { label: 'Felder', icon: <MapPin size={15} />, Body: BaseballFields },
-  kasse: { label: 'Kasse', icon: <Banknote size={15} />, Body: GluehweinKasse },
-  shopping: { label: 'Einkaufsliste', icon: <ShoppingCart size={15} />, Body: BaseballShopping },
-  shifts: { label: 'Schichten', icon: <CalendarDays size={15} />, Body: BaseballDienste },
-  finance: { label: 'Finanzen', icon: <Wallet size={15} />, Body: GluehweinFinanzen },
-};
+// Tabs grouped into areas; every tab body takes the same props. A group with one tab shows no sub-tab row.
+const GROUPS = [
+  {
+    value: 'overview',
+    label: 'Übersicht',
+    icon: <LayoutList size={15} />,
+    tabs: [{ value: 'overview', label: 'Übersicht', icon: <LayoutList size={15} />, Body: BaseballOverview }],
+  },
+  {
+    value: 'teams',
+    label: 'Teams',
+    icon: <Users size={15} />,
+    tabs: [
+      { value: 'teams', label: 'Teams', icon: <Users size={15} />, Body: BaseballTeams },
+      { value: 'table', label: 'Tabelle', icon: <ListOrdered size={15} />, Body: BaseballTable },
+      { value: 'fields', label: 'Felder', icon: <MapPin size={15} />, Body: BaseballFields },
+    ],
+  },
+  {
+    value: 'money',
+    label: 'Geld',
+    icon: <Wallet size={15} />,
+    tabs: [
+      { value: 'sponsors', label: 'Sponsoren', icon: <Handshake size={15} />, Body: BaseballSponsors },
+      { value: 'kasse', label: 'Kasse', icon: <Banknote size={15} />, Body: GluehweinKasse },
+      { value: 'finance', label: 'Finanzen', icon: <Wallet size={15} />, Body: GluehweinFinanzen },
+    ],
+  },
+  {
+    value: 'day',
+    label: 'Turniertag',
+    icon: <CalendarDays size={15} />,
+    tabs: [
+      { value: 'shifts', label: 'Schichten', icon: <CalendarDays size={15} />, Body: BaseballDienste },
+      { value: 'shopping', label: 'Einkaufsliste', icon: <ShoppingCart size={15} />, Body: BaseballShopping },
+    ],
+  },
+];
 
-const TABS = Object.entries(VIEWS).map(([value, { label, icon }]) => ({ value, label, icon }));
+const GROUP_OPTIONS = GROUPS.map(({ value, label, icon }) => ({ value, label, icon }));
+const TAB_OPTIONS = Object.fromEntries(
+  GROUPS.map((g) => [g.value, g.tabs.map(({ value, label, icon }) => ({ value, label, icon }))]),
+);
+const DEFAULT_TABS = Object.fromEntries(GROUPS.map((g) => [g.value, g.tabs[0].value]));
 
 /**
- * Baseballturnier: base page (search, action date, year switcher) with the tabs Übersicht, Teams, Tabelle,
- * Sponsoren, Felder, Kasse, Einkaufsliste, Schichten, Finanzen. Kasse and Finanzen are the shared Glühweinbude
- * components (filtered by the action), so a change there applies here too.
+ * Baseballturnier: base page (search, action date, year switcher) with four areas: Übersicht, Teams (Teams,
+ * Tabelle, Felder), Geld (Sponsoren, Kasse, Finanzen) and Turniertag (Schichten, Einkaufsliste). Each area
+ * remembers its last sub-tab. Kasse and Finanzen are the shared Glühweinbude components (filtered by the action),
+ * so a change there applies here too.
  */
 const Baseball = () => {
-  const [view, setView] = useState('overview');
+  const [group, setGroup] = useState('overview');
+  const [tabByGroup, setTabByGroup] = useState(DEFAULT_TABS);
   const [error, setError] = useState(null);
   const { selectedYear, isLocked: yearLocked } = useYear();
-  const { Body } = VIEWS[view];
+
+  const activeGroup = GROUPS.find((g) => g.value === group) || GROUPS[0];
+  const activeTab = activeGroup.tabs.find((t) => t.value === tabByGroup[activeGroup.value]) || activeGroup.tabs[0];
+  const { Body } = activeTab;
+
+  const changeGroup = (value) => {
+    setError(null);
+    setGroup(value);
+  };
+  const changeTab = (value) => {
+    setError(null);
+    setTabByGroup((prev) => ({ ...prev, [activeGroup.value]: value }));
+  };
 
   return (
     <SalesActionPage action={ACTION}>
       <div className="baseball-toolbar">
         <SegmentedToggle
           className="seg-toggle-fill"
-          ariaLabel="Ansicht"
-          value={view}
-          onChange={setView}
-          options={TABS}
+          ariaLabel="Bereich"
+          value={activeGroup.value}
+          onChange={changeGroup}
+          options={GROUP_OPTIONS}
         />
       </div>
+
+      {activeGroup.tabs.length > 1 && (
+        <div className="baseball-toolbar baseball-subtoolbar">
+          <SegmentedToggle
+            ariaLabel="Ansicht"
+            value={activeTab.value}
+            onChange={changeTab}
+            options={TAB_OPTIONS[activeGroup.value]}
+          />
+        </div>
+      )}
 
       {error && (
         <div className="page-error" role="alert">

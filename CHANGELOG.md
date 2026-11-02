@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.35.0] - 2026-11-02
+
+### Changed
+- **Baseballturnier navigation:** the nine flat tabs are grouped into four areas: Übersicht; Teams (Teams, Tabelle, Felder); Geld (Sponsoren, Kasse, Finanzen); Turniertag (Schichten, Einkaufsliste). The second row shows the sub-tabs of the active area and remembers the last sub-tab per area.
+
 ## [1.34.1] - 2026-11-02
 
 ### Added
