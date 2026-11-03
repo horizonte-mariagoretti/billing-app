@@ -6,15 +6,22 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
 import Button from './Button';
 import DecimalInput from './DecimalInput';
+import StyledSelect from './StyledSelect';
+import { unitModeLabel } from '../utils/gluehweinCatalogMath';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
+import './SettingsFieldsModal.css'; // shared field (.settings-fields-modal-*)
 import './RecipeEditor.css';
 
 let rowSeq = 0;
 const newKey = () => `r${++rowSeq}`;
 const norm = (s) => String(s ?? '').trim().toLowerCase();
 
+const BASE_UNITS = ['portion', 'buy', 'liter'];
+
 /**
- * Recipe of one Sortiment product: which ingredients, how much per sold unit.
+ * Recipe of one Sortiment product: which ingredients, how much for one recipe base amount (Rezeptmenge, e.g. 1 Becher
+ * or 1 l; unit 'portion' | 'buy' | 'liter' like the Sortiment Übrig select). The Einkaufsliste converts the Einkauf
+ * into that unit and multiplies the rows by the number of base amounts.
  * Each row takes the ingredient by name. A name that is not in the ingredient list yet is created when the recipe is
  * saved, with the unit typed in the row (default Stk). A known name takes its unit from the ingredient.
  * product: gw_items row from useGluehweinCatalog().fetchItems (its current recipe is product.recipe).
@@ -36,6 +43,9 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
       qty: r.qty_per_unit == null ? '' : String(r.qty_per_unit),
     };
   }));
+  const [baseAmount, setBaseAmount] = useState(() => String(product?.recipe_amount ?? 1));
+  const [baseUnit, setBaseUnit] = useState(() => (BASE_UNITS.includes(product?.recipe_unit) ? product.recipe_unit : 'portion'));
+  const [baseError, setBaseError] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState(null); // null = list closed, [] or [template] = open
@@ -129,12 +139,18 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const amount = Number(String(baseAmount).replace(',', '.'));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setBaseError(true);
+      setError(t('gw_recipe_err_base', 'Bitte eine Rezeptmenge größer 0 eingeben.'));
+      return;
+    }
     const parsed = validRows();
     if (!parsed) return;
     setSaving(true);
     setError(null);
     try {
-      await saveRecipe(product.id, parsed);
+      await saveRecipe(product.id, parsed, { amount, unit: baseUnit });
       onSaved?.();
     } catch {
       setError(t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
@@ -149,7 +165,7 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
           {t('gw_recipe_title', 'Rezept')}{product ? `: ${product.name}` : ''}
         </h2>
         <p className="recipe-editor-desc">
-          {t('gw_recipe_desc', 'Zutaten und Menge pro verkaufter Einheit. Das Rezept gilt für alle Jahre.')}
+          {t('gw_recipe_desc_base', 'Zutaten und Menge für die Rezeptmenge. Das Rezept gilt für alle Jahre.')}
         </p>
         <form onSubmit={handleSubmit} noValidate>
           {error && (
@@ -159,13 +175,38 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
             </div>
           )}
 
+          <div className="settings-fields-modal-field recipe-editor-base">
+            <label className="input-label" htmlFor="recipe-editor-base-amount">{t('gw_recipe_base', 'Rezeptmenge')}</label>
+            <div className="settings-fields-modal-input">
+              <DecimalInput
+                id="recipe-editor-base-amount"
+                min="0"
+                className={`input-field${baseError ? ' error' : ''}`}
+                value={baseAmount}
+                placeholder="1"
+                onChange={(e) => { setBaseAmount(e.target.value); setBaseError(false); setError(null); }}
+                onFocus={(e) => e.target.select()}
+                aria-invalid={baseError ? 'true' : undefined}
+              />
+              <StyledSelect
+                className="recipe-editor-base-unit"
+                value={baseUnit}
+                onChange={(e) => setBaseUnit(e.target.value)}
+              >
+                {BASE_UNITS.map((mode) => (
+                  <option key={mode} value={mode}>{unitModeLabel(product, mode, t('gw_plan_buy', 'Einkaufseinheit'))}</option>
+                ))}
+              </StyledSelect>
+            </div>
+          </div>
+
           {rows.length === 0 ? (
             <div className="recipe-editor-empty">{t('gw_recipe_empty', 'Noch keine Zutaten im Rezept.')}</div>
           ) : (
             <div className="recipe-editor-rows">
               <div className="recipe-editor-row recipe-editor-head" aria-hidden="true">
                 <span>{t('gw_recipe_col_ingredient', 'Zutat')}</span>
-                <span>{t('gw_recipe_col_qty', 'Menge pro Einheit')}</span>
+                <span>{t('gw_recipe_col_qty_base', 'Menge pro Rezeptmenge')}</span>
                 <span />
               </div>
               {rows.map((r, idx) => {
@@ -192,7 +233,7 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
                         className="input-field"
                         value={r.qty}
                         placeholder="0"
-                        aria-label={`${t('gw_recipe_col_qty', 'Menge pro Einheit')} ${idx + 1}`}
+                        aria-label={`${t('gw_recipe_col_qty_base', 'Menge pro Rezeptmenge')} ${idx + 1}`}
                         onChange={(e) => update(r.key, { qty: e.target.value })}
                         onFocus={(e) => e.target.select()}
                       />
