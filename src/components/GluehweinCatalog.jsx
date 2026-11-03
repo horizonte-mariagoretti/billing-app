@@ -52,6 +52,22 @@ const planLabelOf = (i) => (i?.plan_unit === 'liter'
   ? 'l'
   : i?.plan_unit === 'buy' && String(i?.buy_unit || '').trim() ? String(i.buy_unit).trim() : unitOf(i));
 
+// Eingekauft converted into the unit the Übrig amount is typed in (plan_unit). null when the conversion is missing.
+const boughtInUnit = (i, mode) => {
+  const bought = numOrNull(i?.purchase_qty);
+  if (bought == null) return null;
+  if (mode === 'buy') return bought;
+  if (mode === 'liter') return numOrNull(i.pack_liters) > 0 ? bought * numOrNull(i.pack_liters) : null;
+  const content = numOrNull(i.pack_size);
+  return bought * (content > 0 ? content : 1);
+};
+// Differenz = Eingekauft − Übrig, in the Übrig unit (what was sold or used at the event). null when unknown.
+const differenceOf = (i) => {
+  const bought = boughtInUnit(i, i?.plan_unit || 'portion');
+  if (bought == null) return null;
+  return round2(bought - (numOrNull(i.planned_qty) ?? 0));
+};
+
 // Shown in the inline fields: comma decimal, no grouping (so the text parses back with numOrNull).
 // Dot notation for DecimalInput (it shows the comma itself); decimals fixes the digits, e.g. prices 5.00.
 const shownDot = (v, decimals) => {
@@ -431,7 +447,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, onOpe
           <fieldset className="gw-item-terms gw-unit-bottom" disabled={yearLocked}>
             <div className="gw-unit-group">
               <div className="settings-fields-modal-field">
-                <label className="input-label" htmlFor="gw-item-planned">{t('gw_col_final_sold', 'Final verkauft')}</label>
+                <label className="input-label" htmlFor="gw-item-planned">{t('gw_col_left_final', 'Übrig')}</label>
                 <div className="settings-fields-modal-input">
                   <DecimalInput
                     id="gw-item-planned"
@@ -562,7 +578,7 @@ const CopyTermsModal = ({ year, onCopy, onCancel, triggerRef }) => {
               </div>
               <label className="gw-copy-qty-toggle">
                 <input type="checkbox" checked={withQty} onChange={(e) => setWithQty(e.target.checked)} />
-                {t('gw_copy_with_qty', 'Geplante Mengen mitkopieren')}
+                {t('gw_copy_with_qty', 'Übrige Mengen mitkopieren')}
               </label>
               <span className="settings-fields-modal-hint wide">
                 {t(
@@ -668,6 +684,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
     name: (i) => String(i.name).toLowerCase(),
     sell_price: (i) => i.sell_price ?? null,
     planned_qty: (i) => Number(i.planned_qty) || 0,
+    difference: (i) => differenceOf(i),
   }, { tieBreak: (i) => i.name, locale: LOCALE }), [visible, sortRows]);
 
   // Throws on failure so the popup shows its save error and stays open.
@@ -682,6 +699,17 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
     await copyTerms(fromYear, year, { withQty });
     setCopyOpen(null);
     await reload();
+  };
+
+  // Unit the Übrig amount is typed in (plan_unit lives on the item): the amount itself is kept as typed.
+  const commitLeftUnit = async (row, mode) => {
+    if (mode === (row.plan_unit || 'portion')) return;
+    try {
+      await saveItem({ id: row.id, name: row.name, unit: row.unit, plan_unit: mode });
+      await reload();
+    } catch {
+      onError?.(t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
+    }
   };
 
   // One inline edit of a row: whole terms are rewritten, the other fields keep their stored values.
@@ -826,6 +854,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
               <col className="gw-col-sell" />
               <col className="gw-col-buy" />
               <col className="gw-col-planned" />
+              <col className="gw-col-diff" />
               <col className="gw-col-actions" />
             </colgroup>
             <thead>
@@ -833,7 +862,8 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                 {sortTh('name', t('gw_col_name', 'Name'))}
                 {sortTh('sell_price', t('gw_col_sell', 'Verkaufspreis'))}
                 <th>{t('gw_col_bought_form', 'Einkauf')}</th>
-                {sortTh('planned_qty', t('gw_col_sold', 'Verkauft'))}
+                {sortTh('planned_qty', t('gw_col_left', 'Übrig'))}
+                {sortTh('difference', t('gw_col_difference', 'Differenz'))}
                 <th aria-label={t('actions', 'Aktionen')} />
               </tr>
             </thead>
@@ -851,17 +881,19 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                   >
                     <td className="gw-name-cell">{i.name}</td>
                     <td className="dt-mono gw-price-cell">
-                      <InlineField
-                        label={`${t('gw_col_sell', 'Verkaufspreis')}: ${i.name}`}
-                        value={i.sell_price}
-                        decimals={2}
-                        disabled={yearLocked}
-                        onCommit={(text) => commitField(i, 'sell_price', text)}
-                      />
-                      <span className="dt-muted gw-unit-suffix"> €</span>
+                      <div className="gw-cell">
+                        <InlineField
+                          label={`${t('gw_col_sell', 'Verkaufspreis')}: ${i.name}`}
+                          value={i.sell_price}
+                          decimals={2}
+                          disabled={yearLocked}
+                          onCommit={(text) => commitField(i, 'sell_price', text)}
+                        />
+                        <span className="dt-muted gw-unit-suffix"> €</span>
+                      </div>
                     </td>
                     <td className="dt-mono gw-buy-cell-td">
-                      <div className="gw-bought-cell">
+                      <div className="gw-cell">
                         <InlineField
                           label={`${t('gw_col_bought', 'Eingekauft')}: ${i.name}`}
                           value={i.purchase_qty}
@@ -872,13 +904,42 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                       </div>
                     </td>
                     <td className="dt-mono gw-sold-cell">
+                      <div className="gw-cell">
                       <InlineField
-                        label={`${t('gw_col_sold', 'Verkauft')}: ${i.name}`}
+                        label={`${t('gw_col_left', 'Übrig')}: ${i.name}`}
                         value={i.planned_qty}
                         disabled={yearLocked}
                         onCommit={(text) => commitField(i, 'planned_qty', text)}
                       />
-                      <span className="dt-muted"> {pluralUnit(planLabelOf(i), i.planned_qty)}</span>
+                      {/* The row's click opens the editor; clicks on the dropdown (incl. its portal list) must not. */}
+                      <span className="gw-left-unit-cell" onClick={(e) => e.stopPropagation()}>
+                        <StyledSelect
+                          className="gw-left-unit"
+                          portal
+                          value={i.plan_unit || 'portion'}
+                          disabled={yearLocked}
+                          onChange={(e) => commitLeftUnit(i, e.target.value)}
+                        >
+                          <option value="portion">{unitOf(i)}</option>
+                          <option value="buy">{i.buy_unit || t('gw_plan_buy', 'Einkaufseinheit')}</option>
+                          <option value="liter">l</option>
+                        </StyledSelect>
+                      </span>
+                      </div>
+                    </td>
+                    <td className="dt-mono gw-diff-cell">
+                      <div className="gw-cell">
+                      {differenceOf(i) == null ? (
+                        <span className="dt-muted">–</span>
+                      ) : (
+                        <>
+                          <span className={differenceOf(i) < 0 ? 'negative' : undefined}>
+                            {differenceOf(i).toLocaleString('de-DE', { maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="dt-muted"> {planLabelOf(i)}</span>
+                        </>
+                      )}
+                      </div>
                     </td>
                     <td className="gw-row-actions">
                       <button

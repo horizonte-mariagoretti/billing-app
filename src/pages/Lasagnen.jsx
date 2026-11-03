@@ -18,6 +18,7 @@ import { incomeTotals, incomeEntries, lasagnaAmounts, isoDate } from '../utils/l
 import { lasagnaShares, bonusReductionPct, lasagnaBonusFromSettings } from '../utils/lasagnaBonus';
 import { SHOP_STORES, shoppingList, itemToBuy, displayUnit, stockSettingKey } from '../utils/lasagnaShoppingList';
 import '../components/DataTable.css';
+import '../components/TableInputFont.css';
 import './Lasagnen.css';
 
 const fullName = (h) => `${h.first_name || ''} ${h.last_name || ''}`.trim();
@@ -492,7 +493,7 @@ const Lasagnen = () => {
               <th>{t('lasagnen_shop_col_item', 'Zutat')}</th>
               <th className="num">{t('lasagnen_shop_col_total', 'Menge gesamt')}</th>
               <th className="num">{t('lasagnen_shop_col_stock', 'Vorrat')}</th>
-              <th className="lasagnen-shop-unit" aria-hidden="true" />
+              <th className="shop-unit" aria-hidden="true" />
               <th className="num">{t('lasagnen_shop_col_buy', 'Einkaufen')}</th>
             </tr>
           </thead>
@@ -502,11 +503,11 @@ const Lasagnen = () => {
             const open = q ? true : !collapsedStores.has(store.key); // searching: matches are always shown
             return (
             <tbody key={store.key}>
-              <tr className="lasagnen-shop-section">
+              <tr className="shop-section">
                 <th colSpan={5}>
                   <button
                     type="button"
-                    className="lasagnen-shop-toggle"
+                    className="shop-toggle"
                     aria-expanded={open}
                     onClick={() => toggleStore(store.key)}
                   >
@@ -526,7 +527,7 @@ const Lasagnen = () => {
                     <td className="num">
                       <DecimalInput
                         min="0"
-                        className="lasagnen-shop-stock-input"
+                        className="shop-stock-input"
                         value={stockInputValue(settings?.[key], display.factor)}
                         disabled={!settings || yearLocked}
                         placeholder="0"
@@ -536,7 +537,7 @@ const Lasagnen = () => {
                         aria-label={`${t('lasagnen_shop_col_stock', 'Vorrat')}: ${itemName(item)}`}
                       />
                     </td>
-                    <td className="lasagnen-shop-unit dt-mono dt-muted">{display.unit}</td>
+                    <td className="shop-unit dt-mono dt-muted">{display.unit}</td>
                     <td className="num dt-mono dt-strong">{fmtShopAmount(item, itemToBuy(item, item.need, stock), locale, display)}</td>
                   </tr>
                 );

@@ -22,6 +22,7 @@ import GluehweinEinkaufsliste from '../components/GluehweinEinkaufsliste';
 import GluehweinFinanzen from '../components/GluehweinFinanzen';
 import './SalesActionPage.css';
 import './Gluehwein.css';
+import '../components/TableInputFont.css';
 
 const ACTION = SALES_ACTIONS.find((a) => a.key === 'gluehwein');
 // Start = the action's date (Dashboard month fallback when no sale day is set); end = last day of the Glühweinbude.

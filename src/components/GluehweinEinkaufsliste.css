@@ -43,15 +43,15 @@
 .gw-shop-table,
 .gw-ing-table,
 .gw-recipes-table { table-layout: fixed; }
-.gw-shop-table { min-width: 960px; }
+.gw-shop-table { min-width: 1100px; }
 .gw-ing-table { min-width: 900px; }
 .gw-recipes-table { min-width: 720px; }
 .gw-shop-table th:first-child,
 .gw-ing-table th:first-child,
 .gw-recipes-table th:first-child { min-width: 0; }
 
-.gw-shop-col-type  { width: 110px; }
 .gw-shop-col-qty   { width: 130px; }
+.gw-shop-col-unit  { width: 60px; }
 .gw-shop-col-buy   { width: 230px; }
 .gw-shop-col-money { width: 160px; }
 .gw-ing-col-unit   { width: 100px; }
@@ -66,18 +66,8 @@
   white-space: normal;
 }
 
-/* Row fully covered by stock: nothing to buy. */
+/* Zutaten row fully covered by stock: nothing to buy. */
 .gw-shop-row-covered td { opacity: 0.6; }
-
-.gw-shop-type {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-.gw-shop-type.ingredient { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
-.gw-shop-type.product    { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
 
 /* ── Zutaten ── */
 .gw-ing-row { cursor: pointer; }
@@ -136,3 +126,8 @@
 }
 
 .gw-shop-empty-desc { font-size: 0.9rem; max-width: 420px; }
+
+/* ── Einkaufsliste: collapsible sections Getränke and Zutaten, like the Lasagnen list ── */
+.gw-shop-table tbody + tbody { border-top: 1px solid var(--color-border-light-theme); }
+/* Opened recipe drink: its ingredient lines, indented under the drink name (past the chevron). */
+.gw-shop-table .gw-shop-line td:first-child { padding-left: calc(var(--space-lg) + 22px); }

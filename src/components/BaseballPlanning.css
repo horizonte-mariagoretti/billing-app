@@ -61,7 +61,8 @@
 .baseball-cell {
   width: 100%;
   min-width: 0;
-  padding: 6px 8px;
+  height: 28px;
+  padding: 0 8px;
   font-size: 0.85rem;
 }
 .baseball-cell--num { text-align: right; }
@@ -148,11 +149,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Row height as on the Horis page (about 57px): the 36px inputs in the rows need less vertical padding. */
-.data-table.baseball-table td {
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
 .baseball-row-actions {
   display: flex;
   align-items: center;
@@ -183,8 +179,8 @@
 .baseball-teams-table .baseball-add-row td { padding: 8px 12px; }
 .baseball-teams-table .baseball-add-row .baseball-cell,
 .baseball-teams-table .baseball-add-row .baseball-field-select .ss-trigger {
-  height: 36px;
-  min-height: 36px;
+  height: 28px;
+  min-height: 28px;
   padding: 8px 10px;
   font-size: 0.9rem;
 }

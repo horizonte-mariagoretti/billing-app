@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ShoppingCart, Lock, Plus, Carrot, BookOpen, ListChecks } from 'lucide-react';
+import { ShoppingCart, Lock, Plus, Carrot, BookOpen, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import { useGluehweinCatalog } from '../hooks/useGluehweinCatalog';
 import { useGluehweinIngredients } from '../hooks/useGluehweinIngredients';
 import useCurrency from '../hooks/useCurrency';
@@ -9,6 +9,7 @@ import { buildShoppingList } from '../utils/gluehweinShoppingList';
 import SegmentedToggle from './SegmentedToggle';
 import SortableTh from './SortableTh';
 import Button from './Button';
+import DecimalInput from './DecimalInput';
 import { editableRowProps } from './editableRow';
 import RecipeEditor from './RecipeEditor';
 import GluehweinIngredientModal from './GluehweinIngredientModal';
@@ -33,56 +34,88 @@ const Empty = ({ icon: Icon, title, desc }) => (
   </div>
 );
 
-/** Computed shopping list (read-only): ingredients from the recipes + Zusatzbedarf, products without recipe. */
-const ShoppingTable = ({ products, ingredients, t, formatCurrency }) => {
+/**
+ * Computed shopping list, like the Lasagnen Einkaufsliste: two collapsible sections.
+ *  - Getränke: every product with Einkauf, by name. A recipe drink has a toggle in its name cell that shows its own
+ *    need per ingredient (informational, its cost is already in the Zutaten).
+ *  - Zutaten: the actual purchase list, each ingredient once (all drinks + Zusatzbedarf) with an editable Bestand,
+ *    packs and cost. The sort headers apply to these rows only.
+ */
+const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, formatCurrency }) => {
   const { sort, toggleSort, sortRows } = useTableSort({ key: null, dir: null });
+  const [collapsed, setCollapsed] = useState(() => new Set()); // section keys whose rows are hidden
+  const [openDrinks, setOpenDrinks] = useState(() => new Set()); // recipe drinks showing their ingredients
+  const drafts = useRef({}); // ingredient id -> typed Bestand, saved on blur
+  const flip = (setter) => (key) => setter((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+  const toggleSection = flip(setCollapsed);
+  const toggleDrink = flip(setOpenDrinks);
 
-  const { rows, total } = useMemo(() => {
-    // The shopping list works in portions (selling units); planned quantities in liters or bottles are converted.
-    // Liter products are planned and bought in liters: need in l, a pack holds pack_liters. Others work in portions.
+  const { drinks, ingRows, total } = useMemo(() => {
+    // The shopping list is driven by Einkauf (purchase_qty, buy units). Liter products: sold and bought in liters,
+    // a buy unit holds pack_liters. Other products: sold per portion, a buy unit holds pack_size portions.
     const isLiter = (p) => p.plan_unit === 'liter';
     const shopProducts = products.map((p) => (isLiter(p) ? { ...p, unit: 'l' } : p));
     const productTerms = new Map(products.map((p) => [p.id, isLiter(p)
-      ? { ...p, planned_qty: Number(p.planned_qty) || 0, pack_size: Number(p.pack_liters) || 1 }
-      : { ...p, planned_qty: p.portions ?? 0 }]));
+      ? { ...p, pack_size: Number(p.pack_liters) || 1 }
+      : p]));
     const ingredientTerms = new Map(ingredients.map((g) => [g.id, g]));
     const recipe = products.flatMap((p) => (p.recipe || []).map((r) => ({ product_id: p.id, ...r })));
     const result = buildShoppingList({ products: shopProducts, ingredients, productTerms, ingredientTerms, recipe });
-    // Unsorted: ingredients first, then products, each by name.
-    const list = [...result.rows].sort((a, b) => (
-      (a.source === b.source ? 0 : a.source === 'ingredient' ? -1 : 1) || a.name.localeCompare(b.name, LOCALE)
-    ));
-    return { rows: list, total: result.total };
+    // Zutaten unsorted: by name. Drinks keep the util's name order.
+    const list = [...result.ingredients].sort((a, b) => a.name.localeCompare(b.name, LOCALE));
+    return { drinks: result.drinks, ingRows: list, total: result.total };
   }, [products, ingredients]);
 
-  const sorted = useMemo(() => sortRows(rows, {
+  const sorted = useMemo(() => sortRows(ingRows, {
     name: (r) => lower(r.name),
-    source: (r) => (r.source === 'ingredient' ? 0 : 1),
     need: (r) => r.need,
     stock: (r) => r.stock,
     packs: (r) => r.packs,
     packPrice: (r) => r.packPrice,
     cost: (r) => r.cost,
-  }, { tieBreak: (r) => r.name, locale: LOCALE }), [rows, sortRows]);
+  }, { tieBreak: (r) => r.name, locale: LOCALE }), [ingRows, sortRows]);
 
-  if (rows.length === 0) {
+  if (ingRows.length === 0 && drinks.length === 0) {
     return (
       <Empty
         icon={ShoppingCart}
-        title={t('gw_shop_empty', 'Noch keine geplanten Mengen')}
-        desc={t('gw_shop_empty_desc2', 'Trage im Sortiment bei einem Rezept-Produkt eine Verkauft-Menge über 0 ein, bei einem Produkt ohne Rezept eine Einkauf-Menge, oder bei einer Zutat einen Zusatzbedarf.')}
+        title={t('gw_shop_empty', 'Noch keine Einkaufsmengen')}
+        desc={t('gw_shop_empty_desc3', 'Trage im Sortiment bei einem Produkt eine Einkauf-Menge über 0 ein, oder bei einer Zutat einen Zusatzbedarf.')}
       />
     );
   }
 
   const th = (key, label, align) => <SortableTh column={key} label={label} align={align} sort={sort} onSort={toggleSort} />;
+  const chevron = (open) => (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />);
+  // Section header row, like the Lasagnen shops.
+  const sectionHeader = (key, label) => (
+    <tr className="shop-section">
+      <th colSpan={7}>
+        <button type="button" className="shop-toggle" aria-expanded={!collapsed.has(key)} onClick={() => toggleSection(key)}>
+          {chevron(!collapsed.has(key))}
+          <span>{label}</span>
+        </button>
+      </th>
+    </tr>
+  );
+  const dash = <span className="dt-muted">–</span>;
+  const saveStock = (r) => () => {
+    if (!(r.id in drafts.current)) return;
+    const n = Math.max(0, Number(drafts.current[r.id]) || 0);
+    delete drafts.current[r.id];
+    if (n !== r.stock) onStockSave(r.id, n);
+  };
   return (
     <table className="data-table gw-shop-table">
       <colgroup>
         <col />
-        <col className="gw-shop-col-type" />
+        <col className="gw-shop-col-buy" />
         <col className="gw-shop-col-qty" />
-        <col className="gw-shop-col-qty" />
+        <col className="gw-shop-col-unit" />
         <col className="gw-shop-col-buy" />
         <col className="gw-shop-col-money" />
         <col className="gw-shop-col-money" />
@@ -90,42 +123,92 @@ const ShoppingTable = ({ products, ingredients, t, formatCurrency }) => {
       <thead>
         <tr>
           {th('name', t('gw_shop_col_item', 'Artikel'))}
-          {th('source', t('gw_shop_col_type', 'Typ'))}
           {th('need', t('gw_shop_col_need', 'Bedarf'))}
-          {th('stock', t('gw_col_stock', 'Bestand'))}
+          {th('stock', t('gw_col_stock', 'Bestand'), 'right')}
+          <th className="shop-unit" aria-hidden="true" />
           {th('packs', t('gw_shop_col_to_buy', 'Zu kaufen (Packungen)'))}
           {th('packPrice', t('gw_shop_col_pack_price2', 'Preis je Packung'), 'right')}
           {th('cost', t('gw_shop_col_cost', 'Kosten'), 'right')}
         </tr>
       </thead>
-      <tbody>
-        {sorted.map((r) => (
-          <tr key={r.key} className={r.packs === 0 ? 'gw-shop-row-covered' : undefined}>
-            <td className="gw-shop-name">{r.name}</td>
-            <td>
-              <span className={`gw-shop-type ${r.source}`}>
-                {r.source === 'ingredient' ? t('gw_shop_type_ingredient', 'Zutat') : t('gw_shop_type_product', 'Produkt')}
-              </span>
-            </td>
-            <td className="dt-mono">{fmtQty(r.need)} <span className="dt-muted">{r.unit}</span></td>
-            <td className="dt-mono">
-              {r.source === 'ingredient'
-                ? <>{fmtQty(r.stock)} <span className="dt-muted">{r.unit}</span></>
-                : <span className="dt-muted">–</span>}
-            </td>
-            <td className="dt-mono">
-              {fmtQty(r.packs)} <span className="dt-muted">{r.packLabel || packLabel(r.packType, t)}</span>
-              {(r.source === 'product' ? r.packSize !== 1 : r.packType !== 'none') && r.packs > 0 && (
-                <span className="dt-muted"> ({fmtQty(r.packs * r.packSize)} {r.unit})</span>
-              )}
-            </td>
-            <td className="num dt-mono">{formatCurrency(r.packPrice)}</td>
-            <td className="num dt-mono dt-strong">{formatCurrency(r.cost)}</td>
-          </tr>
-        ))}
-      </tbody>
+      {drinks.length > 0 && (
+        <tbody>
+          {sectionHeader('drinks', t('gw_shop_section_drinks', 'Getränke'))}
+          {!collapsed.has('drinks') && drinks.flatMap((d) => {
+            const open = openDrinks.has(d.key);
+            const unitLabel = d.packLabel || t('gw_pack_none', 'Stk');
+            return [
+              <tr key={d.key}>
+                <td className="gw-shop-name">
+                  {d.hasRecipe ? (
+                    <button type="button" className="shop-toggle" aria-expanded={open} onClick={() => toggleDrink(d.key)}>
+                      {chevron(open)}
+                      <span>{d.name}</span>
+                    </button>
+                  ) : d.name}
+                </td>
+                <td className="dt-mono">
+                  {d.hasRecipe
+                    ? <>{fmtQty(d.packs)} <span className="dt-muted">{unitLabel} ({fmtQty(d.need)} {d.unit})</span></>
+                    : <>{fmtQty(d.need)} <span className="dt-muted">{d.unit}</span></>}
+                </td>
+                <td className="num">{dash}</td>
+                <td className="shop-unit" />
+                <td className="dt-mono">
+                  {fmtQty(d.packs)} <span className="dt-muted">{unitLabel}</span>
+                  {!d.hasRecipe && d.packSize !== 1 && <span className="dt-muted"> ({fmtQty(d.need)} {d.unit})</span>}
+                </td>
+                <td className="num dt-mono">{formatCurrency(d.packPrice)}</td>
+                <td className="num dt-mono dt-strong">{formatCurrency(d.cost)}</td>
+              </tr>,
+              // Recipe drink opened: its own need per ingredient (Bedarf only).
+              ...(open ? d.lines.map((l) => (
+                <tr key={l.key} className="gw-shop-line">
+                  <td>{l.name}</td>
+                  <td className="dt-mono">{fmtQty(l.need)} <span className="dt-muted">{l.unit}</span></td>
+                  <td colSpan={5} />
+                </tr>
+              )) : []),
+            ];
+          })}
+        </tbody>
+      )}
+      {ingRows.length > 0 && (
+        <tbody>
+          {sectionHeader('ingredients', t('gw_ing_title', 'Zutaten'))}
+          {!collapsed.has('ingredients') && sorted.map((r) => (
+            <tr key={r.key} className={r.packs === 0 ? 'gw-shop-row-covered' : undefined}>
+              <td className="gw-shop-name">{r.name}</td>
+              <td className="dt-mono">{fmtQty(r.need)} <span className="dt-muted">{r.unit}</span></td>
+              <td className="num">
+                <DecimalInput
+                  min="0"
+                  className="shop-stock-input"
+                  value={r.stock}
+                  disabled={yearLocked}
+                  placeholder="0"
+                  onChange={(e) => { drafts.current[r.id] = e.target.value; }}
+                  onBlur={saveStock(r)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label={`${t('gw_col_stock', 'Bestand')}: ${r.name}`}
+                />
+              </td>
+              <td className="shop-unit dt-mono dt-muted">{r.unit}</td>
+              <td className="dt-mono">
+                {fmtQty(r.packs)} <span className="dt-muted">{packLabel(r.packType, t)}</span>
+                {r.packType !== 'none' && r.packs > 0 && (
+                  <span className="dt-muted"> ({fmtQty(r.packs * r.packSize)} {r.unit})</span>
+                )}
+              </td>
+              <td className="num dt-mono">{formatCurrency(r.packPrice)}</td>
+              <td className="num dt-mono dt-strong">{formatCurrency(r.cost)}</td>
+            </tr>
+          ))}
+        </tbody>
+      )}
       <tfoot>
         <tr>
+          {/* The util's total: Zutaten + drinks without recipe; recipe drinks are already in their ingredients. */}
           <td>{t('gw_shop_total', 'Gesamt')}</td>
           <td />
           <td />
@@ -249,7 +332,7 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
         <tr>
           {th('name', t('gw_recipes_col_product', 'Produkt'))}
           {th('count', t('gw_recipes_col_ingredients', 'Zutaten pro Einheit'))}
-          {th('planned', t('gw_col_planned_qty', 'Geplant'))}
+          {th('planned', t('gw_col_left', 'Übrig'))}
           <th aria-label={t('actions', 'Aktionen')} />
         </tr>
       </thead>
@@ -293,8 +376,9 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
 
 /**
  * Einkaufsliste of a Verkaufsaktion (generic on `action`), three sub-views:
- *  - Einkaufsliste: computed by buildShoppingList from the Sortiment's planned quantities + recipes (ingredients), the
- *    Einkauf of products without recipe, and the ingredients' Zusatzbedarf and Bestand (read-only).
+ *  - Einkaufsliste: computed by buildShoppingList from the Sortiment's Einkauf (per product), its recipes and the
+ *    ingredients' Zusatzbedarf and Bestand: section Getränke (recipe drinks open to their own need per ingredient),
+ *    section Zutaten (the purchase list: packs and cost; Bestand editable, saved on blur).
  *  - Zutaten: ingredient management (useGluehweinIngredients); row click opens GluehweinIngredientModal.
  *  - Rezepte: recipe per Sortiment product (RecipeEditor).
  * Locked year: terms (price, pack, Zusatzbedarf, Bestand) read-only; names/units and recipes stay editable.
@@ -307,6 +391,7 @@ const GluehweinEinkaufsliste = ({ action, year, yearLocked }) => {
   const [view, setView] = useState('list');
   const [data, setData] = useState({ year: null, products: [], ingredients: [] });
   const [error, setError] = useState(null);
+  const [saveError, setSaveError] = useState(null); // Bestand save failed (list stays visible)
   const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState(null); // null | { ingredient: row | null, triggerRef }
   const [recipeFor, setRecipeFor] = useState(null); // product row
@@ -362,6 +447,22 @@ const GluehweinEinkaufsliste = ({ action, year, yearLocked }) => {
     setModal(null);
     await reloadSafe();
   };
+  // Bestand typed in the Einkaufsliste: shown at once (Zu kaufen follows), saved with the other terms as stored,
+  // then reloaded so the list shows what the DB holds.
+  const handleStockSave = async (id, stock) => {
+    const g = data.ingredients.find((x) => x.id === id);
+    if (!g || yearLocked) return;
+    setData((prev) => ({ ...prev, ingredients: prev.ingredients.map((x) => (x.id === id ? { ...x, stock_qty: stock } : x)) }));
+    try {
+      await saveIngredientTerms(year, id, {
+        buy_price: g.buy_price, pack_type: g.pack_type, pack_size: g.pack_size, extra_qty: g.extra_qty, stock_qty: stock,
+      });
+      setSaveError(null);
+    } catch {
+      setSaveError(t('gw_shop_save_error', 'Bestand konnte nicht gespeichert werden.'));
+    }
+    await reloadSafe();
+  };
   const handleRecipeSaved = async () => {
     setRecipeFor(null);
     await reloadSafe();
@@ -409,13 +510,22 @@ const GluehweinEinkaufsliste = ({ action, year, yearLocked }) => {
         )}
       </div>
 
+      {view === 'list' && saveError && <div className="page-error">{saveError}</div>}
+
       <div className="data-table-container">
         {loading ? (
           <Empty icon={ShoppingCart} title={t('loading', 'Laden…')} />
         ) : error ? (
           <Empty icon={ShoppingCart} title={error} />
         ) : view === 'list' ? (
-          <ShoppingTable products={data.products} ingredients={data.ingredients} t={t} formatCurrency={formatCurrency} />
+          <ShoppingTable
+            products={data.products}
+            ingredients={data.ingredients}
+            yearLocked={yearLocked}
+            onStockSave={handleStockSave}
+            t={t}
+            formatCurrency={formatCurrency}
+          />
         ) : view === 'ingredients' ? (
           <IngredientsTable
             ingredients={data.ingredients}
