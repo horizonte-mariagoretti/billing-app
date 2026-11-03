@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, BookOpen, Plus, Save, Trash2 } from 'lucide-react';
 import { useGluehweinCatalog } from '../hooks/useGluehweinCatalog';
+import { useGluehweinRecipeLibrary } from '../hooks/useGluehweinRecipeLibrary';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
 import Button from './Button';
@@ -10,26 +11,35 @@ import './RecipeEditor.css';
 
 let rowSeq = 0;
 const newKey = () => `r${++rowSeq}`;
+const norm = (s) => String(s ?? '').trim().toLowerCase();
 
 /**
  * Recipe of one Sortiment product: which ingredients, how much per sold unit.
+ * Each row takes the ingredient by name. A name that is not in the ingredient list yet is created when the recipe is
+ * saved, with the unit typed in the row (default Stk). A known name takes its unit from the ingredient.
  * product: gw_items row from useGluehweinCatalog().fetchItems (its current recipe is product.recipe).
  * ingredients: gw_ingredients rows from useGluehweinIngredients().fetchIngredients (incl. inactive ones).
- *   A recipe row whose ingredient is inactive or missing is shown with "(inaktiv)".
  * onClose(): cancel. onSaved(): after a successful saveRecipe (the parent reloads and closes).
- * Blank and duplicate ingredient rows are prevented: each select only offers ingredients not used in another row,
- * and saving checks that every row has an ingredient and a quantity > 0.
  */
 const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
   const t = useT();
   const { saveRecipe } = useGluehweinCatalog();
-  const [rows, setRows] = useState(() => (product?.recipe || []).map((r) => ({
-    key: newKey(),
-    ingredient_id: r.ingredient_id,
-    qty: r.qty_per_unit == null ? '' : String(r.qty_per_unit),
-  })));
+  const library = useGluehweinRecipeLibrary();
+  const byName = useMemo(() => new Map(ingredients.map((i) => [norm(i.name), i])), [ingredients]);
+  const byId = useMemo(() => new Map(ingredients.map((i) => [i.id, i])), [ingredients]);
+  const [rows, setRows] = useState(() => (product?.recipe || []).map((r) => {
+    const g = byId.get(r.ingredient_id);
+    return {
+      key: newKey(),
+      name: g?.name || '',
+      unit: g?.unit || '',
+      qty: r.qty_per_unit == null ? '' : String(r.qty_per_unit),
+    };
+  }));
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState(null); // null = list closed, [] or [template] = open
+  const [templateName, setTemplateName] = useState(null); // null = closed, string = name being typed
 
   const modalRef = useRef(null);
   useFocusTrap(modalRef, { active: true });
@@ -40,47 +50,87 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const byId = useMemo(() => new Map(ingredients.map((i) => [i.id, i])), [ingredients]);
-  // A missing ingredient (should not happen, the FK forbids it) still shows as an inactive option.
-  const lookup = (id) => byId.get(id) || { id, name: t('gw_recipe_unknown', 'Unbekannte Zutat'), unit: '', active: 0 };
-  const used = new Set(rows.map((r) => r.ingredient_id).filter(Boolean));
-  // Active ingredients not used in any row yet.
-  const free = ingredients.filter((i) => i.active && !used.has(i.id));
-  const hasBlank = rows.some((r) => !r.ingredient_id);
-  const canAdd = free.length > 0 && !hasBlank;
-
   const update = (key, patch) => {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
     setError(null);
   };
 
-  const addRow = () => {
-    if (!canAdd) return;
-    // Pre-select the only remaining ingredient so no blank row is left behind.
-    setRows((rs) => [...rs, { key: newKey(), ingredient_id: free.length === 1 ? free[0].id : '', qty: '' }]);
-    setError(null);
+  // Typing a known name fills its unit; a new name keeps the unit typed in the row.
+  const setName = (key, name) => {
+    const known = byName.get(norm(name));
+    update(key, known ? { name, unit: known.unit || '' } : { name });
   };
 
+  const addRow = () => setRows((rs) => [...rs, { key: newKey(), name: '', unit: '', qty: '' }]);
   const removeRow = (key) => {
     setRows((rs) => rs.filter((r) => r.key !== key));
     setError(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (rows.some((r) => !r.ingredient_id)) {
-      setError(t('gw_recipe_err_blank', 'Bitte in jeder Zeile eine Zutat wählen oder die Zeile entfernen.'));
-      return;
+  // Checks the rows and returns them as { name, unit, qty_per_unit }, or null after setting the error.
+  const validRows = () => {
+    if (rows.some((r) => !r.name.trim())) {
+      setError(t('gw_recipe_err_blank', 'Bitte in jeder Zeile einen Namen eingeben oder die Zeile entfernen.'));
+      return null;
     }
-    if (new Set(rows.map((r) => r.ingredient_id)).size !== rows.length) {
+    if (new Set(rows.map((r) => norm(r.name))).size !== rows.length) {
       setError(t('gw_recipe_err_dup', 'Jede Zutat darf nur einmal vorkommen.'));
-      return;
+      return null;
     }
-    const parsed = rows.map((r) => ({ ingredient_id: r.ingredient_id, qty_per_unit: Number(String(r.qty).replace(',', '.')) }));
+    const parsed = rows.map((r) => ({
+      name: r.name.trim(),
+      unit: byName.get(norm(r.name))?.unit || r.unit.trim() || 'Stk',
+      qty_per_unit: Number(String(r.qty).replace(',', '.')),
+    }));
     if (parsed.some((r) => !Number.isFinite(r.qty_per_unit) || r.qty_per_unit <= 0)) {
       setError(t('gw_recipe_err_qty', 'Bitte für jede Zutat eine Menge größer 0 eingeben.'));
+      return null;
+    }
+    return parsed;
+  };
+
+  // Opens the template list; loading one replaces the rows here. Nothing is saved to the product until Speichern.
+  const openTemplates = async () => {
+    setTemplateName(null);
+    try {
+      setTemplates(await library.fetchRecipes());
+    } catch {
+      setError(t('gw_recipe_lib_load_error', 'Rezeptbibliothek konnte nicht geladen werden.'));
+    }
+  };
+
+  const loadTemplate = (tpl) => {
+    setRows(tpl.rows.map((r) => ({
+      key: newKey(),
+      name: r.name,
+      unit: r.unit || '',
+      qty: r.qty_per_unit == null ? '' : String(r.qty_per_unit),
+    })));
+    setTemplates(null);
+    setError(null);
+  };
+
+  const saveTemplate = async () => {
+    const name = (templateName || '').trim();
+    if (!name) {
+      setError(t('gw_recipe_lib_name_required', 'Bitte einen Namen für die Vorlage eingeben.'));
       return;
     }
+    const parsed = validRows();
+    if (!parsed) return;
+    try {
+      await library.saveRecipe(name, parsed);
+      setTemplateName(null);
+      setError(null);
+    } catch {
+      setError(t('gw_save_error', 'Änderung konnte nicht gespeichert werden.'));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const parsed = validRows();
+    if (!parsed) return;
     setSaving(true);
     setError(null);
     try {
@@ -109,75 +159,111 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
             </div>
           )}
 
-          {ingredients.length === 0 && rows.length === 0 ? (
-            <div className="recipe-editor-empty">
-              {t('gw_recipe_no_ingredients_shop', 'Lege Zutaten in der Einkaufsliste an.')}
-            </div>
+          {rows.length === 0 ? (
+            <div className="recipe-editor-empty">{t('gw_recipe_empty', 'Noch keine Zutaten im Rezept.')}</div>
           ) : (
-            <>
-              {rows.length === 0 ? (
-                <div className="recipe-editor-empty">{t('gw_recipe_empty', 'Noch keine Zutaten im Rezept.')}</div>
-              ) : (
-                <div className="recipe-editor-rows">
-                  <div className="recipe-editor-row recipe-editor-head" aria-hidden="true">
-                    <span>{t('gw_recipe_col_ingredient', 'Zutat')}</span>
-                    <span>{t('gw_recipe_col_qty', 'Menge pro Einheit')}</span>
-                    <span />
-                  </div>
-                  {rows.map((r, idx) => {
-                    const current = r.ingredient_id ? lookup(r.ingredient_id) : null;
-                    // Own ingredient + the free ones (an inactive one stays visible while it is selected).
-                    const options = [
-                      ...(current ? [current] : []),
-                      ...free.filter((i) => i.id !== r.ingredient_id),
-                    ];
-                    return (
-                      <div className="recipe-editor-row" key={r.key}>
-                        <select
-                          className="input-field"
-                          value={r.ingredient_id}
-                          aria-label={`${t('gw_recipe_col_ingredient', 'Zutat')} ${idx + 1}`}
-                          onChange={(e) => update(r.key, { ingredient_id: e.target.value })}
-                        >
-                          {!r.ingredient_id && <option value="">{t('gw_recipe_pick', 'Zutat wählen…')}</option>}
-                          {options.map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.name}{i.active ? '' : ` (${t('gw_inactive', 'inaktiv')})`}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="recipe-editor-qty">
-                          <DecimalInput
-                            min="0"
-                            className="input-field"
-                            value={r.qty}
-                            placeholder="0"
-                            aria-label={`${t('gw_recipe_col_qty', 'Menge pro Einheit')} ${idx + 1}`}
-                            onChange={(e) => update(r.key, { qty: e.target.value })}
-                            onFocus={(e) => e.target.select()}
-                          />
-                          <span className="recipe-editor-unit">{current?.unit || ''}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="recipe-editor-remove"
-                          onClick={() => removeRow(r.key)}
-                          title={t('gw_recipe_remove', 'Zeile entfernen')}
-                          aria-label={`${t('gw_recipe_remove', 'Zeile entfernen')}: ${current?.name || idx + 1}`}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="recipe-editor-add">
-                <Button type="button" variant="secondary" size="sm" icon={Plus} onClick={addRow} disabled={!canAdd}>
-                  {t('gw_recipe_add', 'Zutat hinzufügen')}
-                </Button>
+            <div className="recipe-editor-rows">
+              <div className="recipe-editor-row recipe-editor-head" aria-hidden="true">
+                <span>{t('gw_recipe_col_ingredient', 'Zutat')}</span>
+                <span>{t('gw_recipe_col_qty', 'Menge pro Einheit')}</span>
+                <span />
               </div>
-            </>
+              {rows.map((r, idx) => {
+                const known = byName.get(norm(r.name));
+                const label = `${t('gw_recipe_col_ingredient', 'Zutat')} ${idx + 1}`;
+                return (
+                  <div className="recipe-editor-row" key={r.key}>
+                    <div className="recipe-editor-name">
+                      <input
+                        className="input-field"
+                        list="recipe-editor-ingredients"
+                        value={r.name}
+                        placeholder={t('gw_recipe_name_placeholder', 'Zutat, z.B. Gin')}
+                        aria-label={label}
+                        onChange={(e) => setName(r.key, e.target.value)}
+                      />
+                      {r.name.trim() && !known && (
+                        <span className="recipe-editor-new">{t('gw_recipe_new_ingredient', 'neu')}</span>
+                      )}
+                    </div>
+                    <div className="recipe-editor-qty">
+                      <DecimalInput
+                        min="0"
+                        className="input-field"
+                        value={r.qty}
+                        placeholder="0"
+                        aria-label={`${t('gw_recipe_col_qty', 'Menge pro Einheit')} ${idx + 1}`}
+                        onChange={(e) => update(r.key, { qty: e.target.value })}
+                        onFocus={(e) => e.target.select()}
+                      />
+                      {known ? (
+                        <span className="recipe-editor-unit">{known.unit || ''}</span>
+                      ) : (
+                        <input
+                          className="input-field recipe-editor-unit-input"
+                          value={r.unit}
+                          placeholder="Stk"
+                          aria-label={`${t('gw_recipe_col_unit', 'Einheit')} ${idx + 1}`}
+                          onChange={(e) => update(r.key, { unit: e.target.value })}
+                        />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="recipe-editor-remove"
+                      onClick={() => removeRow(r.key)}
+                      title={t('gw_recipe_remove', 'Zeile entfernen')}
+                      aria-label={`${t('gw_recipe_remove', 'Zeile entfernen')}: ${r.name || idx + 1}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <datalist id="recipe-editor-ingredients">
+            {ingredients.filter((i) => i.active).map((i) => <option key={i.id} value={i.name} />)}
+          </datalist>
+          <div className="recipe-editor-add">
+            <Button type="button" variant="secondary" size="sm" icon={Plus} onClick={addRow}>
+              {t('gw_recipe_add', 'Zutat hinzufügen')}
+            </Button>
+          </div>
+
+          <div className="recipe-editor-library">
+            <Button variant="secondary" size="sm" type="button" icon={BookOpen} onClick={openTemplates}>
+              {t('gw_recipe_load', 'Rezept laden')}
+            </Button>
+            {templateName === null ? (
+              <Button variant="secondary" size="sm" type="button" icon={Save} onClick={() => setTemplateName('')}>
+                {t('gw_recipe_save_template', 'Als Vorlage speichern')}
+              </Button>
+            ) : (
+              <div className="recipe-editor-template-save">
+                <input
+                  className="input-field"
+                  value={templateName}
+                  placeholder={t('gw_recipe_template_name', 'Name der Vorlage')}
+                  aria-label={t('gw_recipe_template_name', 'Name der Vorlage')}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                />
+                <Button variant="primary" size="sm" type="button" onClick={saveTemplate}>{t('btn_save', 'Speichern')}</Button>
+                <Button variant="ghost" size="sm" type="button" onClick={() => setTemplateName(null)}>{t('btn_cancel', 'Abbrechen')}</Button>
+              </div>
+            )}
+          </div>
+          {templates && (
+            <div className="recipe-editor-templates" role="list">
+              {templates.length === 0 ? (
+                <div className="recipe-editor-empty">{t('gw_recipe_lib_empty', 'Noch keine Vorlagen gespeichert.')}</div>
+              ) : templates.map((tpl) => (
+                <button key={tpl.id} type="button" role="listitem" className="recipe-editor-template" onClick={() => loadTemplate(tpl)}>
+                  <span>{tpl.name}</span>
+                  <span className="dt-muted">{tpl.rows.length} {t('gw_recipe_lib_items', 'Zutaten')}</span>
+                </button>
+              ))}
+            </div>
           )}
 
           <div className="modal-actions">
