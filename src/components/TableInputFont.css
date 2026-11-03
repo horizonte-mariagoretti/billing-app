@@ -1,0 +1,6 @@
+/* Font size of the inputs and select triggers in the data tables: the same as the line names (0.95rem).
+   Own file, imported by the Lasagnen, Glühweinbude and Baseball pages: delete the import to undo this step alone. */
+.data-table input,
+.data-table .ss-root .ss-trigger {
+  font-size: 0.95rem;
+}

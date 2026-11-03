@@ -40,14 +40,8 @@
 .gw-catalog-inactive-toggle input { accent-color: var(--color-primary); cursor: pointer; }
 
 /* ── Table ── */
-/* Fixed column widths: columns must not jump when search or filter changes the rows. */
-.gw-catalog-table { table-layout: fixed; min-width: 980px; }
+/* Table layout: see "Sortiment table" below */
 .gw-catalog-table th:first-child { min-width: 0; }
-.gw-col-sell      { width: 150px; }
-.gw-col-planned   { width: 170px; }
-.gw-col-buy       { width: 290px; }
-.gw-col-recipe    { width: 270px; }
-.gw-col-actions   { width: 90px; }
 
 .gw-bought-cell,
 .gw-recipe-cell {
@@ -122,7 +116,7 @@
   width: 72px;
   padding: 2px 6px;
   border: 1px solid var(--color-border-light-theme);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-light-surface);
   font: inherit;
   font-family: var(--font-mono);
@@ -164,6 +158,9 @@
 }
 
 .gw-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
   background: transparent;
   border: none;
   padding: var(--space-2xs);
@@ -373,81 +370,55 @@
   .gw-unit-group { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* Sortiment table: one spacing system for the value columns (layout pass) */
-.gw-catalog-table { min-width: 760px; }
+/* ── Sortiment table ──
+   One row height (60 px, from .data-table). Every cell holds its content in .gw-cell: a 28 px flex row, centred.
+   Columns have fixed widths, so editing or resizing a field cannot shift the row lines. */
+.gw-catalog-table { table-layout: fixed; width: 100%; min-width: 980px; }
 .gw-col-sell    { width: 190px; }
-.gw-col-buy     { width: 210px; }
-.gw-col-planned { width: 210px; }
+.gw-col-buy     { width: 230px; }
+.gw-col-planned { width: 260px; }
+.gw-col-diff    { width: 130px; }
 .gw-col-actions { width: 96px; }
 .gw-catalog-table thead th:last-child { text-align: right; }
-
-.gw-price-cell,
-.gw-sold-cell,
-.gw-buy-cell-td .gw-bought-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-.gw-price-cell { justify-content: flex-end; }
-.gw-price-cell .gw-unit-suffix { min-width: 14px; }
-.gw-catalog-table .gw-inline-input { width: 88px; }
-.gw-catalog-table .gw-row-actions { text-align: right; }
-
-/* Sortiment table, second layout pass: value columns share one width and one alignment (all left) */
-.gw-col-sell    { width: 200px; }
-.gw-col-buy     { width: 200px; }
-.gw-col-planned { width: 200px; }
-.gw-price-cell { justify-content: flex-start; }
-
-/* Row lines: every cell in a body row has the same height, so the separator lines stay straight (layout pass 3) */
 .gw-catalog-table tbody td {
-  height: 56px;
   padding-top: 0;
   padding-bottom: 0;
   vertical-align: middle;
+  white-space: nowrap;
 }
-.gw-catalog-table .gw-inline-input {
-  height: 30px;
-  line-height: 1.2;
+.gw-catalog-table .gw-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 28px;
+  min-width: 0;
+}
+.gw-catalog-table .gw-cell > * { flex: 0 0 auto; }
+.gw-catalog-table .gw-cell .gw-inline-input {
+  width: 88px;
+  height: 28px;
+  margin: 0;
   padding-top: 0;
   padding-bottom: 0;
   box-sizing: border-box;
 }
-
-/* One unified row height: the whole row (tr) and every cell in it are 56 px, borders included */
-.gw-catalog-table tbody tr {
-  height: 56px;
-}
-.gw-catalog-table tbody td {
-  height: 56px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-/* Separate borders: each body cell carries its own 1 px line inside its 56 px, so rows cannot round to 56.5 px */
-.gw-catalog-table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-.gw-catalog-table tbody td {
-  border-bottom: 1px solid var(--color-border-light-theme);
-}
-
-/* Einkauf units must stay visible: the cell does not clip, and the quantity input leaves room for the unit */
-.gw-catalog-table tbody td {
-  overflow: visible;
-}
-.gw-buy-cell-td .gw-inline-input {
-  width: 72px;
-}
-.gw-buy-cell-td .gw-bought-cell span {
-  white-space: nowrap;
-}
-
-/* Einkauf unit next to the quantity: always shown, in the secondary text colour so it reads clearly */
-.gw-unit-label {
+.gw-catalog-table .gw-buy-cell-td .gw-inline-input { width: 72px; }
+.gw-catalog-table .gw-cell .gw-unit-suffix,
+.gw-catalog-table .gw-cell .gw-unit-label { white-space: nowrap; }
+.gw-catalog-table .gw-price-cell .gw-unit-suffix { min-width: 14px; }
+.gw-catalog-table .gw-unit-label {
   color: var(--color-text-dark-secondary);
   font-size: 0.85rem;
-  white-space: nowrap;
 }
+.gw-catalog-table .gw-left-unit-cell { flex: 0 0 auto; width: 120px; }
+.gw-catalog-table .gw-cell .gw-left-unit { width: 100%; margin: 0; }
+.gw-catalog-table .gw-cell .gw-left-unit .ss-trigger {
+  height: 28px;
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.gw-catalog-table .gw-diff-cell { white-space: nowrap; }

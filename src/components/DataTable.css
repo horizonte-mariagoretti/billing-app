@@ -120,3 +120,105 @@
   .data-table th,
   .data-table td { padding: var(--space-sm) var(--space-md); }
 }
+
+/* Einkaufsliste section header (Lasagnen and Glühwein): full-width band with a chevron toggle */
+.shop-section th {
+  background: var(--color-light-bg);
+  color: var(--color-text-dark-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.shop-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.shop-toggle:focus-visible { outline: 2px solid var(--color-indigo); outline-offset: 2px; border-radius: 4px; }
+
+/* Einkaufsliste stock input (Lasagnen Vorrat, Glühwein Bestand): the stock column (header + input) sits right
+   next to its unit column. */
+.data-table th.shop-unit,
+.data-table th:has(+ .shop-unit),
+.data-table td:has(> .shop-stock-input) {
+  padding-right: 4px;
+}
+
+.data-table td.shop-unit {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 2px;
+}
+.shop-stock-input {
+  width: 84px;
+  height: 28px;
+  padding: 0 8px;
+  text-align: right;
+  font-family: var(--font-mono);
+  border: 1px solid var(--color-border-light-theme);
+  border-radius: var(--radius-md);
+  background: var(--color-light-surface);
+}
+
+/* Row height of every data table (Lasagnen Übersicht: 57 px incl. border). Table inputs and select triggers are 28 px
+   tall and sit 2 px into the cell padding (-2px margin), so a row is 16 + 24 + 16 + 1 px. */
+.data-table .lasagnen-count,
+.data-table .lasagnen-final,
+.data-table .shop-stock-input,
+.data-table .gw-inline-input,
+.data-table .gw-kasse-count,
+.data-table .baseball-cell,
+.data-table .baseball-field-name-input,
+.data-table .ss-root {
+  margin-top: -2px;
+  margin-bottom: -2px;
+}
+/* Row height of every data table: 60 px (a multiple of 4), the minimum for all rows, text-only rows included */
+.data-table tbody tr {
+  height: 60px;
+}
+
+/* Date fields in data tables: 28 px like the other table inputs */
+.data-table .datepicker-input-wrap {
+  height: 28px;
+  box-sizing: border-box;
+  margin-top: -2px;
+  margin-bottom: -2px;
+}
+.data-table .datepicker-input {
+  height: 100%;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Select triggers in data tables: 28 px like the other table inputs (StyledSelect base is 38 px) */
+.data-table .ss-root .ss-trigger {
+  height: 28px;
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Section header rows of the Einkaufsliste lists: 40 px, no vertical cell padding */
+.data-table tbody tr.shop-section {
+  height: 40px;
+}
+.data-table tbody tr.shop-section > th,
+.data-table tbody tr.shop-section > td {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}
+.data-table tbody tr.shop-section .shop-toggle {
+  display: flex;
+  align-items: center;
+  height: 39px; /* 39 + the 1px border = 40 */
+}

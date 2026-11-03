@@ -76,8 +76,9 @@
 .baseball-dienste-chip-input.input-field {
   width: 180px;
   max-width: 100%;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
 }
 

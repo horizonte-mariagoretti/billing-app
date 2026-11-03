@@ -13,6 +13,7 @@ import BaseballShopping from '../components/BaseballShopping';
 import useYear from '../hooks/useYear';
 import { SALES_ACTIONS } from '../utils/lasagnaFinance';
 import './Baseball.css';
+import '../components/TableInputFont.css';
 
 const ACTION = SALES_ACTIONS.find((a) => a.key === 'baseball');
 

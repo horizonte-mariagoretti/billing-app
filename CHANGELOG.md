@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.0] - 2026-11-03
+
+### Changed
+- **Glühweinbude Einkaufsliste is driven by Einkauf everywhere, laid out like the Lasagnen list.** A recipe product (Rezept verwenden on) now computes its ingredients from its Einkauf × content instead of the planned Verkauft quantity. The list has two collapsible sections. "Getränke" holds every product with Einkauf: products without recipe as before (packs = Einkauf, cost = packs × pack price); a recipe drink shows its Einkauf (sold units in brackets), price per pack and ingredient cost, and opens with a chevron to one line per ingredient with the need of that drink only. "Zutaten" is the actual purchase list: each ingredient once over all drinks plus Zusatzbedarf, with an editable Bestand (the same input as the Lasagnen Vorrat, saved on leaving the field), Zu kaufen in packs, price per pack and cost. The total is the Zutaten cost plus the products without recipe (recipe drinks are not counted twice). The "Typ" column, the type badges, the "siehe <Produkt>" lines and the cost split between drinks are gone; the Lasagnen Vorrat input and its unit cell now use shared styles (`.shop-stock-input`, `.shop-unit` in DataTable.css).
+- **Data tables share one look.** Every row is 60 px, section headers of the Einkaufsliste lists 40 px. Table inputs and select triggers are 28 px tall with 8 px radius; the table text inputs use the line-name size (0.95rem, own file `TableInputFont.css`). The Glühweinbude Sortiment rows are fixed-height cells, so resizing no longer shifts the row lines.
+- **Sortiment "Verkauft" is now "Übrig".** The planned quantity column, its popup field, the Rezepte column and the copy option say "Übrig": what is left after the event. The Einkaufsliste does not use it. The Übrig cell has a unit select (Verkaufseinheit, Einkaufseinheit or Liter; stored in the item's plan_unit). A new column "Differenz" shows Eingekauft − Übrig in the Übrig unit (what was sold or used).
+
 ## [1.40.0] - 2026-11-03
 
 ### Added
