@@ -22,7 +22,7 @@ test('recipe drink: Einkauf × content drives its lines; cost from the ingredien
     ['leffe', { purchase_qty: 0 }],
   ]);
   const ingredientTerms = new Map([
-    ['wein', { pack_size: 6, buy_price: 4.5 }], // 30 × 0.2 = 6 l -> 1 pack
+    ['wein', { pack_size: 6, buy_price: 27 }], // pack of 6 l at 27 € -> 30 × 0.2 = 6 l -> 1 pack
     ['gewuerz', { pack_size: 0, buy_price: null }], // pack_size 0 -> 1; null price -> cost 0
   ]);
   const recipe = [
@@ -45,7 +45,7 @@ test('ingredient shared by two drinks: each drink shows its own need, the Zutate
     rot: { purchase_qty: 1, pack_size: 10 }, // 10 sold units
     stella: { purchase_qty: 1, pack_size: 30 }, // 30 sold units
   };
-  const ingredientTerms = { wein: { pack_size: 4, buy_price: 2 } };
+  const ingredientTerms = { wein: { pack_size: 4, buy_price: 8 } }; // pack of 4 at 8 € = 2 € per unit
   const recipe = [
     { product_id: 'stella', ingredient_id: 'wein', qty_per_unit: 1 }, // 30
     { product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 1 }, // 10
@@ -65,7 +65,7 @@ test('ingredient shared by two drinks: each drink shows its own need, the Zutate
 test('stock is subtracted (floor 0) before pack rounding; the drink cost ignores stock', () => {
   const productTerms = { rot: { purchase_qty: 2, pack_size: 60 } }; // 120 sold units
   const ingredientTerms = {
-    becher: { pack_size: 50, buy_price: 0.12, stock_qty: 100 }, // 120 - 100 = 20 -> 1 pack
+    becher: { pack_size: 50, buy_price: 6, stock_qty: 100 }, // 120 - 100 = 20 -> 1 pack; 6 € per pack = 0.12 per unit
     wein: { pack_size: 1, buy_price: 3, stock_qty: 50 }, // need 24, stock 50 -> 0 to buy
   };
   const recipe = [
@@ -82,8 +82,8 @@ test('stock is subtracted (floor 0) before pack rounding; the drink cost ignores
 
 test('Zusatzbedarf alone gives a Zutaten row; with a recipe it adds to the total need, not to the drink', () => {
   const ingredientTerms = new Map([
-    ['becher', { pack_size: 50, buy_price: 0.1, extra_qty: 30 }],
-    ['gewuerz', { pack_size: 10, buy_price: 0.5, extra_qty: 0 }],
+    ['becher', { pack_size: 50, buy_price: 5, extra_qty: 30 }],
+    ['gewuerz', { pack_size: 10, buy_price: 5, extra_qty: 0 }],
   ]);
   const only = buildShoppingList({ products, ingredients, productTerms: {}, ingredientTerms, recipe: [] });
   assert.deepEqual(only.drinks, []);
@@ -107,7 +107,7 @@ test('inactive product and inactive ingredient are ignored; float noise adds no 
   const prods = [...products, { id: 'old', name: 'Alt', unit: 'Stk', active: 0 }];
   const ings = [...ingredients, { id: 'retired', name: 'Weg', unit: 'Stk', active: 0 }];
   const productTerms = { rot: { purchase_qty: 1, pack_size: 15 }, stella: { purchase_qty: 1, pack_size: 5 }, old: { purchase_qty: 99, pack_size: 1 } };
-  const ingredientTerms = { wein: { pack_size: 0.3, buy_price: 1 }, retired: { extra_qty: 5 } };
+  const ingredientTerms = { wein: { pack_size: 0.3, buy_price: 0.3 }, retired: { extra_qty: 5 } };
   const recipe = [
     { product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 0.06 }, // 15 × 0.06 = 0.9
     { product_id: 'stella', ingredient_id: 'wein', qty_per_unit: 0.1 }, // 5 × 0.1 = 0.5
@@ -245,7 +245,7 @@ test('shared ingredient across drinks with different bases is counted once in Zu
     { id: 'rot', name: 'Rot', unit: 'Becher', use_recipe: true }, // default 1 portion
   ];
   const productTerms = { gin: { purchase_qty: 2, pack_liters: 6 }, rot: { purchase_qty: 1, pack_size: 20 } };
-  const ingredientTerms = { becher: { pack_size: 50, buy_price: 0.1 } };
+  const ingredientTerms = { becher: { pack_size: 50, buy_price: 5 } };
   const recipe = [
     { product_id: 'gin', ingredient_id: 'becher', qty_per_unit: 5 }, // 12 l × 5 = 60
     { product_id: 'rot', ingredient_id: 'becher', qty_per_unit: 1 }, // 20
@@ -254,6 +254,18 @@ test('shared ingredient across drinks with different bases is counted once in Zu
   assert.deepEqual(res.drinks.map((d) => d.lines[0].need), [60, 20]);
   assert.equal(res.ingredients.length, 1);
   assert.deepEqual([res.ingredients[0].need, res.ingredients[0].packs, res.ingredients[0].cost], [80, 2, 10]);
+});
+
+test('buy_price is per pack: 1000 ml at 0,59 € and 2000 ml at 1,18 € both cost 0,59 per 1000 ml used', () => {
+  const productTerms = { rot: { purchase_qty: 1, pack_size: 10 } }; // 10 sold units
+  const recipe = [{ product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 100 }]; // 10 × 100 = 1000 ml
+  for (const [size, price] of [[1000, 0.59], [2000, 1.18]]) {
+    const res = buildShoppingList({
+      products, ingredients, productTerms, recipe, ingredientTerms: { wein: { pack_size: size, buy_price: price } },
+    });
+    assert.equal(res.drinks[0].cost, 0.59);
+    assert.equal(res.ingredients[0].packPrice, price);
+  }
 });
 
 test('empty input', () => {

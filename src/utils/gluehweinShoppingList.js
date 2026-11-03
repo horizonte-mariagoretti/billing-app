@@ -9,7 +9,10 @@
 //  - Without recipe: Einkauf is bought itself (packs = Einkauf, cost = packs × pack price).
 // Zutaten (the actual purchase list): one row per ingredient, need = sum over all drinks + Zusatzbedarf (extra_qty,
 // active ingredients only). Stock on hand is subtracted (floor 0), the rest is rounded up to whole packs.
-// Ingredients: buy_price is per unit, so a pack costs pack_size × buy_price.
+// Ingredients: buy_price is per pack (Packungspreis), pack_size is the content of one pack in ingredient units.
+// Per-unit price = buy_price / pack_size (ingredientUnitPrice).
+
+import { ingredientUnitPrice } from './gluehweinCatalogMath.js';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 // Trims float noise (0.1 × 3) so Math.ceil does not add a pack.
@@ -40,18 +43,19 @@ export function boughtInRecipeUnit(terms, unit) {
  *   (qty per sold unit).
  * productTerms: Map/object product id -> { purchase_qty, pack_size (content), pack_liters, buy_unit, buy_pack_price,
  *   buy_price (legacy) } of this year. pack_size is the sold units per buy unit, pack_liters the liters per buy unit.
- * ingredientTerms: Map/object ingredient id -> { buy_price, pack_type, pack_size, extra_qty, stock_qty } of this year.
+ * ingredientTerms: Map/object ingredient id -> { buy_price (per pack), pack_type, pack_size, extra_qty, stock_qty } of
+ *   this year.
  * recipe: [{ product_id, ingredient_id, qty_per_unit }] (qty per recipe base amount).
  * Returns { drinks, ingredients, total }.
  *  drinks: { key, id, name, unit, hasRecipe, need (sold amount for display), packs (Einkauf), packLabel (buy_unit or
  *    null), packSize, packPrice, cost, lines, recipeIssue }. Liter products (plan_unit 'liter') show need in 'l'
  *    (Einkauf × pack_liters), the others in their unit (Einkauf × pack_size); packSize is that factor (missing = 1).
- *    Recipe drinks: cost = Σ line need × ingredient buy_price (per unit, not rounded to packs), packPrice = cost /
+ *    Recipe drinks: cost = Σ line need × ingredient unit price (not rounded to packs), packPrice = cost /
  *    packs; lines: { key, id, name, unit, need (this drink only) }; recipeIssue: null, or 'pack_size' | 'pack_liters' |
  *    'recipe_amount' when Einkauf cannot be converted into recipe batches (then lines = [], cost = packPrice = null).
  *    Without recipe: lines = [], packPrice = buy_pack_price (legacy: pack_size × buy_price), cost = packs × packPrice.
- *  ingredients: { key, id, source: 'ingredient', name, unit, packType, packSize, need, stock, toBuy, packs, packPrice,
- *    cost }, in input order.
+ *  ingredients: { key, id, source: 'ingredient', name, unit, packType, packSize, need, stock, toBuy, packs, packPrice
+ *    (per pack), cost }, in input order.
  *  total: what is really bought: Zutaten cost + cost of the drinks without recipe (recipe drinks are already in
  *    their ingredients).
  */
@@ -115,7 +119,7 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
       if (!(need > 0)) continue;
       const g = ingById.get(r.ingredient_id);
       addIng(g.id, need);
-      cost += need * num(termsOf(ingredientTerms, g.id).buy_price);
+      cost += need * (ingredientUnitPrice(termsOf(ingredientTerms, g.id)) ?? 0);
       lines.push({ key: `ingredient:${g.id}:${p.id}`, id: g.id, name: g.name || '', unit: g.unit || 'Stk', need: round6(need) });
     }
     drinks.push({ ...base, hasRecipe: true, packPrice: round2(cost / bought), cost: round2(cost), lines });
@@ -145,8 +149,8 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
       stock,
       toBuy,
       packs,
-      packPrice: round2(size * num(t.buy_price)),
-      cost: round2(packs * size * num(t.buy_price)),
+      packPrice: round2(num(t.buy_price)),
+      cost: round2(packs * num(t.buy_price)),
     };
   });
   // Footer total: the real purchase cost. Recipe drinks are left out, their ingredients are already in ingRows.

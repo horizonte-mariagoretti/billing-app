@@ -170,7 +170,7 @@ const GluehweinIngredientModal = ({
           <fieldset className="gw-ing-terms" disabled={yearLocked}>
             <div className="settings-fields-modal-grid">
               <div className="settings-fields-modal-field wide">
-                <label className="input-label" htmlFor="gw-ing-buy">{t('gw_col_buy', 'Einkaufspreis')}</label>
+                <label className="input-label" htmlFor="gw-ing-buy">{t('gw_col_buy_pack', 'Packungspreis')}</label>
                 <DecimalInput
                   id="gw-ing-buy"
                   min="0"
@@ -180,7 +180,7 @@ const GluehweinIngredientModal = ({
                   onChange={(e) => setValue('buy_price', e.target.value)}
                   onFocus={(e) => e.target.select()}
                 />
-                <span className="settings-fields-modal-hint">{t('gw_buy_hint', 'Pro Einheit')}</span>
+                <span className="settings-fields-modal-hint">{t('gw_buy_pack_hint', 'Pro Packung')}</span>
               </div>
               <div className="settings-fields-modal-field">
                 <label className="input-label" htmlFor="gw-ing-pack">{t('gw_col_pack_type', 'Packungsart')}</label>
