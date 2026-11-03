@@ -2078,6 +2078,28 @@ UPDATE baseball_duty_assignments SET needed = (
       `);
     },
   },
+  {
+    version: 52,
+    up: (exec) => {
+      // Glühwein recipe library: saved recipe templates (not year-bound, not tied to one product). A template is loaded
+      // into the RecipeEditor of any product; its amounts are per sold unit. Rows are stored by ingredient name and
+      // unit (not by id), so a template can name ingredients that do not exist yet; they are created on save.
+      exec(`
+CREATE TABLE IF NOT EXISTS gw_recipe_library (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS gw_recipe_library_rows (
+  library_id TEXT NOT NULL REFERENCES gw_recipe_library(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'Stk',
+  qty_per_unit REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (library_id, name)
+);
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

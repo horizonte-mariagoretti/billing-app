@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.40.0] - 2026-11-03
+
+### Added
+- **Glühwein recipe library.** In the recipe popup, "Rezept laden" lists saved templates and replaces the rows with a template's ingredients and amounts (nothing is saved to the product until "Speichern"). "Als Vorlage speichern" saves the current rows under a name. Templates are shared across products and years. Migration 52 adds `gw_recipe_library` and `gw_recipe_library_rows`; hook `useGluehweinRecipeLibrary`.
+- **Recipe rows take ingredients by name.** A recipe row is a typed name with a unit and an amount per sold unit. A name that is not in the ingredient list yet is created as an ingredient when the recipe is saved (unit default Stk), so ingredients no longer need to be added first. Names match existing ingredients case-insensitively; an inactive match is reactivated. Templates store names and units, not ids. Helper `utils/gluehweinRecipeRows.js`.
+
 ## [1.39.1] - 2026-11-02
 
 ### Changed

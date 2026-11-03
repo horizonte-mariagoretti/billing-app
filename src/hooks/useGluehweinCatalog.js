@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
 import { plannedPortions } from '../utils/gluehweinCatalogMath';
+import { planRecipeRows } from '../utils/gluehweinRecipeRows';
 
 const numOrNull = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
 const numOr = (v, fallback) => {
@@ -173,18 +174,31 @@ export function useGluehweinCatalog() {
     );
   }, [run, assertYearOpen]);
 
-  // rows: [{ ingredient_id, qty_per_unit }]. Replaces the whole recipe of the product in one transaction.
+  // rows: [{ name, unit, qty_per_unit }]. Names match existing ingredients (case-insensitive); unknown names are created
+  // as ingredients in the same transaction, inactive matches are reactivated. Replaces the whole recipe of the product.
   const saveRecipe = useCallback(async (productId, rows) => {
-    const ops = [{ sql: 'DELETE FROM gw_recipe WHERE product_id = ?', params: [productId] }];
-    for (const r of rows || []) {
-      if (!r?.ingredient_id) continue;
+    const ingredients = await query('SELECT id, name, unit, active FROM gw_ingredients');
+    const plan = planRecipeRows(rows, ingredients);
+    const ops = [];
+    for (const g of plan.create) {
+      ops.push({
+        sql: `INSERT INTO gw_ingredients (id, name, unit, sort_order, active)
+              VALUES (?, ?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM gw_ingredients), 1)`,
+        params: [g.id, g.name, g.unit],
+      });
+    }
+    for (const id of plan.reactivate) {
+      ops.push({ sql: 'UPDATE gw_ingredients SET active = 1 WHERE id = ?', params: [id] });
+    }
+    ops.push({ sql: 'DELETE FROM gw_recipe WHERE product_id = ?', params: [productId] });
+    for (const r of plan.recipe) {
       ops.push({
         sql: 'INSERT INTO gw_recipe (product_id, ingredient_id, qty_per_unit) VALUES (?, ?, ?)',
-        params: [productId, r.ingredient_id, Number(r.qty_per_unit) || 0],
+        params: [productId, r.ingredient_id, r.qty_per_unit],
       });
     }
     await transaction(ops);
-  }, [transaction]);
+  }, [query, transaction]);
 
   return { fetchItems, saveItem, deleteItem, saveTerms, copyTerms, saveRecipe };
 }
