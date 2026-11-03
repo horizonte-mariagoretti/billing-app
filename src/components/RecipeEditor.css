@@ -131,3 +131,8 @@
 @media (max-width: 560px) {
   .recipe-editor-row { grid-template-columns: minmax(0, 1fr) 180px 36px; }
 }
+
+/* Recipe base amount (Rezeptmenge) above the rows; field/input/error from SettingsFieldsModal.css */
+.recipe-editor-base { margin-bottom: var(--space-lg); }
+.recipe-editor-base .input-field { max-width: 120px; text-align: right; font-family: var(--font-mono); }
+.recipe-editor-base .recipe-editor-base-unit { width: 160px; margin: 0; }

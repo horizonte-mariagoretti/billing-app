@@ -2,8 +2,10 @@
 //
 // Everything is driven by Einkauf (purchase_qty in buy units, e.g. Kasten or Flasche), never by Übrig (planned_qty).
 // Getränke: every active product with Einkauf, in name order. A product with no Einkauf has no row.
-//  - With a recipe (use_recipe on, recipe rows): Einkauf × content = sold units; each recipe row needs
-//    sold units × qty_per_unit. Its cost is informational (the ingredients are bought in the Zutaten list).
+//  - With a recipe (use_recipe on, recipe rows): the recipe rows are the ingredients for one recipe base amount
+//    (recipe_amount in recipe_unit). Einkauf is converted into recipe_unit (boughtInRecipeUnit), batches = that /
+//    recipe_amount, each recipe row needs batches × qty_per_unit. Its cost is informational (the ingredients are
+//    bought in the Zutaten list). A missing conversion gives no ingredient need and sets recipeIssue (never a silent 0).
 //  - Without recipe: Einkauf is bought itself (packs = Einkauf, cost = packs × pack price).
 // Zutaten (the actual purchase list): one row per ingredient, need = sum over all drinks + Zusatzbedarf (extra_qty,
 // active ingredients only). Stock on hand is subtracted (floor 0), the rest is rounded up to whole packs.
@@ -21,15 +23,32 @@ const isActive = (row) => row?.active === undefined || row?.active === null || !
 const byName = (a, b) => (a.name || '').localeCompare(b.name || '', 'de-DE');
 
 /**
- * products: gw_items rows ({ id, name, unit, active?, use_recipe? }); ingredients: gw_ingredients rows (same shape).
- * productTerms: Map/object product id -> { purchase_qty, pack_size (content), buy_unit, buy_pack_price, buy_price (legacy) }
- *   of this year. pack_size is the sold units per buy unit (liter products: liters per buy unit).
+ * Einkauf (purchase_qty, buy units) converted into a recipe unit: 'buy' = Einkauf; 'portion' = Einkauf × pack_size
+ * (sold units per buy unit); 'liter' = Einkauf × pack_liters (liters per buy unit). null when the conversion value is
+ * missing or not > 0.
+ */
+export function boughtInRecipeUnit(terms, unit) {
+  const bought = num(terms?.purchase_qty);
+  if (unit === 'buy') return bought;
+  const factor = num(unit === 'liter' ? terms?.pack_liters : terms?.pack_size);
+  return factor > 0 ? bought * factor : null;
+}
+
+/**
+ * products: gw_items rows ({ id, name, unit, active?, use_recipe?, plan_unit?, recipe_amount?, recipe_unit? });
+ *   ingredients: gw_ingredients rows ({ id, name, unit, active? }). recipe_amount / recipe_unit default to 1 / 'portion'
+ *   (qty per sold unit).
+ * productTerms: Map/object product id -> { purchase_qty, pack_size (content), pack_liters, buy_unit, buy_pack_price,
+ *   buy_price (legacy) } of this year. pack_size is the sold units per buy unit, pack_liters the liters per buy unit.
  * ingredientTerms: Map/object ingredient id -> { buy_price, pack_type, pack_size, extra_qty, stock_qty } of this year.
- * recipe: [{ product_id, ingredient_id, qty_per_unit }] (qty per sold unit).
+ * recipe: [{ product_id, ingredient_id, qty_per_unit }] (qty per recipe base amount).
  * Returns { drinks, ingredients, total }.
- *  drinks: { key, id, name, unit, hasRecipe, need (sold units), packs (Einkauf), packLabel (buy_unit or null),
- *    packSize, packPrice, cost, lines }. Recipe drinks: cost = Σ line need × ingredient buy_price (per unit, not
- *    rounded to packs), packPrice = cost / packs; lines: { key, id, name, unit, need (this drink only) }.
+ *  drinks: { key, id, name, unit, hasRecipe, need (sold amount for display), packs (Einkauf), packLabel (buy_unit or
+ *    null), packSize, packPrice, cost, lines, recipeIssue }. Liter products (plan_unit 'liter') show need in 'l'
+ *    (Einkauf × pack_liters), the others in their unit (Einkauf × pack_size); packSize is that factor (missing = 1).
+ *    Recipe drinks: cost = Σ line need × ingredient buy_price (per unit, not rounded to packs), packPrice = cost /
+ *    packs; lines: { key, id, name, unit, need (this drink only) }; recipeIssue: null, or 'pack_size' | 'pack_liters' |
+ *    'recipe_amount' when Einkauf cannot be converted into recipe batches (then lines = [], cost = packPrice = null).
  *    Without recipe: lines = [], packPrice = buy_pack_price (legacy: pack_size × buy_price), cost = packs × packPrice.
  *  ingredients: { key, id, source: 'ingredient', name, unit, packType, packSize, need, stock, toBuy, packs, packPrice,
  *    cost }, in input order.
@@ -57,30 +76,42 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
     const t = termsOf(productTerms, p.id);
     const bought = num(t.purchase_qty);
     if (!(bought > 0)) continue;
-    const size = num(t.pack_size) > 0 ? num(t.pack_size) : 1;
-    const soldUnits = bought * size;
+    const isLiter = p.plan_unit === 'liter';
+    const factor = num(isLiter ? t.pack_liters : t.pack_size);
+    const size = factor > 0 ? factor : 1;
     const base = {
       key: `product:${p.id}`,
       id: p.id,
       name: p.name || '',
-      unit: p.unit || 'Stk',
-      need: round6(soldUnits),
+      unit: isLiter ? 'l' : p.unit || 'Stk',
+      need: round6(bought * size),
       packs: bought,
       packLabel: String(t.buy_unit ?? '').trim() || null,
       packSize: size,
+      recipeIssue: null,
     };
     const rows = p.use_recipe ? (recipeOf.get(p.id) || []).filter((r) => ingById.has(r.ingredient_id)) : [];
     if (rows.length === 0) {
-      // Bought as it is: Einkauf is already counted in buy units, no rounding.
+      // Bought as it is: Einkauf is already counted in buy units, no rounding. Legacy: buy_price is per sold unit.
       const hasPackPrice = t.buy_pack_price != null && t.buy_pack_price !== '';
-      const packPrice = round2(hasPackPrice ? num(t.buy_pack_price) : size * num(t.buy_price));
+      const content = num(t.pack_size) > 0 ? num(t.pack_size) : 1;
+      const packPrice = round2(hasPackPrice ? num(t.buy_pack_price) : content * num(t.buy_price));
       drinks.push({ ...base, hasRecipe: false, packPrice, cost: round2(bought * packPrice), lines: [] });
       continue;
     }
+    const recipeUnit = p.recipe_unit || 'portion';
+    const recipeAmount = p.recipe_amount == null || p.recipe_amount === '' ? 1 : num(p.recipe_amount);
+    const converted = boughtInRecipeUnit(t, recipeUnit);
+    if (!(recipeAmount > 0) || converted == null) {
+      const recipeIssue = !(recipeAmount > 0) ? 'recipe_amount' : recipeUnit === 'liter' ? 'pack_liters' : 'pack_size';
+      drinks.push({ ...base, hasRecipe: true, recipeIssue, packPrice: null, cost: null, lines: [] });
+      continue;
+    }
+    const batches = converted / recipeAmount;
     let cost = 0;
     const lines = [];
     for (const r of rows) {
-      const need = soldUnits * num(r.qty_per_unit);
+      const need = batches * num(r.qty_per_unit);
       if (!(need > 0)) continue;
       const g = ingById.get(r.ingredient_id);
       addIng(g.id, need);

@@ -2100,6 +2100,19 @@ CREATE TABLE IF NOT EXISTS gw_recipe_library_rows (
       `);
     },
   },
+  {
+    version: 53,
+    up: (exec) => {
+      // Glühwein recipe base amount: the recipe rows are the ingredients for recipe_amount of the product, counted in
+      // recipe_unit ('portion' = selling unit, 'buy' = Einkaufseinheit, 'liter'). Default 1 portion = qty per sold unit
+      // as before. Liter products start at 1 l: their Einkaufsliste counted the recipe per liter until now.
+      exec(`
+ALTER TABLE gw_items ADD COLUMN recipe_amount REAL NOT NULL DEFAULT 1;
+ALTER TABLE gw_items ADD COLUMN recipe_unit TEXT NOT NULL DEFAULT 'portion';
+UPDATE gw_items SET recipe_unit = 'liter' WHERE plan_unit = 'liter';
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

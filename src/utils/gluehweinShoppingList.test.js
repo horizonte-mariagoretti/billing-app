@@ -1,7 +1,7 @@
 // Run: node --test src/utils/gluehweinShoppingList.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildShoppingList } from './gluehweinShoppingList.js';
+import { buildShoppingList, boughtInRecipeUnit } from './gluehweinShoppingList.js';
 
 const products = [
   { id: 'rot', name: 'Glühwein rot', unit: 'Becher', use_recipe: true },
@@ -158,6 +158,102 @@ test('footer total = Zutaten cost + drinks without recipe; recipe drinks are not
   assert.deepEqual([by.leffe.hasRecipe, by.leffe.cost], [false, 15]);
   assert.equal(res.ingredients[0].cost, 20);
   assert.equal(res.total, 35); // not 55
+});
+
+test('boughtInRecipeUnit: buy = Einkauf, portion = × content, liter = × liters per buy unit; missing value -> null', () => {
+  const terms = { purchase_qty: 8, pack_size: 24, pack_liters: 6 };
+  assert.equal(boughtInRecipeUnit(terms, 'buy'), 8);
+  assert.equal(boughtInRecipeUnit(terms, 'portion'), 192);
+  assert.equal(boughtInRecipeUnit(terms, 'liter'), 48);
+  assert.equal(boughtInRecipeUnit({ purchase_qty: 8, pack_size: 24 }, 'liter'), null);
+  assert.equal(boughtInRecipeUnit({ purchase_qty: 8, pack_size: 0 }, 'portion'), null);
+  assert.equal(boughtInRecipeUnit({ purchase_qty: 8 }, 'buy'), 8);
+});
+
+test('default base (1, portion) equals qty per sold unit; recipe_amount 2 halves the batches', () => {
+  const productTerms = { rot: { purchase_qty: 5, pack_size: 6 } }; // 30 sold units
+  const ingredientTerms = { wein: { pack_size: 1, buy_price: 1 } };
+  const recipe = [{ product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 0.2 }];
+  const implicit = buildShoppingList({ products, ingredients, productTerms, ingredientTerms, recipe });
+  const explicit = buildShoppingList({
+    products: products.map((p) => (p.id === 'rot' ? { ...p, recipe_amount: 1, recipe_unit: 'portion' } : p)),
+    ingredients, productTerms, ingredientTerms, recipe,
+  });
+  assert.deepEqual(explicit, implicit);
+  assert.equal(implicit.drinks[0].lines[0].need, 6); // 30 × 0.2
+  assert.equal(implicit.drinks[0].recipeIssue, null);
+  const two = buildShoppingList({
+    products: products.map((p) => (p.id === 'rot' ? { ...p, recipe_amount: 2 } : p)),
+    ingredients, productTerms, ingredientTerms, recipe,
+  });
+  assert.equal(two.drinks[0].lines[0].need, 3); // 15 batches × 0.2
+});
+
+test('liter product: Pack of 6 l, recipe per 1 l -> batches = 6 × Pack; shown in liters', () => {
+  const prods = [{ id: 'gin', name: 'Glühgin', unit: 'Becher', plan_unit: 'liter', use_recipe: true, recipe_amount: 1, recipe_unit: 'liter' }];
+  const ings = [{ id: 'gin', name: 'Gin', unit: 'l' }, { id: 'saft', name: 'Saft', unit: 'l' }];
+  const productTerms = { gin: { purchase_qty: 8, pack_size: 1, pack_liters: 6, buy_unit: 'Pack' } };
+  const ingredientTerms = { gin: { pack_size: 1, buy_price: 10 }, saft: { pack_size: 1, buy_price: 1 } };
+  const recipe = [
+    { product_id: 'gin', ingredient_id: 'gin', qty_per_unit: 0.1 },
+    { product_id: 'gin', ingredient_id: 'saft', qty_per_unit: 0.9 },
+  ];
+  const res = buildShoppingList({ products: prods, ingredients: ings, productTerms, ingredientTerms, recipe });
+  const d = res.drinks[0];
+  assert.deepEqual([d.need, d.unit, d.packs, d.packLabel, d.packSize], [48, 'l', 8, 'Pack', 6]);
+  assert.deepEqual(d.lines.map((l) => [l.id, l.need]), [['gin', 4.8], ['saft', 43.2]]); // 48 batches
+  assert.equal(d.cost, 91.2); // 4.8 × 10 + 43.2 × 1
+
+  // Recipe per 2 l: half the batches.
+  const half = buildShoppingList({
+    products: [{ ...prods[0], recipe_amount: 2 }], ingredients: ings, productTerms, ingredientTerms, recipe,
+  });
+  assert.deepEqual(half.drinks[0].lines.map((l) => l.need), [2.4, 21.6]);
+});
+
+test('recipe_unit buy with recipe_amount 2: batches = Einkauf / 2', () => {
+  const prods = [{ id: 'rot', name: 'Rot', unit: 'Becher', use_recipe: true, recipe_amount: 2, recipe_unit: 'buy' }];
+  const productTerms = { rot: { purchase_qty: 10, pack_size: 24 } };
+  const recipe = [{ product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 3 }];
+  const res = buildShoppingList({ products: prods, ingredients, productTerms, ingredientTerms: {}, recipe });
+  assert.equal(res.drinks[0].lines[0].need, 15); // 5 batches × 3
+  assert.equal(res.ingredients[0].need, 15);
+});
+
+test('missing conversion: no ingredient need, recipeIssue set, no cost', () => {
+  const prods = [
+    { id: 'gin', name: 'Glühgin', unit: 'Becher', plan_unit: 'liter', use_recipe: true, recipe_amount: 1, recipe_unit: 'liter' },
+    { id: 'rot', name: 'Rot', unit: 'Becher', use_recipe: true, recipe_amount: 0 },
+  ];
+  const productTerms = { gin: { purchase_qty: 8, pack_size: 1, pack_liters: null }, rot: { purchase_qty: 2, pack_size: 10 } };
+  const recipe = [
+    { product_id: 'gin', ingredient_id: 'wein', qty_per_unit: 1 },
+    { product_id: 'rot', ingredient_id: 'wein', qty_per_unit: 1 },
+  ];
+  const res = buildShoppingList({ products: prods, ingredients, productTerms, ingredientTerms: {}, recipe });
+  const by = byId(res.drinks);
+  assert.deepEqual([by.gin.hasRecipe, by.gin.recipeIssue, by.gin.lines, by.gin.cost, by.gin.packPrice], [true, 'pack_liters', [], null, null]);
+  assert.equal(by.gin.packs, 8);
+  assert.equal(by.rot.recipeIssue, 'recipe_amount');
+  assert.deepEqual(res.ingredients, []);
+  assert.equal(res.total, 0);
+});
+
+test('shared ingredient across drinks with different bases is counted once in Zutaten', () => {
+  const prods = [
+    { id: 'gin', name: 'Glühgin', unit: 'Becher', plan_unit: 'liter', use_recipe: true, recipe_amount: 1, recipe_unit: 'liter' },
+    { id: 'rot', name: 'Rot', unit: 'Becher', use_recipe: true }, // default 1 portion
+  ];
+  const productTerms = { gin: { purchase_qty: 2, pack_liters: 6 }, rot: { purchase_qty: 1, pack_size: 20 } };
+  const ingredientTerms = { becher: { pack_size: 50, buy_price: 0.1 } };
+  const recipe = [
+    { product_id: 'gin', ingredient_id: 'becher', qty_per_unit: 5 }, // 12 l × 5 = 60
+    { product_id: 'rot', ingredient_id: 'becher', qty_per_unit: 1 }, // 20
+  ];
+  const res = buildShoppingList({ products: prods, ingredients, productTerms, ingredientTerms, recipe });
+  assert.deepEqual(res.drinks.map((d) => d.lines[0].need), [60, 20]);
+  assert.equal(res.ingredients.length, 1);
+  assert.deepEqual([res.ingredients[0].need, res.ingredients[0].packs, res.ingredients[0].cost], [80, 2, 10]);
 });
 
 test('empty input', () => {

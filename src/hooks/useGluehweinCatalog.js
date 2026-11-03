@@ -25,6 +25,7 @@ export function useGluehweinCatalog() {
   const fetchItems = useCallback(async (year) => {
     const items = await query(
       `SELECT i.id, i.name, i.unit, i.sort_order, i.active, i.plan_unit, i.liters_per_portion, i.use_recipe,
+              i.recipe_amount, i.recipe_unit,
               t.sell_price, t.buy_price, t.pack_type, t.pack_size, t.buy_unit, t.buy_pack_price, t.planned_qty, t.pack_liters,
               t.purchase_qty, t.purchase_unit
          FROM gw_items i
@@ -45,6 +46,9 @@ export function useGluehweinCatalog() {
       plan_unit: i.plan_unit || 'portion',
       liters_per_portion: i.liters_per_portion ?? null,
       use_recipe: !!i.use_recipe,
+      // Recipe base amount: the recipe rows are the ingredients for recipe_amount in recipe_unit.
+      recipe_amount: numOr(i.recipe_amount, 1),
+      recipe_unit: i.recipe_unit || 'portion',
       purchase_qty: i.purchase_qty ?? null,
       purchase_unit: i.purchase_unit ?? null,
       pack_liters: i.pack_liters ?? null,
@@ -176,7 +180,8 @@ export function useGluehweinCatalog() {
 
   // rows: [{ name, unit, qty_per_unit }]. Names match existing ingredients (case-insensitive); unknown names are created
   // as ingredients in the same transaction, inactive matches are reactivated. Replaces the whole recipe of the product.
-  const saveRecipe = useCallback(async (productId, rows) => {
+  // base: { amount, unit } = the recipe base amount (qty_per_unit is per this amount); omitted keeps the stored one.
+  const saveRecipe = useCallback(async (productId, rows, base) => {
     const ingredients = await query('SELECT id, name, unit, active FROM gw_ingredients');
     const plan = planRecipeRows(rows, ingredients);
     const ops = [];
@@ -189,6 +194,12 @@ export function useGluehweinCatalog() {
     }
     for (const id of plan.reactivate) {
       ops.push({ sql: 'UPDATE gw_ingredients SET active = 1 WHERE id = ?', params: [id] });
+    }
+    if (base) {
+      ops.push({
+        sql: 'UPDATE gw_items SET recipe_amount = ?, recipe_unit = ? WHERE id = ?',
+        params: [numOr(base.amount, 1), ['portion', 'buy', 'liter'].includes(base.unit) ? base.unit : 'portion', productId],
+      });
     }
     ops.push({ sql: 'DELETE FROM gw_recipe WHERE product_id = ?', params: [productId] });
     for (const r of plan.recipe) {

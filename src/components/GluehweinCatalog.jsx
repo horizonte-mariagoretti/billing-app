@@ -16,7 +16,9 @@ import UnitPicker from './UnitPicker';
 import PlanModePicker from './PlanModePicker';
 import { pluralUnit } from '../utils/gwUnits';
 import StyledSelect from './StyledSelect';
-import { itemEconomics, plannedPortions, recipeCostPerUnit } from '../utils/gluehweinCatalogMath';
+import {
+  itemEconomics, plannedPortions, portionsPerRecipe, recipeCostPerUnit, unitModeLabel,
+} from '../utils/gluehweinCatalogMath';
 import Button from './Button';
 import { editableRowProps } from './editableRow';
 import './DataTable.css';
@@ -668,11 +670,16 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
     setIngredients(ings || []);
   }, [fetchItems, fetchIngredients, year]);
 
-  // Recipe products: their cost per selling unit (shown in the popup only).
-  const rows = useMemo(() => items.map((i) => ({
-    ...i,
-    recipeCost: i.use_recipe ? recipeCostPerUnit(i.recipe, ingredients) : null,
-  })), [items, ingredients]);
+  // Recipe products: their cost per selling unit (shown in the popup only). The recipe rows are for the recipe base
+  // amount, so the recipe cost is divided by the selling units that amount stands for (null when it is unknown).
+  const rows = useMemo(() => items.map((i) => {
+    const batchCost = i.use_recipe ? recipeCostPerUnit(i.recipe, ingredients) : null;
+    const portions = portionsPerRecipe(i);
+    return {
+      ...i,
+      recipeCost: batchCost != null && portions ? Math.round((batchCost / portions) * 1e6) / 1e6 : null,
+    };
+  }), [items, ingredients]);
 
   const inactiveCount = items.filter((i) => !i.active).length;
   const q = search.trim().toLowerCase();
@@ -920,9 +927,9 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                           disabled={yearLocked}
                           onChange={(e) => commitLeftUnit(i, e.target.value)}
                         >
-                          <option value="portion">{unitOf(i)}</option>
-                          <option value="buy">{i.buy_unit || t('gw_plan_buy', 'Einkaufseinheit')}</option>
-                          <option value="liter">l</option>
+                          {['portion', 'buy', 'liter'].map((mode) => (
+                            <option key={mode} value={mode}>{unitModeLabel(i, mode, t('gw_plan_buy', 'Einkaufseinheit'))}</option>
+                          ))}
                         </StyledSelect>
                       </span>
                       </div>

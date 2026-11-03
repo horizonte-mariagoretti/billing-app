@@ -6,6 +6,7 @@ import useCurrency from '../hooks/useCurrency';
 import useTableSort from '../hooks/useTableSort';
 import { useT } from '../hooks/useUiTranslations';
 import { buildShoppingList } from '../utils/gluehweinShoppingList';
+import { unitModeLabel } from '../utils/gluehweinCatalogMath';
 import SegmentedToggle from './SegmentedToggle';
 import SortableTh from './SortableTh';
 import Button from './Button';
@@ -22,6 +23,14 @@ const PACK_LABELS = { kasten: 'Kasten', flasche: 'Flasche', paket: 'Paket' };
 const packLabel = (packType, t) => (PACK_LABELS[packType]
   ? t(`gw_pack_${packType}`, PACK_LABELS[packType])
   : t('gw_pack_none', 'Stk'));
+
+// Recipe drink whose Einkauf cannot be converted into recipe batches (buildShoppingList recipeIssue): no ingredient
+// need. Short note in the name cell, the full reason as its tooltip.
+const RECIPE_ISSUE_TEXT = {
+  pack_size: (t) => t('gw_shop_issue_content', 'Inhalt fehlt'),
+  pack_liters: (t) => t('gw_shop_issue_liters', 'Liter fehlen'),
+  recipe_amount: (t) => t('gw_shop_issue_amount', 'Rezeptmenge fehlt'),
+};
 
 const fmtQty = (n) => (Number(n) || 0).toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 const lower = (v) => String(v ?? '').toLowerCase();
@@ -55,16 +64,13 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
   const toggleDrink = flip(setOpenDrinks);
 
   const { drinks, ingRows, total } = useMemo(() => {
-    // The shopping list is driven by Einkauf (purchase_qty, buy units). Liter products: sold and bought in liters,
-    // a buy unit holds pack_liters. Other products: sold per portion, a buy unit holds pack_size portions.
-    const isLiter = (p) => p.plan_unit === 'liter';
-    const shopProducts = products.map((p) => (isLiter(p) ? { ...p, unit: 'l' } : p));
-    const productTerms = new Map(products.map((p) => [p.id, isLiter(p)
-      ? { ...p, pack_size: Number(p.pack_liters) || 1 }
-      : p]));
+    // The shopping list is driven by Einkauf (purchase_qty, buy units). fetchItems rows carry the product and its
+    // terms (pack_size, pack_liters, recipe_amount, recipe_unit); the util converts Einkauf into the recipe unit and
+    // shows liter products (plan_unit 'liter') in liters.
+    const productTerms = new Map(products.map((p) => [p.id, p]));
     const ingredientTerms = new Map(ingredients.map((g) => [g.id, g]));
     const recipe = products.flatMap((p) => (p.recipe || []).map((r) => ({ product_id: p.id, ...r })));
-    const result = buildShoppingList({ products: shopProducts, ingredients, productTerms, ingredientTerms, recipe });
+    const result = buildShoppingList({ products, ingredients, productTerms, ingredientTerms, recipe });
     // Zutaten unsorted: by name. Drinks keep the util's name order.
     const list = [...result.ingredients].sort((a, b) => a.name.localeCompare(b.name, LOCALE));
     return { drinks: result.drinks, ingRows: list, total: result.total };
@@ -140,7 +146,17 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
             return [
               <tr key={d.key}>
                 <td className="gw-shop-name">
-                  {d.hasRecipe ? (
+                  {d.recipeIssue ? (
+                    <>
+                      {d.name}
+                      <span
+                        className="dt-muted"
+                        title={t('gw_shop_issue_hint', 'Einkauf lässt sich nicht in die Rezeptmenge umrechnen: kein Zutatenbedarf. Im Sortiment Inhalt bzw. Liter pro Einkaufseinheit eintragen oder die Rezeptmenge prüfen.')}
+                      >
+                        {' '}· {RECIPE_ISSUE_TEXT[d.recipeIssue](t)}
+                      </span>
+                    </>
+                  ) : d.hasRecipe ? (
                     <button type="button" className="shop-toggle" aria-expanded={open} onClick={() => toggleDrink(d.key)}>
                       {chevron(open)}
                       <span>{d.name}</span>
@@ -148,7 +164,9 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
                   ) : d.name}
                 </td>
                 <td className="dt-mono">
-                  {d.hasRecipe
+                  {d.recipeIssue
+                    ? <>{fmtQty(d.packs)} <span className="dt-muted">{unitLabel}</span></>
+                    : d.hasRecipe
                     ? <>{fmtQty(d.packs)} <span className="dt-muted">{unitLabel} ({fmtQty(d.need)} {d.unit})</span></>
                     : <>{fmtQty(d.need)} <span className="dt-muted">{d.unit}</span></>}
                 </td>
@@ -158,8 +176,8 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
                   {fmtQty(d.packs)} <span className="dt-muted">{unitLabel}</span>
                   {!d.hasRecipe && d.packSize !== 1 && <span className="dt-muted"> ({fmtQty(d.need)} {d.unit})</span>}
                 </td>
-                <td className="num dt-mono">{formatCurrency(d.packPrice)}</td>
-                <td className="num dt-mono dt-strong">{formatCurrency(d.cost)}</td>
+                <td className="num dt-mono">{d.packPrice == null ? dash : formatCurrency(d.packPrice)}</td>
+                <td className="num dt-mono dt-strong">{d.cost == null ? dash : formatCurrency(d.cost)}</td>
               </tr>,
               // Recipe drink opened: its own need per ingredient (Bedarf only).
               ...(open ? d.lines.map((l) => (
@@ -331,7 +349,7 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
       <thead>
         <tr>
           {th('name', t('gw_recipes_col_product', 'Produkt'))}
-          {th('count', t('gw_recipes_col_ingredients', 'Zutaten pro Einheit'))}
+          {th('count', t('gw_recipes_col_ingredients_base', 'Zutaten pro Rezeptmenge'))}
           {th('planned', t('gw_col_left', 'Übrig'))}
           <th aria-label={t('actions', 'Aktionen')} />
         </tr>
@@ -341,6 +359,11 @@ const RecipesTable = ({ products, ingredients, onEdit, t }) => {
           <tr key={p.id} {...editableRowProps(() => onEdit(p), `${t('gw_recipe_title', 'Rezept')} bearbeiten: ${p.name}`)}>
             <td className="gw-shop-name">{p.name}</td>
             <td className="gw-recipes-parts">
+              {p.recipe?.length > 0 && (
+                <span className="dt-muted">
+                  {t('gw_per', 'pro')} {fmtQty(p.recipe_amount)} {unitModeLabel(p, p.recipe_unit, t('gw_plan_buy', 'Einkaufseinheit'))}:{' '}
+                </span>
+              )}
               {p.recipe?.length
                 ? p.recipe.map((r, i) => {
                   const g = byId.get(r.ingredient_id);

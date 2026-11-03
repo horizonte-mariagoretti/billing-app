@@ -13,6 +13,32 @@ const numOrNull = (v) => {
 };
 
 /**
+ * Label of a unit mode ('portion' | 'buy' | 'liter', as in plan_unit and recipe_unit) for one product: the selling unit
+ * (default Stk), the buying unit (buyFallback when it is empty) or 'l'. Used by the Sortiment Übrig select and the
+ * recipe base amount.
+ */
+export function unitModeLabel(item, mode, buyFallback = 'Einkaufseinheit') {
+  if (mode === 'liter') return 'l';
+  if (mode === 'buy') return String(item?.buy_unit || '').trim() || buyFallback;
+  return String(item?.unit || '').trim() || 'Stk';
+}
+
+/**
+ * Selling units one recipe base amount stands for, to cost the recipe per selling unit. 'portion' = recipe_amount;
+ * 'buy' = recipe_amount × pack_size; 'liter' = recipe_amount (liter products are costed per liter, as before).
+ * null when the amount is not > 0 or the content is missing.
+ */
+export function portionsPerRecipe({ recipe_amount, recipe_unit, pack_size } = {}) {
+  const amount = numOrNull(recipe_amount);
+  if (!(amount > 0)) return null;
+  if (recipe_unit === 'buy') {
+    const content = numOrNull(pack_size);
+    return content > 0 ? amount * content : null;
+  }
+  return amount;
+}
+
+/**
  * Planned quantity in selling units (portions). plan_unit: 'portion' = planned_qty is portions; 'liter' = planned_qty
  * is total liters, one portion holds liters_per_portion; 'buy' = planned_qty is buying units (bottles), content =
  * pack_size portions each. Returns null when the conversion value is missing (never 0).
