@@ -81,10 +81,21 @@ export function itemEconomics({ sell_price, buy_pack_price, pack_size, planned_q
 }
 
 /**
- * Cost of one selling unit through the recipe: Σ qty_per_unit × ingredient buy price per ingredient unit
- * (same semantics as the shopping list; proportional, no pack rounding). Ingredients without price count 0.
- * recipeRows: [{ ingredient_id, qty_per_unit }]; ingredientTerms: Map/object id -> { buy_price } or an array of
- * ingredient rows ({ id, buy_price }). Returns null for an empty recipe.
+ * Ingredient price per ingredient unit. buy_price is the price per pack (Packungspreis), pack_size the content of one
+ * pack in ingredient units. Null when no price is entered.
+ */
+export function ingredientUnitPrice(terms) {
+  const price = numOrNull(terms?.buy_price);
+  if (price == null) return null;
+  const size = numOrNull(terms?.pack_size);
+  return price / (size > 0 ? size : 1);
+}
+
+/**
+ * Cost of one selling unit through the recipe: Σ qty_per_unit × ingredient unit price (same semantics as the shopping
+ * list; proportional, no pack rounding). Ingredients without price count 0.
+ * recipeRows: [{ ingredient_id, qty_per_unit }]; ingredientTerms: Map/object id -> { buy_price, pack_size } or an array
+ * of ingredient rows ({ id, buy_price, pack_size }). Returns null for an empty recipe.
  */
 export function recipeCostPerUnit(recipeRows, ingredientTerms) {
   if (!recipeRows || recipeRows.length === 0) return null;
@@ -93,7 +104,7 @@ export function recipeCostPerUnit(recipeRows, ingredientTerms) {
     : ingredientTerms;
   const termsOf = (id) => (lookup instanceof Map ? lookup.get(id) : lookup?.[id]) || {};
   const sum = recipeRows.reduce((s, r) => (
-    s + (numOrNull(r.qty_per_unit) ?? 0) * (numOrNull(termsOf(r.ingredient_id).buy_price) ?? 0)
+    s + (numOrNull(r.qty_per_unit) ?? 0) * (ingredientUnitPrice(termsOf(r.ingredient_id)) ?? 0)
   ), 0);
   return round6(sum);
 }

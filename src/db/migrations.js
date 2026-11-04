@@ -2113,6 +2113,17 @@ UPDATE gw_items SET recipe_unit = 'liter' WHERE plan_unit = 'liter';
       `);
     },
   },
+  {
+    version: 54,
+    up: (exec) => {
+      // Zutaten buy_price was the price per ingredient unit; it is now the price per pack (Packungspreis). Multiply by
+      // the pack content so every existing price keeps its total cost.
+      exec(`
+UPDATE gw_ingredient_terms SET buy_price = buy_price * CASE WHEN pack_size > 0 THEN pack_size ELSE 1 END
+  WHERE buy_price IS NOT NULL;
+      `);
+    },
+  },
 ];
 // adapter shape:
 //   exec(sql) -> void

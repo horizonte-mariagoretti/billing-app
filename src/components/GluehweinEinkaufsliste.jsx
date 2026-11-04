@@ -213,9 +213,9 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
               </td>
               <td className="shop-unit dt-mono dt-muted">{r.unit}</td>
               <td className="dt-mono">
-                {fmtQty(r.packs)} <span className="dt-muted">{packLabel(r.packType, t)}</span>
-                {r.packType !== 'none' && r.packs > 0 && (
-                  <span className="dt-muted"> ({fmtQty(r.packs * r.packSize)} {r.unit})</span>
+                {fmtQty(r.packs)} <span className="dt-muted">{r.packType === 'none' ? r.unit : packLabel(r.packType, t)}</span>
+                {r.packType !== 'none' && (
+                  <span className="dt-muted"> (à {fmtQty(r.packSize)} {r.unit})</span>
                 )}
               </td>
               <td className="num dt-mono">{formatCurrency(r.packPrice)}</td>
@@ -288,7 +288,7 @@ const IngredientsTable = ({ ingredients, showInactive, onOpen, t, formatCurrency
           {th('unit', t('gw_col_unit', 'Einheit'))}
           {th('pack_type', t('gw_col_pack_type', 'Packungsart'))}
           {th('pack_size', t('gw_col_pack_size', 'Packungsgröße'))}
-          {th('buy_price', t('gw_col_buy', 'Einkaufspreis'), 'right')}
+          {th('buy_price', t('gw_col_buy_pack', 'Packungspreis'), 'right')}
           {th('extra_qty', t('gw_col_extra_qty', 'Zusatzbedarf'))}
           {th('stock_qty', t('gw_col_stock', 'Bestand'))}
         </tr>
