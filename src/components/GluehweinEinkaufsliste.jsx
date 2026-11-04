@@ -14,6 +14,7 @@ import DecimalInput from './DecimalInput';
 import { editableRowProps } from './editableRow';
 import RecipeEditor from './RecipeEditor';
 import GluehweinIngredientModal from './GluehweinIngredientModal';
+import { pluralUnit } from '../utils/gwUnits';
 import './DataTable.css';
 import './GluehweinEinkaufsliste.css';
 
@@ -142,7 +143,7 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
           {sectionHeader('drinks', t('gw_shop_section_drinks', 'Getränke'))}
           {!collapsed.has('drinks') && drinks.flatMap((d) => {
             const open = openDrinks.has(d.key);
-            const unitLabel = d.packLabel || t('gw_pack_none', 'Stk');
+            const unitLabel = pluralUnit(d.packLabel || t('gw_pack_none', 'Stk'), d.packs);
             return [
               <tr key={d.key}>
                 <td className="gw-shop-name">
@@ -213,7 +214,7 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
               </td>
               <td className="shop-unit dt-mono dt-muted">{r.unit}</td>
               <td className="dt-mono">
-                {fmtQty(r.packs)} <span className="dt-muted">{r.packType === 'none' ? r.unit : packLabel(r.packType, t)}</span>
+                {fmtQty(r.packs)} <span className="dt-muted">{r.packType === 'none' ? r.unit : pluralUnit(packLabel(r.packType, t), r.packs)}</span>
                 {r.packType !== 'none' && (
                   <span className="dt-muted"> (à {fmtQty(r.packSize)} {r.unit})</span>
                 )}
