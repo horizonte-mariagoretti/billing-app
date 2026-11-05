@@ -103,7 +103,10 @@
 .d2-col.now .d2-col-label { color: var(--color-primary); }
 
 /* ── Jahresplan under the months: today, Verkaufsaktionen, Arbeiten ── */
-.d2-plan { position: relative; padding: 30px 0 52px 40px; margin-top: var(--space-md); }
+/* Hero card and Jahresplan card stacked in the left grid column (bento: the quick panel stays on the right). */
+.d2-hero-col { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }
+.d2-plan-card { min-width: 0; padding-top: var(--space-md); padding-bottom: var(--space-md); }
+.d2-plan { position: relative; padding: 22px 0 30px; }
 .d2-plan-track {
   position: relative;
   height: 8px;
@@ -130,7 +133,7 @@
   background: var(--color-primary);
   border: 1.5px solid #FFFFFF;
 }
-.d2-job-dot.done { background: #CBD5E1; }
+.d2-job-dot.done { background: var(--color-primary-border-light); }
 
 .d2-today {
   position: absolute;
@@ -177,6 +180,7 @@
   border: 2px solid var(--stat-indigo-icon);
   color: var(--stat-indigo-icon);
 }
+.d2-marker-icon svg { display: block; flex: none; }
 .d2-marker.unset .d2-marker-icon {
   border-style: dashed;
   border-color: var(--color-text-dark-tertiary);
@@ -192,7 +196,6 @@
   color: var(--color-text-dark-secondary);
   white-space: nowrap;
 }
-.d2-marker.lane-1 .d2-marker-label { top: calc(100% + 24px); }
 .d2-marker:hover .d2-marker-icon { background: var(--stat-indigo-bg); }
 .d2-marker:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 50%; }
 
