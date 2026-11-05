@@ -179,7 +179,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
   ].filter((x) => x.count > 0) : [];
 
   const go = (view) => onNavigate?.(view);
-  const hoursPct = data && data.jobs.plannedHours > 0 ? Math.min(100, (data.jobs.actualHours / data.jobs.plannedHours) * 100) : 0;
   const topMax = data?.horis.top[0]?.total_actual_hours || 1;
 
   const statCards = [
@@ -187,21 +186,16 @@ const Dashboard2 = ({ settings, onNavigate }) => {
       key: 'paid', tone: 'lime', icon: ReceiptEuro,
       label: t('d2_invoices_paid', 'Rechnungen bezahlt'),
       value: data ? fmt(data.invoices.paid) : '—',
-      chip: data ? `${data.invoices.paidCount}×` : '',
     },
     {
       key: 'saldo', tone: 'indigo', icon: Wallet,
       label: t('d2_actions_saldo', 'Aktionen-Saldo'),
       value: data ? fmt(actionsSaldo) : '—',
-      chip: t('d2_actions_saldo_sub', 'netto'),
     },
     {
       key: 'hours', tone: 'pink', icon: Clock,
       label: t('d2_hours', 'Arbeitsstunden'),
       value: data ? fmtHours(data.jobs.actualHours) : '—',
-      chip: data ? `${data.jobs.done}/${data.jobs.total} ${t('d2_jobs_done', 'erledigt')}` : '',
-      bar: hoursPct,
-      barLabel: data ? `${t('d2_planned', 'geplant')} ${fmtHours(data.jobs.plannedHours)}` : '',
     },
   ];
 
@@ -210,9 +204,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
       <div className="page-header d2-header">
         <div className="d2-header-title">
           <h2>{t('d2_scout_year', 'Pfadfinderjahr')} {scoutYearLabel(selectedYear)}</h2>
-          <span className="recent-subtle">
-            {t('d2_year_range', '1. Sept – 31. Aug')} · {progress.label}
-          </span>
         </div>
         <div className="page-header-end">
           <YearSwitcher />
@@ -336,12 +327,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
           <div className="quick-stat">
             <span className="quick-stat-label">{t('d2_open_items', 'Offene Posten')}</span>
             <span className="quick-stat-value">{data ? fmt(data.invoices.open) : '—'}</span>
-            {data && (
-              <span className="quick-stat-foot">
-                {data.invoices.openCount} {t('d2_invoices_open', 'offene Rechnungen')}
-                {data.invoices.overdueCount > 0 && ` · ${data.invoices.overdueCount} ${t('d2_overdue', 'überfällig')}`}
-              </span>
-            )}
           </div>
 
           <div className="quick-actions">
@@ -377,13 +362,7 @@ const Dashboard2 = ({ settings, onNavigate }) => {
               <span className="stat-label">{c.label}</span>
               <div className="stat-value-row">
                 <span className="stat-value">{c.value}</span>
-                {c.chip && <span className="stat-trend">{c.chip}</span>}
               </div>
-              {c.bar !== undefined && (
-                <div className="d2-card-bar" title={c.barLabel}>
-                  <i style={{ width: `${c.bar}%` }} />
-                </div>
-              )}
             </div>
           );
         })}
@@ -407,23 +386,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
               {s ? (
                 <>
                   <span className={`d2-action-saldo${s.saldo < 0 ? ' negative' : ''}`}>{fmt(s.saldo)}</span>
-                  <span className="recent-client">
-                    {t('d2_income', 'Einnahmen')} {fmt(s.income)} · {t('d2_expenses', 'Ausgaben')} {fmt(s.expenses)}
-                  </span>
-                  {a.key === 'lasagnen' ? (
-                    <>
-                      <div className="d2-action-progress" title={`${s.paidHoris}/${s.orderingHoris} ${t('d2_paid', 'bezahlt')}`}>
-                        <i style={{ width: `${s.orderingHoris ? (s.paidHoris / s.orderingHoris) * 100 : 0}%` }} />
-                      </div>
-                      <span className="recent-date">
-                        Bolo {s.bolo} · Veggie {s.veggie} · {s.paidHoris}/{s.orderingHoris} {t('d2_paid', 'bezahlt')}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="recent-date">
-                      {s.days} {t('d2_sales_days', 'Verkaufstage')} · {t('d2_counts_in', 'zählt im')} {MONTHS[parseInt(a.monthKey.slice(5, 7), 10) - 1]} {a.monthKey.slice(0, 4)}
-                    </span>
-                  )}
                 </>
               ) : (
                 <span className="recent-client">{t('d2_no_numbers', 'Noch keine Zahlen erfasst')}</span>
@@ -439,7 +401,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
         <div className="recent-card">
           <div className="recent-header">
             <h3>{t('d2_next_jobs', 'Nächste Arbeiten')}</h3>
-            <span className="recent-subtle">{data ? `${data.jobs.total} ${t('d2_in_year', 'im Jahr')}` : ''}</span>
           </div>
           {data && data.jobs.upcoming.length === 0 ? (
             <div className="empty-state">{t('d2_no_jobs', 'Keine anstehenden Arbeiten')}</div>
@@ -465,7 +426,6 @@ const Dashboard2 = ({ settings, onNavigate }) => {
         <div className="recent-card">
           <div className="recent-header">
             <h3>{t('d2_top_horis', 'Aktivste Horis')}</h3>
-            <span className="recent-subtle">{data ? `${data.horis.active} ${t('d2_horis_active', 'aktiv')}` : ''}</span>
           </div>
           {data && data.horis.top.length === 0 ? (
             <div className="empty-state">{t('d2_no_hours', 'Noch keine Stunden erfasst')}</div>
