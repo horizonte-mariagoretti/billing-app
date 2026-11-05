@@ -219,6 +219,7 @@ const Dashboard2 = ({ settings, onNavigate }) => {
 
       {/* 1 — Hero + what needs attention */}
       <section className="bottom-grid d2-top">
+        <div className="d2-hero-col">
         <div className="chart-card d2-hero">
           <div className="chart-toolbar">
             <div className="d2-hero-main">
@@ -283,9 +284,11 @@ const Dashboard2 = ({ settings, onNavigate }) => {
               })}
             </div>
           </div>
+        </div>
 
-          {/* Jahresplan: where we are in the year and when the Aktionen and Arbeiten fall */}
-          {plan && (
+        {/* Jahresplan: where we are in the year and when the Aktionen and Arbeiten fall */}
+        {plan && (
+          <div className="chart-card d2-plan-card">
             <div className="d2-plan" aria-label={t('d2_plan', 'Jahresplan')}>
               <div className="d2-plan-track">
                 <i className="d2-plan-fill" style={{ width: `${progress.pct}%` }} />
@@ -313,14 +316,15 @@ const Dashboard2 = ({ settings, onNavigate }) => {
                       onClick={() => go(m.key)}
                       title={m.unset ? `${m.label}: ${t('d2_no_date', 'Datum offen')}` : `${m.label}: ${fmtDay(m.iso)}`}
                     >
-                      <span className="d2-marker-icon"><Icon size={13} aria-hidden="true" /></span>
-                      <span className="d2-marker-label">{m.label}{m.unset ? '' : ` · ${fmtDay(m.iso)}`}</span>
+                      <span className="d2-marker-icon"><Icon size={14} aria-hidden="true" /></span>
+                      {!m.unset && <span className="d2-marker-label">{fmtDay(m.iso)}</span>}
                     </button>
                   );
                 })}
               </div>
             </div>
-          )}
+          </div>
+        )}
         </div>
 
         <aside className="quick-panel">
