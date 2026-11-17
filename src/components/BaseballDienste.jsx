@@ -65,7 +65,7 @@ const BaseballDienste = ({ year, yearLocked, onError }) => {
     return ok;
   }, [yearLocked, reload]);
 
-  const shifts = useMemo(() => (data ? [...data.shifts].sort(byTime) : []), [data]);
+  const shifts = useMemo(() => (data ? data.shifts.toSorted(byTime) : []), [data]);
 
   // Open slots (Ist < Soll) grouped per shift, for the banner.
   const gaps = useMemo(() => {

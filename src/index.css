@@ -274,3 +274,37 @@ input[type=number] { -moz-appearance: textfield; }
     touch-action: manipulation;
   }
 }
+
+/* Keyboard focus ring for rows that act as buttons (see utils/clickableRow.js). */
+tr[tabindex='0']:focus-visible {
+  outline: 2px solid var(--color-indigo);
+  outline-offset: -2px;
+}
+
+/* Respect the OS "reduce motion" setting: keep state changes, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Modals are native <dialog> elements (components/Modal.jsx): the old overlay classes
+   keep their look, the browser's default dialog box styling is switched off. */
+dialog:is(.modal-overlay, .job-modal-overlay, .confirm-overlay, .sync-conflict-overlay, .job-doc-overlay, .preview-fullscreen-overlay) {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+}
+dialog:is(.modal-overlay, .job-modal-overlay, .confirm-overlay, .sync-conflict-overlay, .job-doc-overlay, .preview-fullscreen-overlay)::backdrop {
+  background: transparent;
+}

@@ -42,7 +42,7 @@ export function parseHoriLines(text, existing = []) {
     if (!line) return;
     const dateMatch = line.match(DATE_TOKEN);
     if (!dateMatch && rows.length === 0 && /name|geburt|naissance/i.test(line)) return; // header
-    let namePart = line;
+    let namePart;
     let birth = null;
     let status = 'ok';
     if (dateMatch) {

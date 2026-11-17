@@ -53,7 +53,7 @@ const setState = (patch) => {
 };
 
 const loadYears = async () => {
-  const runQuery = store.query || window.electron.db.query;
+  const runQuery = store.query || window.appDb.query;
   const rows = await runQuery('SELECT year, locked FROM app_years ORDER BY year DESC');
   const list = rows.map(r => ({ year: Number(r.year), locked: Number(r.locked) === 1 }));
   setState({ years: list });

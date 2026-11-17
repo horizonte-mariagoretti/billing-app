@@ -43,7 +43,7 @@ export function useSalesDays(action) {
         [id, action, year, date]
       );
     } catch (err) {
-      if (/UNIQUE/i.test(String(err?.message))) throw new Error('DAY_EXISTS');
+      if (/UNIQUE/i.test(String(err?.message))) throw new Error('DAY_EXISTS', { cause: err });
       throw err;
     }
     return id;

@@ -4,7 +4,6 @@
 // in-memory dev database by Bootstrap (Vite web dev only).
 // Dates are relative to "today".
 
-/* eslint-disable object-property-newline */
 export function buildSampleStatements() {
   /* ── helpers ─────────────────────────────────────────────── */
   const today = new Date();
@@ -119,7 +118,6 @@ export function buildSampleStatements() {
     return { name: p.name_de, nameEn: p.name, nameFr: p.name_fr, description: p.description_de, qty, rate: p.rate, duration, ...over };
   };
 
-  /* eslint-disable object-property-newline */
   const mkDoc = (o) => {
     const doc = {
       tax_rate: 21, discount_value: 0, discount_type: '%', currency: 'EUR', language: 'de',

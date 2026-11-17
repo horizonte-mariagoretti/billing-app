@@ -1,12 +1,12 @@
 // In-browser SQLite engine wrapping sql.js (WASM build).
-// Mirrors the public surface of window.electron.db so useDatabase.js — and
+// Mirrors the public surface of window.appDb so useDatabase.js — and
 // every hook/page that uses it — keeps working without a code change.
 //
 // Boot order (web target):
 //   1. Bootstrap fetches DB bytes from GitHub.
 //   2. Calls init(bytes).
 //   3. Calls runMigrations(...).
-//   4. Calls installAsElectronShim() — overrides window.electron.db so the
+//   4. Calls installDbBridge() — overrides window.appDb so the
 //      existing useDatabase.js binds to this engine.
 //   5. App mounts and runs as normal.
 
@@ -88,7 +88,7 @@ export function run(sql, params = []) {
   try {
     const r = bindAndStep('SELECT last_insert_rowid() AS id', []);
     lastInsertRowid = r[0]?.id ?? 0;
-  } catch (_e) {}
+  } catch { /* already applied */ }
   if (changes > 0) {
     dirty = true;
     emit('mutation', { sql });
@@ -106,7 +106,7 @@ export function transaction(ops) {
     }
     db.exec('COMMIT');
   } catch (e) {
-    try { db.exec('ROLLBACK'); } catch (_e) {}
+    try { db.exec('ROLLBACK'); } catch { /* already applied */ }
     throw e;
   }
   return results;
@@ -151,12 +151,11 @@ export function migrate() {
   emit('mutation', { sql: '<migration>' });
 }
 
-// Bind window.electron.db to this engine. The existing useDatabase.js calls
-// window.electron.db.{query,run,transaction} as async; we wrap our sync
+// Bind window.appDb to this engine. The existing useDatabase.js calls
+// window.appDb.{query,run,transaction} as async; we wrap our sync
 // implementations to match that contract.
-export function installAsElectronShim() {
-  if (!window.electron) window.electron = {};
-  window.electron.db = {
+export function installDbBridge() {
+  window.appDb = {
     query: async (sql, params) => query(sql, params),
     run: async (sql, params) => run(sql, params),
     transaction: async (ops) => transaction(ops),

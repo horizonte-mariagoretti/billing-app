@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DecimalInput from '../components/DecimalInput';
 import useSettings from '../hooks/useSettings';
 import { useT, getUiLang, setUiLang } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
-import Input from '../components/Input';
 import { Save, Building2, CreditCard, FileText, RefreshCw, Trash2, Plus, AlertTriangle, GripVertical } from 'lucide-react';
 import './Settings.css';
 
@@ -23,7 +22,7 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
   const [dragOverIdx, setDragOverIdx] = useState(null);
 
   let pattern = [];
-  try { pattern = JSON.parse(patternStr); } catch (e) { pattern = []; }
+  try { pattern = JSON.parse(patternStr); } catch { pattern = []; }
 
   const addRow = (afterId = null) => {
     const newSegment = { id: crypto.randomUUID(), type: 'text', value: '' };
@@ -156,9 +155,10 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
             {row.type === 'sequence' && (
               <>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className="value-input mini"
-                  min="1"
                   value={nextNumber}
                   onChange={(e) => {
                     const n = parseInt(e.target.value, 10);
@@ -177,8 +177,8 @@ const NumberingEditor = ({ title, patternStr, nextNumber, onChange, onNextNumber
             )}
 
             <div className="row-actions">
-              <button className="row-btn add" title={t ? t('settings_seg_add', 'Add segment below') : 'Add segment below'} onClick={() => addRow(row.id)}><Plus size={16} /></button>
-              <button className="row-btn delete" title={t ? t('settings_seg_remove', 'Remove segment') : 'Remove segment'} onClick={() => removeRow(row.id)}><Trash2 size={16} /></button>
+              <button className="row-btn add" title={t ? t('settings_seg_add', 'Add segment below') : 'Add segment below'} aria-label={t ? t('settings_seg_add', 'Add segment below') : 'Add segment below'} onClick={() => addRow(row.id)}><Plus size={16} /></button>
+              <button className="row-btn delete" title={t ? t('settings_seg_remove', 'Remove segment') : 'Remove segment'} aria-label={t ? t('settings_seg_remove', 'Remove segment') : 'Remove segment'} onClick={() => removeRow(row.id)}><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
@@ -245,6 +245,7 @@ const Settings = () => {
 
   useEffect(() => {
     loadSettings().then(s => { setForm(s); setSavedForm(s); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, []);
 
   const handleSave = async () => {
@@ -253,7 +254,7 @@ const Settings = () => {
       try {
         const arr = JSON.parse(str);
         return Array.isArray(arr) && arr.length > 0;
-      } catch (e) {
+      } catch {
         return false;
       }
     };

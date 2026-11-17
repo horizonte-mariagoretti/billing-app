@@ -5,6 +5,7 @@ import { categoriesFor } from '../utils/lasagnaFinance';
 import Button from './Button';
 import DecimalInput from './DecimalInput';
 import { AlertCircle } from 'lucide-react';
+import Modal from './Modal';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal-*)
 
@@ -65,7 +66,7 @@ const FinanceEntryModal = ({ kind = 'expense', entry, categories: categoriesProp
     : (entry ? t('lasagnen_exp_edit_title', 'Ausgabe bearbeiten') : t('lasagnen_exp_add', 'Ausgabe hinzufügen'));
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="finance-entry-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="finance-entry-modal-title">
       <div className="modal-content settings-fields-modal" ref={modalRef}>
         <h2 id="finance-entry-modal-title">{title}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -127,7 +128,7 @@ const FinanceEntryModal = ({ kind = 'expense', entry, categories: categoriesProp
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

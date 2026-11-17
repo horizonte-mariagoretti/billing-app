@@ -1,18 +1,19 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
 import { applyTransition } from '../utils/documentLifecycle';
+import { calcTotalsFromSubtotal } from '../utils/documentCalc';
 
 const newId = () => crypto.randomUUID();
 
 const useDocuments = () => {
-  const { query, run, transaction } = useDatabase();
+  const { query, transaction } = useDatabase();
 
   const fetchDocuments = useCallback(async (type) => {
     return await query(`
       SELECT
         d.*,
         c.name as client_name,
-        COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) as items_subtotal
+        COALESCE(SUM(ROUND(di.qty * di.rate * COALESCE(di.duration, 1), 2)), 0) as items_subtotal
       FROM documents d
       LEFT JOIN clients c ON d.client_id = c.id
       LEFT JOIN document_items di ON di.document_id = d.id
@@ -20,15 +21,7 @@ const useDocuments = () => {
       GROUP BY d.id
       ORDER BY d.date DESC
     `, [type]).then(docs =>
-      docs.map(doc => {
-        const subtotal = doc.items_subtotal;
-        const discount = doc.discount_type === '%'
-          ? subtotal * (doc.discount_value / 100)
-          : doc.discount_value;
-        const isCash = doc.payment_mode === 'cash';
-        const tax = isCash ? 0 : (subtotal - discount) * (doc.tax_rate / 100);
-        return { ...doc, total: subtotal - discount + tax };
-      })
+      docs.map(doc => ({ ...doc, total: calcTotalsFromSubtotal(doc, doc.items_subtotal).total }))
     );
   }, [query]);
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import './DocumentPreview.css';
 import {
   getDocLabels, getVisibleColumns, isPricingHidden, fmtCurrency, fmtNum, fmtDocDate,

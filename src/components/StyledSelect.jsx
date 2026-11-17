@@ -32,7 +32,7 @@ const portalPosition = (trigger) => {
 // matches the app's own styling instead of the OS-native popup — used
 // anywhere a <select>'s unstylable native dropdown would look out of place.
 // onRemove(value): when given, each option shows a delete button; an <option fixed> gets none.
-// portal: render the open list in document.body (position fixed from the trigger), so no ancestor with
+// portal: render the open list in document.body, or in the surrounding modal <dialog> (the top layer hides body children) (position fixed from the trigger), so no ancestor with
 // overflow hidden/auto can cut it off; it flips upward when there is no room below. Escape closes it.
 // dropdownClassName: extra class on the open list (needed for scoped styling when portaled).
 const StyledSelect = ({
@@ -41,6 +41,7 @@ const StyledSelect = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   const [pos, setPos] = React.useState(null);
+  const [host, setHost] = React.useState(null); // surrounding modal <dialog>, if any
   const ref = React.useRef(null);
   const listRef = React.useRef(null);
   React.useEffect(() => {
@@ -75,7 +76,10 @@ const StyledSelect = ({
 
   const toggle = () => {
     if (disabled) return;
-    if (!open && portal && ref.current) setPos(portalPosition(ref.current));
+    if (!open && portal && ref.current) {
+      setPos(portalPosition(ref.current));
+      setHost(ref.current.closest('dialog'));
+    }
     setOpen(!open);
   };
 
@@ -128,7 +132,7 @@ const StyledSelect = ({
         <span className={isEmpty ? 'ss-placeholder' : ''}>{sel?.label || placeholder || ''}</span>
         <ChevronDown size={14} className="ss-chevron" />
       </button>
-      {open && (portal ? createPortal(list, document.body) : list)}
+      {open && (portal ? createPortal(list, host || document.body) : list)}
     </div>
   );
 };

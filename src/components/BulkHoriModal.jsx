@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import useHoris from '../hooks/useHoris';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
@@ -9,6 +9,7 @@ import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-a
 import './HoriModal.css';
 import './DataTable.css'; // .dt-mono
 import './BulkHoriModal.css';
+import Modal from './Modal';
 
 const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
   const { saveHorisBulk } = useHoris();
@@ -53,7 +54,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bulk-hori-title">
+    <Modal className="modal-overlay" aria-labelledby="bulk-hori-title">
       <div className="modal-content horis-modal bulk-hori-modal" ref={modalRef}>
         <h2 id="bulk-hori-title">{t('horis_bulk_title', 'Mehrere Horis hinzufügen')}</h2>
         <p className="bulk-hori-help">
@@ -123,7 +124,7 @@ const BulkHoriModal = ({ existing, onSave, onCancel, triggerRef }) => {
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 
 const useDatabase = () => {
-  if (!window.electron?.db?.query) {
-    throw new Error('Electron IPC bridge is not available. Make sure the preload script is loaded.');
+  if (!window.appDb?.query) {
+    throw new Error('Database is not ready (window.appDb is missing).');
   }
 
   const query = useCallback(async (sql, params) => {
     try {
-      return await window.electron.db.query(sql, params);
+      return await window.appDb.query(sql, params);
     } catch (err) {
       console.error('Database Query Error:', err);
       throw err;
@@ -16,7 +16,7 @@ const useDatabase = () => {
 
   const run = useCallback(async (sql, params) => {
     try {
-      return await window.electron.db.run(sql, params);
+      return await window.appDb.run(sql, params);
     } catch (err) {
       console.error('Database Run Error:', err);
       throw err;
@@ -25,7 +25,7 @@ const useDatabase = () => {
 
   const transaction = useCallback(async (operations) => {
     try {
-      return await window.electron.db.transaction(operations);
+      return await window.appDb.transaction(operations);
     } catch (err) {
       console.error('Database Transaction Error:', err);
       throw err;

@@ -25,7 +25,7 @@ export default function useTableSort(defaultSort = { key: null, dir: null }) {
     const get = accessors?.[sort.key];
     if (!sort.dir || !get) return rows;
     const tie = (a, b) => (tieBreak ? String(tieBreak(a)).localeCompare(String(tieBreak(b)), locale) : 0);
-    return [...rows].sort((a, b) => {
+    return rows.toSorted((a, b) => {
       const va = get(a);
       const vb = get(b);
       const aMissing = va == null;

@@ -22,10 +22,14 @@ export function UiTranslationsProvider({ children }) {
   const [translations, setTranslations] = useState({});
 
   useEffect(() => {
-    if (!window.electron?.db?.query) return;
+    document.documentElement.lang = getUiLang();
+  }, []);
+
+  useEffect(() => {
+    if (!window.appDb?.query) return;
     const lang = getUiLang();
     const col = COL_MAP[lang];
-    window.electron.db.query(`SELECT key, ${col} AS val FROM ui_translations`)
+    window.appDb.query(`SELECT key, ${col} AS val FROM ui_translations`)
       .then(rows => {
         const map = {};
         rows.forEach(r => { map[r.key] = r.val; });

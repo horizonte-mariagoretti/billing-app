@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, FileText, FileCheck, Users, Settings } from 'lucide-react';
 import { useT } from '../hooks/useUiTranslations';
 import './BottomNav.css';

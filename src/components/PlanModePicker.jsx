@@ -21,6 +21,7 @@ const PlanModePicker = ({ value, labels, onChange, disabled = false }) => {
   }, [fetchPlanModes]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     reload().catch(() => setError(t('gw_unit_load_error', 'Einheiten konnten nicht geladen werden.')));
     // reload only once per mount; t is stable per render tree
     // eslint-disable-next-line react-hooks/exhaustive-deps

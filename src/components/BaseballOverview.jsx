@@ -89,7 +89,7 @@ const BaseballOverview = ({ action, year, yearLocked, onError }) => {
   };
 
   const handleAddKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault();
       saveDraft({ refocus: true });
     }

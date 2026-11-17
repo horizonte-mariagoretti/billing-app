@@ -6,6 +6,7 @@ import Button from './Button';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal-*)
 import './GluehweinShiftModal.css';
+import Modal from './Modal';
 
 const ERROR_TEXT = {
   BAD_SLOT_TIME: 'Bitte Beginn und Ende eingeben (nicht gleich).',
@@ -67,7 +68,7 @@ const GluehweinShiftModal = ({ dayLabel, slot, defaultStart = '', existingStarts
   const title = slot ? 'Schicht bearbeiten' : 'Schicht hinzufügen';
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-shift-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="gw-shift-modal-title">
       <div className="modal-content settings-fields-modal gw-shift-modal" ref={modalRef}>
         <h2 id="gw-shift-modal-title">{title}</h2>
         <p className="settings-fields-modal-desc">{dayLabel}</p>
@@ -120,7 +121,7 @@ const GluehweinShiftModal = ({ dayLabel, slot, defaultStart = '', existingStarts
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -2,15 +2,6 @@ import StyledSelect from './StyledSelect';
 import { GROUP_SIZE } from '../utils/baseballGroups';
 import './BaseballFields.css';
 
-/** Number of teams per field id (teams without a field are not counted). */
-export const countTeamsPerField = (teams) => {
-  const counts = new Map();
-  for (const t of teams || []) {
-    if (t?.field_id != null) counts.set(t.field_id, (counts.get(t.field_id) || 0) + 1);
-  }
-  return counts;
-};
-
 /**
  * Feld of a Baseballturnier team: "–" (no field) or one of the year's fields. A field that already holds
  * 4 teams is disabled, except the team's own current field (`ownFieldId`).

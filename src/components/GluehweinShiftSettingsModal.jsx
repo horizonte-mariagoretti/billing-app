@@ -6,6 +6,7 @@ import Button from './Button';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css';
 import './GluehweinShiftSettingsModal.css';
+import Modal from './Modal';
 
 /**
  * Popup for the Glühwein shift settings, saved per scout year (`year_settings`, like the Lasagnen prices):
@@ -68,7 +69,7 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-shift-settings-title">
+    <Modal className="modal-overlay" aria-labelledby="gw-shift-settings-title">
       <div className="modal-content settings-fields-modal gw-shift-settings" ref={modalRef}>
         <h2 id="gw-shift-settings-title">Schicht-Einstellungen</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -147,7 +148,7 @@ const GluehweinShiftSettingsModal = ({ settings, year, yearLocked, onClose, onSa
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

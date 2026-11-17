@@ -1,4 +1,3 @@
-import React from 'react';
 import { Document, Page, View, Text, StyleSheet, Font } from '@react-pdf/renderer';
 import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff';
 import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff';

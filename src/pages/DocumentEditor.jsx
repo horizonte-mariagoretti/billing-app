@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import DecimalInput from '../components/DecimalInput';
 import {
   ChevronLeft, Check, Plus, Trash2, Save, FileText, Search,
@@ -22,7 +22,9 @@ import { pdf } from '@react-pdf/renderer';
 import ClientModal from '../components/ClientModal';
 import JobLinesDialog from '../components/JobLinesDialog';
 import DatePicker from '../components/DatePicker';
+import { toLocalISODate, parseLocalDate } from '../utils/localDate';
 import './DocumentEditor.css';
+import Modal from '../components/Modal';
 
 // Custom arrow-key stepping for numeric fields: plain arrow = 0.5, +Shift =
 // 1.0, +Ctrl = 0.1, +Shift+Ctrl = 10.0. Overrides the browser's native
@@ -85,11 +87,11 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
 
   const [doc, setDoc] = useState(() => {
     const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    const dateStr = toLocalISODate(today);
     const dueDate = new Date(today);
     if (type === 'invoice') dueDate.setMonth(dueDate.getMonth() + 1);
     else dueDate.setMonth(dueDate.getMonth() + 2);
-    const dueDateStr = dueDate.toISOString().split('T')[0];
+    const dueDateStr = toLocalISODate(dueDate);
 
     const defaults = {
       type,
@@ -139,15 +141,20 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- effect runs after render, the function is declared below
     fetchClients();
+    // eslint-disable-next-line react-hooks/immutability -- effect runs after render, the function is declared below
     fetchProducts();
+    // eslint-disable-next-line react-hooks/immutability -- effect runs after render, the function is declared below
     fetchSettingsAndNumber();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, [type]);
 
   useEffect(() => {
     if (isPersisted && status === 'paid') {
       fetchPayments(doc.id).then(setPayments);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
       setPayments([]);
     }
   }, [isPersisted, status, doc.id, fetchPayments]);
@@ -319,12 +326,13 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
   };
 
   const handleDateChange = (newDate) => {
-    const dt = new Date(newDate);
+    const dt = parseLocalDate(newDate);
+    if (!dt) { setIsDirty(true); setDoc({ ...doc, date: newDate }); return; }
     const due = new Date(dt);
     if (type === 'invoice') due.setMonth(due.getMonth() + 1);
     else due.setMonth(due.getMonth() + 2);
     setIsDirty(true);
-    setDoc({ ...doc, date: newDate, due_date: due.toISOString().split('T')[0] });
+    setDoc({ ...doc, date: newDate, due_date: toLocalISODate(due) });
   };
 
   const togglePaymentMode = () => {
@@ -370,12 +378,8 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         <DocumentPdfTemplate doc={exportDoc} sender={settings} client={client} />
       ).toBlob();
 
-      if (window.electron?.pdf?.save) {
-        // Electron: send bytes via IPC → native OS Save dialog
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        await window.electron.pdf.save({ bytes, filename });
-      } else if (window.showSaveFilePicker) {
-        // Web (Chrome/Edge): File System Access API → native OS Save dialog
+      if (window.showSaveFilePicker) {
+        // Chrome/Edge: File System Access API → native OS Save dialog
         const fileHandle = await window.showSaveFilePicker({
           suggestedName: filename,
           types: [{ description: 'PDF Files', accept: { 'application/pdf': ['.pdf'] } }],
@@ -384,7 +388,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
         await writable.write(blob);
         await writable.close();
       } else {
-        // Web fallback (Firefox/Safari): direct download to Downloads folder
+        // Firefox/Safari fallback: direct download to Downloads folder
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1060,10 +1064,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       </div>{/* end editor-split */}
 
       {previewFullscreen && (
-        <div
-          className="preview-fullscreen-overlay"
-          role="dialog"
-          aria-modal="true"
+        <Modal className="preview-fullscreen-overlay"
           aria-label={t('editor_preview', 'Preview')}
           onKeyDown={(e) => { if (e.key === 'Escape') setPreviewFullscreen(false); }}
         >
@@ -1095,7 +1096,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               client={clients.find((c) => c.id === doc.client_id) || null}
             />
           </div>
-        </div>
+        </Modal>
       )}
 
       {showJobLines && (
@@ -1138,10 +1139,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
       )}
 
       {pdfExportOpen && (
-        <div
-          className="confirm-overlay"
-          role="dialog"
-          aria-modal="true"
+        <Modal className="confirm-overlay"
           aria-labelledby="pdf-export-title"
           onKeyDown={(e) => { if (e.key === 'Escape') setPdfExportOpen(false); }}
         >
@@ -1159,12 +1157,12 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
                   type="text"
                   value={pdfExportName}
                   onChange={(e) => setPdfExportName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleExportPDF(pdfExportName, pdfExportLang); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleExportPDF(pdfExportName, pdfExportLang); }}
                   spellCheck={false}
                 />
                 <span className="pdf-export-ext">.pdf</span>
               </div>
-              {!window.electron && !window.showSaveFilePicker && (
+              {!window.showSaveFilePicker && (
                 <p className="pdf-export-note">
                   {t('pdf_export_web_note', 'File will be saved to your Downloads folder.')}
                 </p>
@@ -1194,7 +1192,7 @@ const DocumentEditor = ({ type = 'invoice', initialData, onSave, onCancel, onCon
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

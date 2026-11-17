@@ -6,7 +6,8 @@ import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
 import SponsorStatusIcon from './SponsorStatusIcon';
 import BaseballSponsorModal from './BaseballSponsorModal';
-import { CheckCell, DeleteButton, EditButton, money } from './BaseballCells';
+import { CheckCell, DeleteButton, EditButton } from './BaseballCells';
+import { money } from '../utils/baseballFormat';
 import { editableRowProps } from './editableRow';
 import './DataTable.css';
 import './BaseballPlanning.css';
@@ -31,7 +32,6 @@ const BaseballSponsors = ({ year, yearLocked, onError }) => {
   const disabled = !!yearLocked;
   const rows = sponsors.rows;
   const total = rows.reduce((acc, s) => acc + (Number(s.amount) || 0), 0);
-  const paid = rows.filter((s) => Number(s.paid)).reduce((acc, s) => acc + (Number(s.amount) || 0), 0);
 
   const openModal = (editing, trigger) => {
     triggerRef.current = trigger || null;
@@ -95,6 +95,7 @@ const BaseballSponsors = ({ year, yearLocked, onError }) => {
               </tr>
             </thead>
             <tbody>
+              {/* eslint-disable-next-line react-hooks/refs -- handlers only write the ref when clicked */}
               {rows.map((s) => {
                 const name = s.sp_name || s.name;
                 return (

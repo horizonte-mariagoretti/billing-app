@@ -1,6 +1,4 @@
-// Runtime-agnostic schema + migrations for InvoiceForge.
-// Mirrors electron/database.js but expressed as a list so it can run against
-// sql.js (browser) the same way the Electron path runs against better-sqlite3.
+// Schema + migrations for InvoiceForge, run in the browser by sql.js.
 
 const BASE_SCHEMA = `
   CREATE TABLE IF NOT EXISTS clients (
@@ -85,7 +83,7 @@ const MIGRATIONS = [
         "ALTER TABLE products ADD COLUMN description_fr TEXT;",
         "ALTER TABLE documents ADD COLUMN language TEXT DEFAULT 'en';",
       ];
-      stmts.forEach(s => { try { exec(s); } catch (_e) {} });
+      stmts.forEach(s => { try { exec(s); } catch { /* already applied */ } });
     },
   },
   {
@@ -99,7 +97,7 @@ const MIGRATIONS = [
         "ALTER TABLE clients ADD COLUMN vat_company_name TEXT;",
         "ALTER TABLE clients ADD COLUMN vat_validated_at TEXT;",
       ];
-      stmts.forEach(s => { try { exec(s); } catch (_e) {} });
+      stmts.forEach(s => { try { exec(s); } catch { /* already applied */ } });
       try {
         exec(`
           CREATE TABLE IF NOT EXISTS product_categories (
@@ -112,8 +110,8 @@ const MIGRATIONS = [
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           );
         `);
-      } catch (_e) {}
-      try { exec("ALTER TABLE products ADD COLUMN category_id TEXT REFERENCES product_categories(id);"); } catch (_e) {}
+      } catch { /* already applied */ }
+      try { exec("ALTER TABLE products ADD COLUMN category_id TEXT REFERENCES product_categories(id);"); } catch { /* already applied */ }
     },
   },
   {
@@ -127,7 +125,7 @@ const MIGRATIONS = [
         "ALTER TABLE documents ADD COLUMN locked INTEGER DEFAULT 0;",
         "ALTER TABLE documents ADD COLUMN source_quote_id TEXT;",
       ];
-      stmts.forEach(s => { try { exec(s); } catch (_e) {} });
+      stmts.forEach(s => { try { exec(s); } catch { /* already applied */ } });
       try {
         exec(`
           CREATE TABLE IF NOT EXISTS document_events (
@@ -139,7 +137,7 @@ const MIGRATIONS = [
             FOREIGN KEY (document_id) REFERENCES documents(id)
           );
         `);
-      } catch (_e) {}
+      } catch { /* already applied */ }
       try {
         exec(`
           CREATE TABLE IF NOT EXISTS payments (
@@ -155,7 +153,7 @@ const MIGRATIONS = [
             FOREIGN KEY (document_id) REFERENCES documents(id)
           );
         `);
-      } catch (_e) {}
+      } catch { /* already applied */ }
     },
   },
   {
@@ -492,14 +490,14 @@ const MIGRATIONS = [
   {
     version: 9,
     up: (exec) => {
-      try { exec("ALTER TABLE document_items ADD COLUMN duration REAL DEFAULT 1;"); } catch(e) {}
-      try { exec("ALTER TABLE documents ADD COLUMN visible_columns TEXT;"); } catch(e) {}
+      try { exec("ALTER TABLE document_items ADD COLUMN duration REAL DEFAULT 1;"); } catch { /* already applied */ }
+      try { exec("ALTER TABLE documents ADD COLUMN visible_columns TEXT;"); } catch { /* already applied */ }
       try {
         exec(`INSERT OR IGNORE INTO ui_translations (key, value_de, value_en) VALUES
           ('col_duration','Dauer (h)','Duration (h)'),
           ('col_columns','Spalten','Columns');
         `);
-      } catch(e) {}
+      } catch { /* already applied */ }
     },
   },
   {
@@ -1458,7 +1456,7 @@ FROM settings WHERE key GLOB 'lasagna_*' OR key GLOB 'camp_*';
         `);
         exec('COMMIT');
       } catch (e) {
-        try { exec('ROLLBACK'); } catch (_e) {}
+        try { exec('ROLLBACK'); } catch { /* already applied */ }
         console.error('Migration 28 failed:', e.message);
         throw e;
       }
@@ -2127,12 +2125,12 @@ UPDATE gw_ingredient_terms SET buy_price = buy_price * CASE WHEN pack_size > 0 T
 ];
 // adapter shape:
 //   exec(sql) -> void
+//   hasVersionRow() / insertVersionRow()
 //   getVersion() -> number
 //   setVersion(n) -> void
 export function runMigrations(adapter) {
   adapter.exec(BASE_SCHEMA);
-  const hasRow = adapter.hasVersionRow();
-  if (!hasRow) adapter.insertVersionRow();
+  if (!adapter.hasVersionRow()) adapter.insertVersionRow();
   for (const m of MIGRATIONS) {
     if (adapter.getVersion() < m.version) {
       m.up((sql) => adapter.exec(sql));
@@ -2141,4 +2139,4 @@ export function runMigrations(adapter) {
   }
 }
 
-export const TARGET_SCHEMA_VERSION = 13;
+export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

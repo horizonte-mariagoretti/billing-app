@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Cloud, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 import { DEFAULT_DATA_REPO, REPO_STORAGE_KEY, GITHUB_OAUTH_CLIENT_ID } from '../sync/config';

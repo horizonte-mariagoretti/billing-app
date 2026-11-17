@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { CalendarPlus, Copy, Pencil, Plus, Trash2, X } from 'lucide-react';
-import Button from './Button';
+import { Copy, Pencil, Plus, Trash2, X } from 'lucide-react';
 import GluehweinShiftModal from './GluehweinShiftModal';
 import {
   DAY_MIN, buildTimeScale, fmtMinutes, groupDaysIntoBlocks, layoutShifts, shiftSpan,
@@ -389,7 +388,7 @@ const GluehweinShiftCalendar = ({
   };
 
   const modalSlots = modal ? (shiftsByDay.get(modal.day.id) || []) : [];
-  const lastSlot = [...modalSlots].sort((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time))).pop();
+  const lastSlot = modalSlots.toSorted((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time))).at(-1);
 
   return (
     <div className="gw-cal-stack">

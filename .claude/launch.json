@@ -2,22 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Vite + Electron (Dev)",
-      "runtimeExecutable": "npm",
+      "name": "Dev",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
     },
     {
-      "name": "Vite Preview (Production Build)",
-      "runtimeExecutable": "npm",
+      "name": "Preview (production build)",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
       "runtimeArgs": ["run", "preview"],
       "port": 4173
-    },
-    {
-      "name": "Vite Web Dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:web"],
-      "port": 5173
     }
   ],
   "autoVerify": false

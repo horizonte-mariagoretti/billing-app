@@ -36,8 +36,7 @@ export function groupTeams(teams) {
 export function groupByField(teams, fields) {
   const list = Array.isArray(teams) ? teams : [];
   const fieldList = (Array.isArray(fields) ? fields : [])
-    .slice()
-    .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+    .toSorted((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
   const byId = new Map(fieldList.map((f) => [f.id, []]));
   const unassigned = [];
   for (const team of list) {

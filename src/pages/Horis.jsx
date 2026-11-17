@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import '../components/DataTable.css';
 import './Horis.css';
+import Modal from '../components/Modal';
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -88,7 +89,7 @@ const HoriDetail = ({ hori, year, locked, fmtHours, onClose, onEdit }) => {
   const age = hori.birth_date ? calcAge(hori.birth_date) : null;
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="horis-detail-title"
+    <Modal className="modal-overlay" aria-labelledby="horis-detail-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-content horis-detail" ref={ref}>
         <div className="horis-detail-header">
@@ -173,7 +174,7 @@ const HoriDetail = ({ hori, year, locked, fmtHours, onClose, onEdit }) => {
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -399,7 +400,7 @@ const Horis = () => {
   /* ── matrix data ── */
 
   const matrixData = useMemo(() => {
-    const jobs = [...matrix.jobs].sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+    const jobs = matrix.jobs.toSorted((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
     const horis = matrix.horis
       .filter(matchesSearch)
       .sort((a, b) => fullName(a).localeCompare(fullName(b)));

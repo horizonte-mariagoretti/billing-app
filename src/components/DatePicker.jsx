@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useT } from '../hooks/useUiTranslations';
 import './DatePicker.css';
@@ -51,6 +51,7 @@ const DatePicker = ({ label, value, onChange, disabled, initialView }) => {
 
   // Sync display text when value changes externally (e.g. calendar selection)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     setInputText(value ? formatDisplay(value) : '');
   }, [value]);
 

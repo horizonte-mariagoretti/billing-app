@@ -7,6 +7,7 @@ import DecimalInput from './DecimalInput';
 import { AlertCircle } from 'lucide-react';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css';
+import Modal from './Modal';
 
 /**
  * Small modal that edits a few settings keys in place (e.g. lasagne prices, camp contribution).
@@ -87,7 +88,7 @@ const SettingsFieldsModal = ({ title, description, fields, values, onSaved, onCa
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-fields-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="settings-fields-modal-title">
       <div className="modal-content settings-fields-modal" ref={modalRef}>
         <h2 id="settings-fields-modal-title">{title}</h2>
         {description && <p className="settings-fields-modal-desc">{description}</p>}
@@ -160,7 +161,7 @@ const SettingsFieldsModal = ({ title, description, fields, values, onSaved, onCa
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

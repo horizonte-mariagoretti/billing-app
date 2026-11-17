@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
@@ -7,13 +7,12 @@ import { useT } from '../hooks/useUiTranslations';
 import OverlayScrollArea from './OverlayScrollArea';
 import './Layout.css';
 
-const isWebRuntime = typeof window !== 'undefined' && window.__ELECTRON_PRELOAD__ !== true;
-
-const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noPadding = false }) => {
+const Layout = ({ children, currentView, setView, onNewDoc, title, noPadding = false }) => {
   const t = useT();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
   useEffect(() => { setIsMobileOpen(false); }, [currentView]);
   // Falls back to the sidebar's own nav_* token for this view instead of
   // just capitalizing the raw view key (which always rendered in English,
@@ -34,12 +33,9 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
   };
   const [fallbackKey, fallbackText] = VIEW_TITLE_KEYS[currentView] || [null, currentView];
   const resolvedTitle = title ?? (fallbackKey ? t(fallbackKey, fallbackText) : fallbackText);
-  const initials = (() => {
-    const name = (settings?.company_name || '').trim();
-    if (!name) return '??';
-    const parts = name.split(/\s+/);
-    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '')).toUpperCase();
-  })();
+  useEffect(() => {
+    if (typeof resolvedTitle === 'string' && resolvedTitle) document.title = `${resolvedTitle} · Hori-Admin`;
+  }, [resolvedTitle]);
 
   return (
     <div className={`app-container${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
@@ -50,7 +46,6 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
         currentView={currentView}
         setView={setView}
         onNewDoc={onNewDoc}
-        settings={settings}
         collapsed={isMobileOpen ? false : sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
         isMobileOpen={isMobileOpen}
@@ -71,7 +66,7 @@ const Layout = ({ children, currentView, setView, onNewDoc, title, settings, noP
             <h1 className="view-title">{resolvedTitle}</h1>
           </div>
           <div className="header-right">
-            {isWebRuntime && <SyncStatusBadge />}
+            <SyncStatusBadge />
           </div>
         </header>
         <OverlayScrollArea className={`content-body${noPadding ? ' content-body--no-padding' : ''}`}>

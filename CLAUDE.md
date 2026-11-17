@@ -1,6 +1,6 @@
 # Hori-Admin — Project Reference
 
-**Version:** 1.20.0 | **Stack:** React 19 + Vite 8 — runs as **Electron 41 desktop app** (better-sqlite3) **OR** as a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API)
+**Version:** 2.0.0 | **Stack:** React 19 + Vite 8 — a **static web app** on GitHub Pages (sql.js WASM + GitHub Contents API). There is no desktop build; if one is ever needed it will be built new.
 
 > Single source of truth. Read this; read nothing else.
 
@@ -8,27 +8,20 @@
 
 ## What the app is
 
-Desktop billing tool for freelancers. Manages clients, products/services, invoices, quotes. Generates PDFs in EN/DE/FR. Fully offline — no server, no cloud, all data in local SQLite file.
+Billing tool for a scout group. Manages clients, products/services, invoices, quotes, helpers (Horis), jobs and sales actions. Generates PDFs in EN/DE/FR. No server: the SQLite file lives in a private GitHub repo.
 
 ---
 
 ## How to run
 
 ```bash
-# Electron (default — desktop, local SQLite)
-npm run dev       # Vite + Electron dev with HMR
-npm run build     # Build dist/ + dist-electron/
-# After build: npx electron .
-
-# Web (browser, GitHub Pages, sql.js + GitHub repo persistence)
-npm run dev:web   # BUILD_TARGET=web vite — pure browser, no Electron plugins
-npm run build:web # Static build for GitHub Pages
+npm run dev       # Vite dev server (in-memory sample DB, no GitHub login)
+npm run build     # Static build for GitHub Pages (base /billing-app/)
 npm run preview   # Serve production build at :4173
+npm test          # node --test src/  (use Node 24, see .nvmrc)
 ```
 
-Runtime detection: `window.__ELECTRON_PRELOAD__ === true` ⇒ Electron path. Falsy ⇒ web path. The `<Bootstrap>` component picks the right persistence/PDF handlers.
-
-**Web mode boot**: PAT prompt → `verifyAccess` → fetch `data/invoiceforge.db` → init sql.js → run migrations → install shim that rebinds `window.electron.db` to the WASM engine → mount `<App>`. From here, every hook + page works unmodified.
+**Boot**: PAT prompt → `verifyAccess` → fetch `data/invoiceforge.db` → init sql.js → run migrations → install shim that rebinds `window.electron.db` to the WASM engine → mount `<App>`. From here, every hook + page works unmodified.
 
 ---
 
@@ -36,12 +29,8 @@ Runtime detection: `window.__ELECTRON_PRELOAD__ === true` ⇒ Electron path. Fal
 
 ```
 Billing_App/
-├── electron/
-│   ├── main.js          # Electron main process — BrowserWindow, IPC handlers
-│   ├── database.js      # SQLite schema + migrations (schema_version table)
-│   └── preload.js       # contextBridge: exposes window.electron.db.{query,run,transaction}
 ├── src/
-│   ├── main.jsx         # React root mount + pre-Bootstrap noop shim for window.electron.db
+│   ├── main.jsx         # React root mount + pre-Bootstrap noop shim for window.appDb
 │   ├── Bootstrap.jsx    # Web/Electron orchestrator. Web: gates on PAT, loads sql.js, fetches DB, debounces sync.
 │   ├── Bootstrap.css
 │   ├── App.jsx          # Central state: view, isEditing, editingData, appSettings
@@ -52,6 +41,7 @@ Billing_App/
 │   │   ├── Layout.css
 │   │   ├── Sidebar.jsx         # Nav + collapse toggle. Props: collapsed, onToggleCollapse.
 │   │   ├── Sidebar.css
+│   │   ├── Modal.jsx           # Native <dialog> wrapper for every modal: <Modal className="modal-overlay" onClose={...}>; Esc only closes if onClose is passed
 │   │   ├── Button.jsx          # variant=primary|secondary|outline|ghost|danger, size=sm|md|lg
 │   │   ├── Button.css
 │   │   ├── Input.jsx           # Labeled input wrapper with error state
@@ -118,8 +108,8 @@ Billing_App/
 │   │   ├── useCurrency.js      # formatCurrency(amount, currency)
 │   │   └── useFocusTrap.js     # Keyboard focus trap for modals
 │   ├── db/
-│   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Rebinds window.electron.db.
-│   │   └── migrations.js        # Schema + migrations 0–39 (runtime-agnostic).
+│   │   ├── sqliteEngine.js      # sql.js (WASM) wrapper. Web target only. Binds window.appDb.
+│   │   └── migrations.js        # Schema + migrations 1–54 (runMigrations(adapter)); LATEST_SCHEMA_VERSION
 │   ├── sync/
 │   │   ├── config.js            # Owner/repo/branch defaults + localStorage keys.
 │   │   ├── githubSync.js        # GitHub Contents API client (fetchDb, pushDb, verifyAccess).
@@ -155,28 +145,20 @@ Billing_App/
 
 Static SPA on GitHub Pages. SQLite DB binary lives at `data/invoiceforge.db` in a private repo (default: `Lexon245/maria-goretti-invoices`). Browser uses **sql.js** (WASM) to read/mutate; **GitHub Contents API** to fetch on boot and PUT on debounced save.
 
-- **Boot**: `Bootstrap` reads PAT from `localStorage` → `githubSync.fetchDb()` → `sqliteEngine.init(bytes)` → `runMigrations()` → `installAsElectronShim()` rebinds `window.electron.db` so the rest of the app sees the same surface.
+- **Boot**: `Bootstrap` reads PAT from `localStorage` → `githubSync.fetchDb()` → `sqliteEngine.init(bytes)` → `runMigrations()` → `installDbBridge()` binds `window.appDb` so the rest of the app sees the same surface.
 - **Save**: every mutation marks the engine dirty and emits an event. After 3 s of idle (`SYNC_DEBOUNCE_MS`), `Bootstrap` exports bytes and `PUT`s to the Contents API with the cached SHA. On `beforeunload`, a `keepalive: true` fetch flushes any pending bytes.
 - **Conflict**: 409/422 SHA mismatch → `SyncConflictModal`. Two paths: discard local + reload, or re-fetch SHA and force-overwrite.
 - **Auth**: fine-grained PAT in `localStorage` under key `mg-invoices-pat`. Required scope: `Contents: Read and write` on the data repo only. Sign-out wipes the key. CSP `<meta>` in `index.html` restricts `connect-src` so leaked tokens can't be exfiltrated to a foreign origin.
 
-## IPC bridge (Electron ↔ React)
+## DB bridge
 
-`preload.js` exposes three methods via `contextBridge`:
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `window.electron.db.query` | `(sql, params?) → row[]` | SELECT |
-| `window.electron.db.run` | `(sql, params?) → { changes, lastInsertRowid }` | INSERT/UPDATE/DELETE |
-| `window.electron.db.transaction` | `(ops: {sql,params}[]) → results[]` | Atomic multi-statement |
-
-`useDatabase` hook wraps these with error logging. Never call `window.electron.db` directly from components — always go through hook.
+`window.appDb.{query,run,transaction}` is bound to the sql.js engine by `sqliteEngine.installDbBridge()`. Never call it directly from components — always go through the `useDatabase` hook.
 
 ---
 
 ## Database schema
 
-Managed by `electron/database.js`. Migrations version-gated via `schema_version` table.
+Managed by `src/db/migrations.js`. Migrations are version-gated via the `schema_version` table.
 
 ### Tables
 
@@ -435,7 +417,7 @@ import { version as appVersion } from '../../package.json';
 
 ## Adding a new feature — checklist
 
-1. Schema change? Add migration in `electron/database.js`, bump `schema_version`.
+1. Schema change? Add a migration at the end of `MIGRATIONS` in `src/db/migrations.js`.
 2. New data access? Add method to relevant hook in `src/hooks/`.
 3. New page? Create `pages/Foo.jsx` + `pages/Foo.css`. Add nav item to a section of `navSections` in `Sidebar.jsx` (Übersicht / Finanzen / Arbeiten / Aktionen / Allgemein; Übersicht = Dashboard, Dashboard 2.0) and a title in `Layout.jsx` `VIEW_TITLE_KEYS`. Add view case in `App.jsx`.
 4. New component? Add to `src/components/`. Keep CSS scoped to component class.
@@ -451,4 +433,7 @@ import { version as appVersion } from '../../package.json';
 - `app-container` has `min-width: 480px` — prevents layout collapse on tiny windows.
 - Settings body column uses `minmax(0, 1fr)` — required; plain `1fr` lets content overflow grid container.
 - Translation table + numbering editor use internal `overflow-x: auto` — content has `min-width` so columns don't crush on narrow sidebars.
-- Browser preview (Vite dev) uses in-memory stub DB — data doesn't persist, some IPC-dependent features behave differently.
+- `npm run dev` uses an in-memory sample DB (`src/dev/sampleData.js`) — data does not persist; add `?empty` for a blank DB.
+- Sync is whole-file: two people saving at once get a conflict window. Closing the tab with unsaved edits shows the browser's "leave site?" warning.
+- Money is rounded to cents per line, discount and tax (`utils/documentCalc.js`); SQL sums use `ROUND(..., 2)` per line.
+- Dates: use `utils/localDate.js` (`toLocalISODate`, `parseLocalDate`), never `toISOString().split('T')`.

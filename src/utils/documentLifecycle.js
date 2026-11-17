@@ -2,6 +2,8 @@
 // Invoices:  draft -> sent -> { paid | overdue | cancelled }
 // Quotes:    draft -> sent -> { accepted | declined } -> converted
 
+import { parseLocalDate } from './localDate.js';
+
 export const INVOICE_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
 export const QUOTE_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'converted'];
 
@@ -100,7 +102,7 @@ export const isOverdue = (doc, today = new Date()) => {
   if (!doc || doc.type !== 'invoice') return false;
   if (doc.status !== 'sent') return false;
   if (!doc.due_date) return false;
-  const due = new Date(doc.due_date);
+  const due = parseLocalDate(doc.due_date) || new Date(doc.due_date);
   if (isNaN(due.getTime())) return false;
   // Compare on date level (ignore time).
   due.setHours(23, 59, 59, 999);
