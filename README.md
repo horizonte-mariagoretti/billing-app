@@ -1,16 +1,13 @@
-# React + Vite
+# Hori-Admin
 
-Minimal setup: React + Vite with HMR and ESLint rules.
+Billing and planning app for a scout group. React 19 + Vite, runs in the browser (GitHub Pages).
+Data is a SQLite file (sql.js) stored in a private GitHub repo.
 
-Two official plugins:
+See [CLAUDE.md](CLAUDE.md) for the project reference.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-Not enabled — impacts dev & build perf. To add: [documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-For prod apps, use TypeScript with type-aware lint rules. See [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for TypeScript + [`typescript-eslint`](https://typescript-eslint.io) integration.
+```bash
+npm install
+npm run dev     # sample data, no login
+npm run build   # static build
+npm test
+```

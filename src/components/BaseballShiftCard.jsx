@@ -1,13 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { TextCell, EditButton, DeleteButton } from './BaseballCells';
-
-/** "09:00–14:30 Uhr", "ab 16:30 Uhr" (open end) or '' (no time). */
-export const shiftTimeLabel = (s) => {
-  if (s?.start_time && s?.end_time) return `${s.start_time}–${s.end_time} Uhr`;
-  if (s?.start_time) return `ab ${s.start_time} Uhr`;
-  return '';
-};
+import { shiftTimeLabel } from '../utils/baseballFormat';
 
 /**
  * One Baseballturnier shift as a card: head (name, time, "x von y besetzt", edit/delete) and one row per duty
@@ -24,6 +18,7 @@ const BaseballShiftCard = ({
   const cancelRef = useRef(false); // Escape: the blur that follows must not save
 
   useEffect(() => { if (adding) inputRef.current?.focus(); }, [adding]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
   useEffect(() => { if (disabled) setAdding(null); }, [disabled]);
 
   const slot = (dutyId) => {
@@ -122,7 +117,7 @@ const BaseballShiftCard = ({
                             aria-label={`Person für ${d.name}, ${shift.label}`}
                             onChange={(e) => setDraft(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') { e.preventDefault(); save(d.id, true); }
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); save(d.id, true); }
                               if (e.key === 'Escape') { e.preventDefault(); cancelRef.current = true; setDraft(''); setAdding(null); }
                             }}
                             onBlur={() => { if (cancelRef.current) { cancelRef.current = false; return; } save(d.id, false); }}
@@ -144,7 +139,6 @@ const BaseballShiftCard = ({
                     <td>
                       <TextCell
                         type="number"
-                        step="1"
                         value={soll}
                         disabled={disabled}
                         label={`Soll ${d.name}, ${shift.label}`}

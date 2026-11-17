@@ -6,6 +6,7 @@ import Input from './Input';
 import BaseballFieldSelect from './BaseballFieldSelect';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row / .modal-actions styles
 import './BaseballTeamModal.css';
+import Modal from './Modal';
 
 /**
  * Edit one Baseballturnier team: Gruppenname (required), Feld, Ansprechpartner, Telefon, E-Mail.
@@ -62,7 +63,7 @@ const BaseballTeamModal = ({ team, fields, fieldCounts, onSave, onCancel, trigge
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="baseball-team-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="baseball-team-modal-title">
       <div className="modal-content baseball-team-modal" ref={modalRef}>
         <h2 id="baseball-team-modal-title">Team bearbeiten</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -124,7 +125,7 @@ const BaseballTeamModal = ({ team, fields, fieldCounts, onSave, onCancel, trigge
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

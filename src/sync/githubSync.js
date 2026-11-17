@@ -79,10 +79,11 @@ export async function fetchDb() {
   const data = await res.json();
   cachedSha = data.sha;
   if (data.encoding !== 'base64' || !data.content) {
-    // Large files (>1MB) come back without inline content; would need the
-    // blob endpoint. Defer that path — invoice DBs are small.
-    if (data.size > 1_000_000) {
-      throw new Error('DB file >1MB — blob fetch not yet implemented');
+    // Files over 1 MB come back without content: ask for the raw bytes instead.
+    if (data.size > 0) {
+      const raw = await fetch(url, { headers: { ...authHeaders(), Accept: 'application/vnd.github.raw+json' } });
+      if (!raw.ok) throw new Error(`fetchDb (raw) failed: HTTP ${raw.status}`);
+      return { bytes: new Uint8Array(await raw.arrayBuffer()), sha: cachedSha };
     }
     return { bytes: new Uint8Array(0), sha: cachedSha };
   }
@@ -103,8 +104,8 @@ export async function pushDb(bytes, message) {
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (res.status === 409) {
-    // SHA mismatch — another push landed since our last fetch.
+  if (res.status === 409 || res.status === 422) {
+    // SHA mismatch (409) or missing SHA (422): another push landed since our last fetch.
     const err = new Error('sync_conflict');
     err.code = 'sync_conflict';
     throw err;

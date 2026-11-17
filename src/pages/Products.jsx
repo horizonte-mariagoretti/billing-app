@@ -14,6 +14,8 @@ import {
   ChevronDown, ChevronRight, ArrowUp, ArrowDown, AlertCircle
 } from 'lucide-react';
 import './Products.css';
+import { clickableRow } from '../utils/clickableRow';
+import Modal from '../components/Modal';
 
 const uiLang = getUiLang();
 
@@ -56,7 +58,9 @@ const Products = () => {
   useFocusTrap(modalRef, { active: showModal, triggerRef: openBtnRef });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- effect runs after render, the function is declared below
     fetchAll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, []);
 
   useEffect(() => {
@@ -343,7 +347,7 @@ const Products = () => {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={cat.id} className="product-row-clickable" onClick={() => setEditingCategoryId(cat.id)}>
+                    <tr key={cat.id} className="product-row-clickable" {...clickableRow(() => setEditingCategoryId(cat.id))}>
                       <td>
                         <div className="product-name-cell">
                           <span className="product-cat-dot" style={{ backgroundColor: cat.color }} />
@@ -433,7 +437,7 @@ const Products = () => {
                     {!isCollapsed && group.items.map((product) => {
                       const displayName = getLocalizedName(product);
                       return (
-                        <tr key={product.id} className="product-row-clickable" onClick={() => handleEdit(product)}>
+                        <tr key={product.id} className="product-row-clickable" {...clickableRow(() => handleEdit(product))}>
                           <td>
                             <div className="product-name-cell">
                               <span className="product-name-text">{displayName || product.name}</span>
@@ -462,7 +466,7 @@ const Products = () => {
       )}
 
       {showModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}>
+        <Modal className="modal-overlay" onClose={() => setShowModal(false)} aria-label={editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}>
           <div className="modal-content" ref={modalRef}>
             <h2>{editingProduct ? t('products_edit_title', 'Edit Product') : t('products_add_title', 'Add Product')}</h2>
 
@@ -564,7 +568,7 @@ const Products = () => {
               </div>
             </form>
           </div>
-        </div>
+        </Modal>
       )}
 
       {confirm && (

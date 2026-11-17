@@ -11,6 +11,7 @@ import { formatTimeRange } from '../utils/jobHours';
 import { buildJobItems } from '../utils/jobDocumentLines';
 import './JobDocumentDialog.css';
 import './JobLinesDialog.css';
+import Modal from './Modal';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -116,10 +117,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
   const openPrefix = t('jobs_open_prefix', 'ab');
 
   return createPortal(
-    <div
-      className="job-doc-overlay"
-      role="dialog"
-      aria-modal="true"
+    <Modal className="job-doc-overlay"
       aria-labelledby="job-lines-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
@@ -196,7 +194,7 @@ const JobLinesDialog = ({ type, onConfirm, onCancel }) => {
           </form>
         )}
       </div>
-    </div>,
+    </Modal>,
     document.body
   );
 };

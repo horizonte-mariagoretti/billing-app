@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import useSalesActions from '../hooks/useSalesActions';
 import StatusBadge from '../components/StatusBadge';
@@ -8,9 +8,10 @@ import { useT } from '../hooks/useUiTranslations';
 import { calcTotalsFromSubtotal } from '../utils/documentCalc';
 import {
   Euro, FileText, Users, Clock, AlertCircle,
-  ArrowUpRight, Plus, Sparkles, ReceiptEuro, X
+  Plus, Sparkles, ReceiptEuro, X
 } from 'lucide-react';
 import './Dashboard.css';
+import { toLocalISODate } from '../utils/localDate';
 
 const DEFAULT_CHART_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const RANGES = [
@@ -21,8 +22,8 @@ const RANGES = [
   { id: 'custom', label: 'Custom' },
 ];
 
-const TODAY = new Date();
-const todayStr = TODAY.toISOString().split('T')[0];
+// Read on use: the app can stay open past midnight.
+const todayStr = () => toLocalISODate();
 
 // Scout year runs Sept 1 -> Aug 31. yearsAgo=0 is the scout year containing
 // today; yearsAgo=1 is the previous one.
@@ -64,7 +65,7 @@ function getRangeDates(rangeId) {
 }
 
 function heroClosedToday() {
-  return localStorage.getItem('hero_last_closed') === todayStr;
+  return localStorage.getItem('hero_last_closed') === todayStr();
 }
 
 const CUSTOM_FROM_KEY = 'dashboard_custom_from';
@@ -128,6 +129,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
     return () => ro.disconnect();
   }, []);
 
+  // eslint-disable-next-line react-hooks/immutability, react-hooks/exhaustive-deps -- effect runs after render, the function is declared below
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
@@ -137,7 +139,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         query(`
           SELECT
             d.id, d.status, d.date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
-            COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) as items_subtotal
+            COALESCE(SUM(ROUND(di.qty * di.rate * COALESCE(di.duration, 1), 2)), 0) as items_subtotal
           FROM documents d
           LEFT JOIN document_items di ON di.document_id = d.id
           WHERE d.type = 'invoice'
@@ -184,7 +186,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
         .filter(k => !series.some(s => s.key === k))
         .sort();
       const earlier = earlierKeys.map(k => {
-        const [y, m] = k.split('-');
+        const m = k.split('-')[1];
         return { key: k, label: MONTHS[parseInt(m, 10) - 1], value: byMonth.get(k) || 0 };
       });
       const fullSeries = [...earlier, ...series];
@@ -233,7 +235,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
   const firstName = (settings?.company_name || 'there').split(/\s+/)[0];
 
   const handleCloseHero = () => {
-    localStorage.setItem('hero_last_closed', todayStr);
+    localStorage.setItem('hero_last_closed', todayStr());
     setShowHero(false);
   };
 
@@ -264,6 +266,7 @@ const Dashboard = ({ settings, onNewDoc, onEditDoc }) => {
     const fromKey = bounds.from.slice(0, 7);
     const toKey = bounds.to.slice(0, 7);
     return monthlyRevenue.filter(m => m.key >= fromKey && m.key <= toKey).map(relabelMonth);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, [monthlyRevenue, chartRange, customFrom, customTo, MONTHS]);
 
   const filteredRevenue = useMemo(

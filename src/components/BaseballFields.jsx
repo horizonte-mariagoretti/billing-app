@@ -53,7 +53,7 @@ const FieldTitle = ({ name, locked, onRename, children }) => {
           onFocus={(e) => e.target.select()}
           onBlur={() => finish(true)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); finish(true); }
             else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
           }}
         />

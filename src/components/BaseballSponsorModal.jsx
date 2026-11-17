@@ -12,6 +12,7 @@ import SponsorStatusIcon from './SponsorStatusIcon';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row / .address-section / .modal-actions
 import './ClientPicker.css'; // shared combobox look (.client-picker-*)
 import './BaseballSponsorModal.css';
+import Modal from './Modal';
 
 const IDENT_KEYS = [
   'name', 'contact_name', 'phone', 'email',
@@ -227,7 +228,7 @@ const BaseballSponsorModal = ({
   );
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bb-sponsor-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="bb-sponsor-modal-title">
       <div className="modal-content bb-sponsor-modal" ref={modalRef}>
         <h2 id="bb-sponsor-modal-title">{title}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -310,7 +311,7 @@ const BaseballSponsorModal = ({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

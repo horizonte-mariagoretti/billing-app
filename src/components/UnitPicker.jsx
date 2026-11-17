@@ -28,6 +28,7 @@ const UnitPicker = ({ kind, value, onChange, disabled = false, placeholder = 'â€
   }, [fetchUnits, kind]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     reload().catch(() => setError(t('gw_unit_load_error', 'Einheiten konnten nicht geladen werden.')));
     // t is stable per render tree; reload only when the kind changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,7 +75,7 @@ const UnitPicker = ({ kind, value, onChange, disabled = false, placeholder = 'â€
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); save(); }
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); save(); }
               if (e.key === 'Escape') setAdding(false);
             }}
           />

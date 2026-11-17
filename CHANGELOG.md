@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.0.0] - 2026-11-17
+
+### Removed
+- **The Electron desktop build.** The app is web-only (GitHub Pages). Removed `electron/`, the Electron, better-sqlite3 and electron-builder dependencies, the second copy of the database schema, `_Inspiration/`, `PROJECT_RECAP.md` and the `*.original.md` files. Scripts are now `dev`, `build`, `preview`, `test`, `lint`.
+- Unused dependency `html2pdf.js` (`pako`, which @react-pdf needs, is now a direct dependency).
+
+### Changed
+- Modals use the native `<dialog>` element (`components/Modal.jsx`): the browser handles the top layer, inert background and focus return. Esc now closes the client, product and sync-conflict windows. Dropdowns inside a modal open inside it.
+- The database bridge is `window.appDb` (was `window.electron.db`), set by `installDbBridge()`.
+- Number cells in the Baseball tables and the document-number field take a comma like the rest of the app.
+- Icon-only buttons have an `aria-label`; the recipe switch has the native `switch` attribute.
+- ESLint is clean (0 problems). `package.json` is `"type": "module"`. Helpers moved out of component files (`utils/baseballFormat.js`).
+
+### Fixed
+- Sync: edits made while a save is running are no longer marked as saved. Closing the tab with unsaved edits shows the browser warning (the old background upload could never work). A tab that goes to the background saves at once.
+- Sync: databases over 1 MB can be opened. A 422 answer counts as a conflict. The conflict window can download your copy first.
+- Money is rounded to cents per line, discount and tax, in the editor, preview, PDF, list and dashboards.
+- Dashboard "today" is read on use, not once at load.
+- A tab left open across a deploy reloads once instead of showing the error screen.
+- Clearing the document date no longer invents a due date.
+
+## [1.41.1] - 2026-11-17
+
+### Fixed
+- Dates for new documents, due dates and the dashboard use the local calendar day. They came from UTC and were a day early shortly after midnight.
+- The overdue check parses the due date as a local date.
+- Rows in Clients, the document list and Products/categories open with the keyboard (Tab, Enter, Space).
+- Enter no longer submits while an IME composition is active (CJK input).
+- The page `lang` follows the UI language, and the browser title follows the current page.
+
+### Changed
+- Animations and transitions respect the OS "reduce motion" setting.
+- Pages load on demand (lazy routes); the document editor is its own chunk.
+- Internal: `toSorted` instead of copy-then-sort, `AbortSignal.timeout` for lookups.
+
 ## [1.41.0] - 2026-11-03
 
 ### Changed

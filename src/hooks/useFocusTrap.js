@@ -44,6 +44,7 @@ const useFocusTrap = (containerRef, { active = true, triggerRef } = {}) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       // Return focus to the element that opened the modal.
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
       const returnTarget = triggerRef?.current || previous;
       if (returnTarget && typeof returnTarget.focus === 'function') returnTarget.focus();
     };

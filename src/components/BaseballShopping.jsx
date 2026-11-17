@@ -3,7 +3,8 @@ import { Plus } from 'lucide-react';
 import { useBaseballRows } from '../hooks/useBaseballRows';
 import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
-import { TextCell, DeleteButton, money } from './BaseballCells';
+import { TextCell, DeleteButton } from './BaseballCells';
+import { money } from '../utils/baseballFormat';
 import './DataTable.css';
 import './BaseballPlanning.css';
 
@@ -84,7 +85,7 @@ const BaseballShopping = ({ year, yearLocked, onError }) => {
                   <tr key={s.id}>
                     <td><TextCell value={s.item} disabled={disabled} label="Ware" onSave={(v) => v && shopping.update(s.id, { item: v })} /></td>
                     <td><TextCell type="number" align="right" value={s.qty} disabled={disabled} label={`Menge: ${s.item}`} onSave={(v) => shopping.update(s.id, { qty: v })} /></td>
-                    <td><TextCell type="number" step="0.01" align="right" value={s.unit_price} disabled={disabled} label={`Preis pro Stück: ${s.item}`} onSave={(v) => shopping.update(s.id, { unit_price: v })} /></td>
+                    <td><TextCell type="number" align="right" value={s.unit_price} disabled={disabled} label={`Preis pro Stück: ${s.item}`} onSave={(v) => shopping.update(s.id, { unit_price: v })} /></td>
                     <td className="num">{money((Number(s.qty) || 0) * (Number(s.unit_price) || 0))}</td>
                     <td><TextCell value={s.category} disabled={disabled} label={`Kategorie: ${s.item}`} onSave={(v) => shopping.update(s.id, { category: v })} /></td>
                     <td><TextCell value={s.source} disabled={disabled} label={`Quelle: ${s.item}`} onSave={(v) => shopping.update(s.id, { source: v })} /></td>

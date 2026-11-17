@@ -7,6 +7,7 @@ import DecimalInput from './DecimalInput';
 import { AlertCircle } from 'lucide-react';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './CampBaseDialog.css';
+import Modal from './Modal';
 
 const KEYS = ['camp_base_contribution', 'camp_min_contribution', 'camp_reduction_per_percent'];
 
@@ -106,7 +107,7 @@ const CampBaseForm = ({ settings, onClose, onSaved, triggerRef, saveFn }) => {
   );
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="camp-dialog-title">
+    <Modal className="modal-overlay" aria-labelledby="camp-dialog-title">
       <div className="modal-content camp-dialog" ref={ref}>
         <h2 id="camp-dialog-title">{t('settings_camp_base', 'Basis Lagerbeitrag')}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -135,7 +136,7 @@ const CampBaseForm = ({ settings, onClose, onSaved, triggerRef, saveFn }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

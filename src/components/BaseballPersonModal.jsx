@@ -7,6 +7,7 @@ import StyledSelect from './StyledSelect';
 import ConfirmDialog from './ConfirmDialog';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row / .modal-actions styles
 import './BaseballTeamModal.css';
+import Modal from './Modal';
 
 /**
  * Edit one person of a Baseballturnier shift slot: Name (required), Telefon, Team (optional, the year's teams).
@@ -66,7 +67,7 @@ const BaseballPersonModal = ({ person, context, teams, onSave, onDelete, onCance
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="baseball-person-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="baseball-person-modal-title">
       <div className="modal-content baseball-team-modal" ref={modalRef}>
         <h2 id="baseball-person-modal-title">Person bearbeiten</h2>
         {context && <p className="baseball-person-modal-context">{context}</p>}
@@ -128,7 +129,7 @@ const BaseballPersonModal = ({ person, context, teams, onSave, onDelete, onCance
           onCancel={() => setConfirmDelete(false)}
         />
       )}
-    </div>
+    </Modal>
   );
 };
 

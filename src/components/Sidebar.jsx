@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   LayoutDashboard,
   Gauge,
@@ -19,7 +18,7 @@ import { version as appVersion } from '../../package.json';
 import { useT } from '../hooks/useUiTranslations';
 import './Sidebar.css';
 
-const Sidebar = ({ currentView, setView, onNewDoc, settings, collapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
+const Sidebar = ({ currentView, setView, onNewDoc, collapsed, onToggleCollapse, isMobileOpen, onMobileClose }) => {
   const t = useT();
 
   // Sidebar sections: Übersicht, Finanzen, Arbeiten, Aktionen, Allgemein.

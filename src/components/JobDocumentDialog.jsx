@@ -8,6 +8,7 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
 import { formatTimeRange } from '../utils/jobHours';
 import './JobDocumentDialog.css';
+import Modal from './Modal';
 
 const fmtDate = (iso) => {
   if (!iso) return '';
@@ -69,10 +70,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
   };
 
   return createPortal(
-    <div
-      className="job-doc-overlay"
-      role="dialog"
-      aria-modal="true"
+    <Modal className="job-doc-overlay"
       aria-labelledby="job-doc-title"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
@@ -103,7 +101,7 @@ const JobDocumentDialog = ({ job, type, onConfirm, onCancel }) => {
           </form>
         )}
       </div>
-    </div>,
+    </Modal>,
     document.body
   );
 };

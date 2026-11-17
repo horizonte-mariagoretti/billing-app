@@ -88,23 +88,27 @@ export const fmtDocDate = (iso) => {
   return `${d}.${m}.${y}`;
 };
 
+// Money is rounded to cents at every step (line, discount, tax), so the figures
+// printed on a document always add up.
+export const roundCents = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 // Discount + tax on a known subtotal. Shared by calcDocTotals (items in
-// memory) and the dashboard (subtotal summed in SQL) so both always agree.
-export const calcTotalsFromSubtotal = (doc, subtotal) => {
+// memory), the dashboard and the document list (subtotal summed in SQL) so all agree.
+export const calcTotalsFromSubtotal = (doc, rawSubtotal) => {
+  const subtotal = roundCents(rawSubtotal || 0);
   const isCash = doc.payment_mode === 'cash';
-  const discountAmt = doc.discount_type === '%'
+  const discountAmt = roundCents(doc.discount_type === '%'
     ? subtotal * ((doc.discount_value || 0) / 100)
-    : (doc.discount_value || 0);
-  const tax = isCash ? 0 : (subtotal - discountAmt) * ((doc.tax_rate || 0) / 100);
-  const total = subtotal - discountAmt + tax;
+    : (doc.discount_value || 0));
+  const tax = isCash ? 0 : roundCents((subtotal - discountAmt) * ((doc.tax_rate || 0) / 100));
+  const total = roundCents(subtotal - discountAmt + tax);
   return { subtotal, discountAmt, tax, total, isCash };
 };
 
+export const getItemLineTotal = (item) => roundCents(item.qty * item.rate * (item.duration ?? 1));
+
 export const calcDocTotals = (doc) => {
-  const subtotal = (doc.items || []).reduce(
-    (sum, item) => sum + item.qty * item.rate * (item.duration ?? 1),
-    0
-  );
+  const subtotal = roundCents((doc.items || []).reduce((sum, item) => sum + getItemLineTotal(item), 0));
   return calcTotalsFromSubtotal(doc, subtotal);
 };
 
@@ -137,4 +141,3 @@ export const splitItemNameDesc = (item) => {
   return { itemName, descLines };
 };
 
-export const getItemLineTotal = (item) => item.qty * item.rate * (item.duration ?? 1);

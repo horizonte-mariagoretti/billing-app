@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useT, getUiLang } from '../hooks/useUiTranslations';
 import { formatTimeRange } from '../utils/jobHours';

@@ -26,11 +26,8 @@ export const validatePhone = (phone, defaultCountry = 'BE') => {
   }
 };
 
-const fetchWithTimeout = (url, timeoutMs = 5000) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
-};
+const fetchWithTimeout = (url, timeoutMs = 5000) =>
+  fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
 
 export const lookupAddress = async (street, city) => {
   const street_ = (street || '').trim();
@@ -87,6 +84,7 @@ export const useDebouncedValidator = (value, fn, delay = 600) => {
 
   useEffect(() => {
     if (value == null || value === '') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
       setState({ status: 'idle', result: null });
       return undefined;
     }

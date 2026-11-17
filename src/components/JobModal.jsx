@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import DecimalInput from './DecimalInput';
 import useDatabase from '../hooks/useDatabase';
 import useJobs from '../hooks/useJobs';
@@ -13,6 +13,7 @@ import ClientPicker from './ClientPicker';
 import { computeHours } from '../utils/jobHours';
 import { AlertCircle, Check, X, FileText, Receipt, FilePlus, ReceiptText } from 'lucide-react';
 import './JobModal.css';
+import Modal from './Modal';
 
 const todayISO = () => {
   const d = new Date();
@@ -321,7 +322,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
   const fmt = (n) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
 
   return (
-    <div className="job-modal-overlay" ref={overlayRef} role="dialog" aria-modal="true" aria-label={heading}
+    <Modal className="job-modal-overlay" ref={overlayRef} aria-label={heading}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="job-modal-content" ref={modalRef}>
         <div className="job-modal-head">
@@ -597,7 +598,7 @@ const JobModal = ({ jobId, defaultDate = null, onSave, onCancel, triggerRef, onR
         )}
 
       </div>
-    </div>
+    </Modal>
   );
 };
 

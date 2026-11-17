@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AlertCircle, Edit2, Archive, ArchiveRestore, BookOpen, Package, Lock, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Archive, ArchiveRestore, BookOpen, Package, Lock } from 'lucide-react';
 import { useGluehweinCatalog } from '../hooks/useGluehweinCatalog';
 import { useGluehweinIngredients } from '../hooks/useGluehweinIngredients';
 import useYear from '../hooks/useYear';
@@ -25,6 +25,7 @@ import './DataTable.css';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal-*)
 import './GluehweinCatalog.css';
+import Modal from './Modal';
 
 const LOCALE = 'de-DE';
 
@@ -276,7 +277,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, onOpe
   );
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-item-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="gw-item-modal-title">
       <div className="modal-content settings-fields-modal gw-item-modal" ref={modalRef}>
         <h2 id="gw-item-modal-title">
           {item ? t('gw_item_edit', 'Artikel bearbeiten') : t('gw_item_add', 'Artikel hinzufügen')}
@@ -348,6 +349,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, onOpe
               <input
                 type="checkbox"
                 role="switch"
+                switch=""
                 checked={form.use_recipe}
                 disabled={!item}
                 onChange={(e) => setValue('use_recipe', e.target.checked)}
@@ -481,7 +483,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, onOpe
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -492,6 +494,7 @@ const ItemModal = ({ item, year, yearLocked, recipeCost, onSave, onCancel, onOpe
 const InlineField = ({ label, value, decimals, disabled = false, onCommit }) => {
   const shown = () => shownDot(value, decimals);
   const [draft, setDraft] = useState(shown);
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- local draft follows its prop
   useEffect(() => { setDraft(shown()); }, [value, decimals]);
 
   return (
@@ -554,7 +557,7 @@ const CopyTermsModal = ({ year, onCopy, onCancel, triggerRef }) => {
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-copy-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="gw-copy-modal-title">
       <div className="modal-content settings-fields-modal gw-copy-modal" ref={modalRef}>
         <h2 id="gw-copy-modal-title">{t('gw_copy_title', 'Sortiment aus Jahr kopieren')}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -598,7 +601,7 @@ const CopyTermsModal = ({ year, onCopy, onCancel, triggerRef }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -634,6 +637,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
   useEffect(() => {
     if (!addRequest || addRequest.n === seenAddRef.current) return;
     seenAddRef.current = addRequest.n;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     if (addRequest.key === 'copy') setCopyOpen({ triggerRef: addRequest.triggerRef || null });
     else setModal({ item: null, triggerRef: addRequest.triggerRef || null });
   }, [addRequest]);
@@ -817,7 +821,6 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
     <SortableTh column={key} label={label} align={align} sort={sort} onSort={toggleSort} />
   );
 
-  const muted = (text) => <span className="dt-muted">{text}</span>;
 
   return (
     <div className="gw-catalog">
@@ -876,7 +879,6 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
             </thead>
             <tbody>
               {sorted.map((i) => {
-                const unit = unitOf(i);
                 return (
                   <tr
                     key={i.id}

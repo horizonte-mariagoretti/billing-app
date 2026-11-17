@@ -2,14 +2,16 @@ import { AlertTriangle } from 'lucide-react';
 import Button from '../components/Button';
 import { useT } from '../hooks/useUiTranslations';
 import './SyncConflictModal.css';
+import Modal from '../components/Modal';
 
-// Two-button modal for the 409/422 SHA-mismatch case.
+// Modal for the 409/422 SHA-mismatch case.
+// Download copy: save my local database as a file, nothing else changes.
 // Discard local: re-fetch remote, drop local mutations, reload.
 // Force overwrite: re-fetch SHA, push local bytes anyway.
-const SyncConflictModal = ({ onDiscardLocal, onForceOverwrite, onClose }) => {
+const SyncConflictModal = ({ onDownloadCopy, onDiscardLocal, onForceOverwrite, onClose }) => {
   const t = useT();
   return (
-    <div className="sync-conflict-overlay" role="dialog" aria-modal="true">
+    <Modal className="sync-conflict-overlay" onClose={onClose}>
       <div className="sync-conflict-card">
         <div className="sync-conflict-header">
           <AlertTriangle size={28} className="sync-conflict-icon" />
@@ -20,6 +22,9 @@ const SyncConflictModal = ({ onDiscardLocal, onForceOverwrite, onClose }) => {
         </p>
         <p>{t('sync_pick', 'Pick one:')}</p>
         <div className="sync-conflict-actions">
+          <Button variant="secondary" onClick={onDownloadCopy}>
+            {t('sync_download', 'Download my copy first')}
+          </Button>
           <Button variant="outline" onClick={onDiscardLocal}>
             {t('sync_discard', 'Discard my changes & reload')}
           </Button>
@@ -31,7 +36,7 @@ const SyncConflictModal = ({ onDiscardLocal, onForceOverwrite, onClose }) => {
           {t('sync_decide_later', 'Decide later')}
         </button>
       </div>
-    </div>
+    </Modal>
   );
 };
 

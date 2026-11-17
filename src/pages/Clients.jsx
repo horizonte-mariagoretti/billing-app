@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import { useT } from '../hooks/useUiTranslations';
 import Button from '../components/Button';
@@ -9,6 +9,7 @@ import {
   Check, X, Users, AlertCircle
 } from 'lucide-react';
 import './Clients.css';
+import { clickableRow } from '../utils/clickableRow';
 
 const Clients = () => {
   const { query, run } = useDatabase();
@@ -23,6 +24,7 @@ const Clients = () => {
 
   const openBtnRef = useRef(null);
 
+  // eslint-disable-next-line react-hooks/immutability, react-hooks/exhaustive-deps -- effect runs after render, the function is declared below
   useEffect(() => { fetchClients(); }, []);
 
   const fetchClients = async () => {
@@ -42,7 +44,7 @@ const Clients = () => {
         ORDER BY c.name ASC
       `);
       setClients(data);
-    } catch (err) {
+    } catch {
       setError(t('clients_load_error', 'Failed to load clients. Please restart the app.'));
     } finally {
       setLoading(false);
@@ -138,7 +140,7 @@ const Clients = () => {
             </thead>
             <tbody>
               {filteredClients.map(client => (
-                <tr key={client.id} className="client-row-clickable" onClick={() => handleEdit(client)}>
+                <tr key={client.id} className="client-row-clickable" {...clickableRow(() => handleEdit(client))}>
                   <td className="client-name-cell">{client.name}</td>
                   <td>
                     <div className="cell-with-icon">

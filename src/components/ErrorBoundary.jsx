@@ -32,6 +32,12 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     console.error('ErrorBoundary caught:', error, info);
+    // After a deploy, an open tab asks for page files that no longer exist: reload once to get the new ones.
+    if (/dynamically imported module|Importing a module script failed/i.test(error?.message || '')
+      && !sessionStorage.getItem('chunk_reload')) {
+      sessionStorage.setItem('chunk_reload', '1');
+      window.location.reload();
+    }
   }
 
   handleReload = () => {

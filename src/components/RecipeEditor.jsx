@@ -11,6 +11,7 @@ import { unitModeLabel } from '../utils/gluehweinCatalogMath';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field (.settings-fields-modal-*)
 import './RecipeEditor.css';
+import Modal from './Modal';
 
 let rowSeq = 0;
 const newKey = () => `r${++rowSeq}`;
@@ -159,7 +160,7 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="recipe-editor-title">
+    <Modal className="modal-overlay" aria-labelledby="recipe-editor-title">
       <div className="modal-content recipe-editor" ref={modalRef}>
         <h2 id="recipe-editor-title">
           {t('gw_recipe_title', 'Rezept')}{product ? `: ${product.name}` : ''}
@@ -315,7 +316,7 @@ const RecipeEditor = ({ product, ingredients = [], onClose, onSaved }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -1,23 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import Layout from './components/Layout';
 import Clients from './pages/Clients';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
-import Settings from './pages/Settings';
-import Arbeiten from './pages/Arbeiten';
-import Horis from './pages/Horis';
-import Dashboard2 from './pages/Dashboard2';
-import Lasagnen from './pages/Lasagnen';
-import Gluehwein from './pages/Gluehwein';
-import Baseball from './pages/Baseball';
+const Settings = lazy(() => import('./pages/Settings'));
+const Arbeiten = lazy(() => import('./pages/Arbeiten'));
+const Horis = lazy(() => import('./pages/Horis'));
+const Dashboard2 = lazy(() => import('./pages/Dashboard2'));
+const Lasagnen = lazy(() => import('./pages/Lasagnen'));
+const Gluehwein = lazy(() => import('./pages/Gluehwein'));
+const Baseball = lazy(() => import('./pages/Baseball'));
 import DocumentList from './pages/DocumentList';
-import DocumentEditor from './pages/DocumentEditor';
+const DocumentEditor = lazy(() => import('./pages/DocumentEditor'));
 import useDocuments from './hooks/useDocuments';
 import useSettings from './hooks/useSettings';
 import useDatabase from './hooks/useDatabase';
 import useJobs from './hooks/useJobs';
 import { buildJobItems } from './utils/jobDocumentLines';
 import { UiTranslationsProvider, useT } from './hooks/useUiTranslations';
+import { toLocalISODate } from './utils/localDate';
 import './index.css';
 
 // AppInner is a child of UiTranslationsProvider (see App() below) so it can
@@ -39,6 +40,7 @@ function AppInner() {
       console.error('Failed to load settings:', err);
       setSettingsError(err.message || 'Failed to load settings');
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, []);
 
   const handleNewDoc = (type = 'invoice') => {
@@ -116,8 +118,8 @@ function AppInner() {
       // intentionally no id -> save creates a new document
       type: 'invoice',
       number: nextNum,
-      date: today.toISOString().split('T')[0],
-      due_date: due.toISOString().split('T')[0],
+      date: toLocalISODate(today),
+      due_date: toLocalISODate(due),
       title: quote.title || '',
       client_id: quote.client_id || '',
       notes: quote.notes || '',
@@ -204,8 +206,8 @@ function AppInner() {
       // intentionally no id -> save creates a new document
       type,
       number: nextNum,
-      date: today.toISOString().split('T')[0],
-      due_date: due.toISOString().split('T')[0],
+      date: toLocalISODate(today),
+      due_date: toLocalISODate(due),
       title: job.title || '',
       client_id: job.client_id || '',
       notes: '',
@@ -273,7 +275,6 @@ function AppInner() {
       setView={(v) => { setView(v); setIsEditing(false); }}
       onNewDoc={(type) => handleNewDoc(type || (view === 'quotes' ? 'quote' : 'invoice'))}
       title={editorTitle}
-      settings={appSettings}
       noPadding={isEditing}
     >
       {settingsError && (
@@ -281,6 +282,7 @@ function AppInner() {
           {t('settings_load_error', 'Settings failed to load')}: {settingsError}
         </div>
       )}
+      <Suspense fallback={<div className="page-loading" role="status" aria-live="polite">{t('loading', 'Laden …')}</div>}>
       {isEditing ? (
         <DocumentEditor
           key={editingData?.id || `${editingData?.type}-${editingData?.number || 'new'}`}
@@ -291,6 +293,7 @@ function AppInner() {
           onConvertToInvoice={handleConvertToInvoice}
         />
       ) : renderContent()}
+      </Suspense>
     </Layout>
   );
 }

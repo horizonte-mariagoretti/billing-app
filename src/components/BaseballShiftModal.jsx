@@ -6,6 +6,7 @@ import Button from './Button';
 import Input from './Input';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row / .modal-actions styles
 import './BaseballTeamModal.css';
+import Modal from './Modal';
 
 const TIME_ERRORS = {
   BAD_SLOT_TIME: 'Beginn und Ende dürfen nicht gleich sein.',
@@ -69,7 +70,7 @@ const BaseballShiftModal = ({ shift, defaultLabel = '', onSave, onCancel }) => {
   };
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="baseball-shift-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="baseball-shift-modal-title">
       <div className="modal-content baseball-team-modal" ref={modalRef}>
         <h2 id="baseball-shift-modal-title">{shift ? 'Schicht bearbeiten' : 'Schicht hinzufügen'}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -108,7 +109,7 @@ const BaseballShiftModal = ({ shift, defaultLabel = '', onSave, onCancel }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

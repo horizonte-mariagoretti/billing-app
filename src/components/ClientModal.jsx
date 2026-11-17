@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import useDatabase from '../hooks/useDatabase';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
@@ -13,6 +13,7 @@ import {
   useDebouncedValidator,
 } from '../utils/validators';
 import './ClientModal.css';
+import Modal from './Modal';
 
 const ValidationIcon = ({ status, title }) => {
   const t = useT();
@@ -72,6 +73,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
   const lastQueriedRef = useRef('');
   useEffect(() => {
     const street = formData.address_street?.trim();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     if (!street) { setAddressState({ status: 'idle', result: null }); return undefined; }
     if (street === lastQueriedRef.current) return undefined;
     setAddressState((s) => ({ status: 'pending', result: s.result }));
@@ -86,6 +88,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
       setAddressState({ status: 'valid', result });
     }, 800);
     return () => clearTimeout(handle);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, [formData.address_street]);
 
   const anyPending = [emailState, phoneState, vatState, addressState].some(s => s.status === 'pending');
@@ -158,7 +161,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
   const vatCompany = vatState.status === 'valid' ? vatState.result?.name : null;
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true"
+    <Modal className="modal-overlay" onClose={onCancel}
       aria-label={editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}>
       <div className="modal-content" ref={modalRef}>
         <h2>{editingClient ? t('clients_edit_title', 'Edit Client') : t('clients_add_title', 'Add New Client')}</h2>
@@ -262,7 +265,7 @@ const ClientModal = ({ editingClient, onSave, onCancel, triggerRef }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import DecimalInput from './DecimalInput';
 import './Input.css';
 

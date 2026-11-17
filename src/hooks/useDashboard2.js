@@ -47,7 +47,7 @@ const useDashboard2 = () => {
       query(`
         SELECT
           d.date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
-          COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) AS items_subtotal
+          COALESCE(SUM(ROUND(di.qty * di.rate * COALESCE(di.duration, 1), 2)), 0) AS items_subtotal
         FROM documents d
         LEFT JOIN document_items di ON di.document_id = d.id
         WHERE d.type = 'invoice' AND d.status = 'paid' AND d.date BETWEEN ? AND ?
@@ -76,7 +76,7 @@ const useDashboard2 = () => {
       query(`
         SELECT
           d.id, d.status, d.date, d.due_date, d.tax_rate, d.discount_value, d.discount_type, d.payment_mode,
-          COALESCE(SUM(di.qty * di.rate * COALESCE(di.duration, 1)), 0) AS items_subtotal
+          COALESCE(SUM(ROUND(di.qty * di.rate * COALESCE(di.duration, 1), 2)), 0) AS items_subtotal
         FROM documents d
         LEFT JOIN document_items di ON di.document_id = d.id
         WHERE d.type = 'invoice' AND d.date BETWEEN ? AND ?

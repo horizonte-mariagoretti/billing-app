@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import useHoris from '../hooks/useHoris';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { useT } from '../hooks/useUiTranslations';
@@ -9,6 +9,7 @@ import DatePicker from './DatePicker';
 import { AlertCircle } from 'lucide-react';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .form-row styles
 import './HoriModal.css';
+import Modal from './Modal';
 
 const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
   const { saveHori } = useHoris();
@@ -59,7 +60,7 @@ const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
       if (editingHori?.id) payload.id = editingHori.id;
       const id = await saveHori(payload);
       onSave({ ...payload, id: id ?? editingHori?.id });
-    } catch (err) {
+    } catch {
       setSaveError(t('horis_save_error', 'Hori konnte nicht gespeichert werden.'));
       setSaving(false);
     }
@@ -70,7 +71,7 @@ const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
     : t('horis_add_title', 'Neuen Hori hinzufügen');
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="hori-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="hori-modal-title">
       <div className="modal-content horis-modal" ref={modalRef}>
         <h2 id="hori-modal-title">{title}</h2>
         <form onSubmit={handleSubmit} noValidate>
@@ -134,7 +135,7 @@ const HoriModal = ({ editingHori, onSave, onCancel, triggerRef }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };
 

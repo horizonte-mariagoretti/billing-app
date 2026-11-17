@@ -73,7 +73,7 @@ const ShoppingTable = ({ products, ingredients, yearLocked, onStockSave, t, form
     const recipe = products.flatMap((p) => (p.recipe || []).map((r) => ({ product_id: p.id, ...r })));
     const result = buildShoppingList({ products, ingredients, productTerms, ingredientTerms, recipe });
     // Zutaten unsorted: by name. Drinks keep the util's name order.
-    const list = [...result.ingredients].sort((a, b) => a.name.localeCompare(b.name, LOCALE));
+    const list = result.ingredients.toSorted((a, b) => a.name.localeCompare(b.name, LOCALE));
     return { drinks: result.drinks, ingRows: list, total: result.total };
   }, [products, ingredients]);
 

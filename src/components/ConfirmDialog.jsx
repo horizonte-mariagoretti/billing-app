@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Button from './Button';
 import { useT } from '../hooks/useUiTranslations';
 import './ConfirmDialog.css';
+import Modal from './Modal';
 
 const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, onCancel }) => {
   const t = useT();
@@ -15,7 +16,7 @@ const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, onCancel }) =>
   }, [onCancel]);
 
   return (
-    <div className="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <Modal className="confirm-overlay" aria-labelledby="confirm-title">
       <div className="confirm-box">
         <h3 id="confirm-title">{title}</h3>
         <p>{message}</p>
@@ -24,7 +25,7 @@ const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, onCancel }) =>
           <Button variant="danger" onClick={onConfirm}>{confirmLabel ?? t('btn_delete', 'Delete')}</Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

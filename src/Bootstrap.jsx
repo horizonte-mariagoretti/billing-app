@@ -11,16 +11,7 @@ import {
   SYNC_DEBOUNCE_MS,
 } from './sync/config';
 
-// Detect Electron at boot. The preload script writes a real db.query function;
-// the noop shim in main.jsx only writes async () => []. We treat the absence
-// of a real `electronAPI` flag as "browser web mode."
-function isElectronRuntime() {
-  // electron/preload.js sets a marker we can rely on.
-  return typeof window !== 'undefined' && window.__ELECTRON_PRELOAD__ === true;
-}
-
 const Bootstrap = () => {
-  const electronMode = isElectronRuntime();
   const [authError] = useState(() => {
     const hash = new URLSearchParams(window.location.hash.slice(1));
     return hash.get('auth_error') || null;
@@ -37,17 +28,16 @@ const Bootstrap = () => {
     }
     return localStorage.getItem(PAT_STORAGE_KEY) || '';
   });
-  const [phase, setPhase] = useState(electronMode ? 'ready' : 'init'); // init | auth | loading | ready | error
+  const [phase, setPhase] = useState('init'); // init | auth | loading | ready | error
   const [loadMessage, setLoadMessage] = useState('Connecting to GitHub…');
   const [loadError, setLoadError] = useState(null);
   const [conflict, setConflict] = useState(false);
   const debounceRef = useRef(null);
   const pushingRef = useRef(false);
+  const changesRef = useRef(0); // counts edits, so a save knows if more came in while it ran
 
   // -- Web boot ---------------------------------------------------------------
   useEffect(() => {
-    if (electronMode) return;
-
     // DEV BYPASS: skip GitHub auth in local Vite dev server.
     // Uses an in-memory DB pre-filled with sample data — nothing persists across reloads.
     // This code path is tree-shaken out of production builds (import.meta.env.DEV = false).
@@ -58,7 +48,7 @@ const Bootstrap = () => {
           setLoadMessage('Dev mode — loading in-memory DB…');
           await engine.init(null);
           engine.migrate();
-          engine.installAsElectronShim();
+          engine.installDbBridge();
           // Fill the throw-away DB with sample content so every page has data
           // to look at. Add ?empty to the URL for a blank database instead.
           if (!new URLSearchParams(window.location.search).has('empty')) {
@@ -77,6 +67,7 @@ const Bootstrap = () => {
       return () => { cancelled = true; };
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     if (!pat) { setPhase('auth'); return; }
 
     let cancelled = false;
@@ -109,7 +100,7 @@ const Bootstrap = () => {
 
         setLoadMessage('Running migrations…');
         engine.migrate();
-        engine.installAsElectronShim();
+        engine.installDbBridge();
 
         // If the DB came back empty (404 first run) or migrations ran, push
         // immediately so the data repo has a baseline file.
@@ -129,18 +120,22 @@ const Bootstrap = () => {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pat, electronMode]);
+  }, [pat]);
 
   // -- Debounced sync ---------------------------------------------------------
   async function pushNow(message) {
-    if (pushingRef.current) return;
+    if (pushingRef.current || !githubSync.isConfigured()) return; // not configured: dev mode
     if (!engine.isDirty()) return;
     pushingRef.current = true;
+    const seen = changesRef.current;
+    let ok = false;
     try {
       window.dispatchEvent(new CustomEvent('mg-sync', { detail: 'sync-start' }));
       const bytes = engine.exportBytes();
       await githubSync.pushDb(bytes, message);
-      engine.markClean();
+      // Edits made during the upload are not in `bytes`: keep them marked as unsaved.
+      if (changesRef.current === seen) engine.markClean();
+      ok = true;
       window.dispatchEvent(new CustomEvent('mg-sync', { detail: 'sync-ok' }));
     } catch (err) {
       if (err.code === 'sync_conflict') {
@@ -153,66 +148,52 @@ const Bootstrap = () => {
     } finally {
       pushingRef.current = false;
     }
+    if (ok && engine.isDirty()) pushNow();
   }
 
   useEffect(() => {
-    if (electronMode || phase !== 'ready') return;
+    if (phase !== 'ready') return;
     const unsub = engine.subscribe((event) => {
       if (event !== 'mutation') return;
+      changesRef.current += 1;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => { pushNow(); }, SYNC_DEBOUNCE_MS);
     });
-    const flush = (e) => {
-      if (engine.isDirty()) {
-        // beforeunload: synchronous best-effort push via keepalive fetch.
-        // The structured pushDb function uses async fetch, so we duplicate
-        // the minimum here with keepalive: true to survive the unload.
-        try {
-          const stored = JSON.parse(localStorage.getItem(REPO_STORAGE_KEY) || 'null') || DEFAULT_DATA_REPO;
-          const bytes = engine.exportBytes();
-          let binary = '';
-          const chunk = 0x8000;
-          for (let i = 0; i < bytes.length; i += chunk) {
-            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-          }
-          const body = JSON.stringify({
-            message: `Autosave on unload (${new Date().toISOString()})`,
-            content: btoa(binary),
-            branch: stored.branch || 'main',
-          });
-          fetch(`https://api.github.com/repos/${stored.owner}/${stored.repo}/contents/${encodeURIComponent(stored.dbPath)}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${pat}`,
-              'Accept': 'application/vnd.github+json',
-              'Content-Type': 'application/json',
-            },
-            body,
-            keepalive: true,
-          });
-        } catch (_e) { /* best effort — ignore */ }
-      }
+    // A background upload cannot carry the database (64 KB limit, needs the file SHA),
+    // so warn instead of losing the last edits, and save as soon as the tab is hidden.
+    const warn = (e) => {
+      if (engine.isDirty()) { e.preventDefault(); e.returnValue = ''; }
     };
-    window.addEventListener('beforeunload', flush);
+    const onHide = () => { if (document.visibilityState === 'hidden') pushNow(); };
+    window.addEventListener('beforeunload', warn);
+    document.addEventListener('visibilitychange', onHide);
     return () => {
       unsub();
-      window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('beforeunload', warn);
+      document.removeEventListener('visibilitychange', onHide);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [phase, electronMode, pat]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
+  }, [phase]);
 
   // Listen for manual save requests from the badge.
   useEffect(() => {
-    if (electronMode) return;
     const handler = () => pushNow('Manual save');
     window.addEventListener('mg-save-now', handler);
     return () => window.removeEventListener('mg-save-now', handler);
-  }, [electronMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
+  }, []);
 
   // -- Conflict resolution ----------------------------------------------------
   const handleDiscardLocal = () => {
     setConflict(false);
     window.location.reload();
+  };
+  const handleDownloadCopy = () => {
+    const url = URL.createObjectURL(new Blob([engine.exportBytes()], { type: 'application/octet-stream' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'invoiceforge-my-copy.db' });
+    a.click();
+    URL.revokeObjectURL(url);
   };
   const handleForceOverwrite = async () => {
     setConflict(false);
@@ -234,8 +215,6 @@ const Bootstrap = () => {
   };
 
   // -- Render -----------------------------------------------------------------
-  if (electronMode) return <App />;
-
   if (phase === 'auth') {
     return <GitHubAuth authError={authError} />;
   }
@@ -269,6 +248,7 @@ const Bootstrap = () => {
       <App onSignOut={handleSignOut} />
       {conflict && (
         <SyncConflictModal
+          onDownloadCopy={handleDownloadCopy}
           onDiscardLocal={handleDiscardLocal}
           onForceOverwrite={handleForceOverwrite}
           onClose={() => setConflict(false)}

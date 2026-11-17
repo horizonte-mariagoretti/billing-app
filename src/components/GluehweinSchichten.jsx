@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // useGluehweinShifts / useSalesDays take the action key ('gluehwein' | 'baseball'); this component gets the SALES_ACTIONS entry.
-import { Settings2 } from 'lucide-react';
 import { useGluehweinShifts } from '../hooks/useGluehweinShifts';
 import { useSalesDays } from '../hooks/useSalesDays';
 import useHoris from '../hooks/useHoris';
 import useTableSort from '../hooks/useTableSort';
 import { heatColor } from '../utils/heatColor';
 import { gluehweinShares, gluehweinBonusFromSettings, bonusReductionPct } from '../utils/gluehweinBonus';
-import Button from './Button';
 import ConfirmDialog from './ConfirmDialog';
 import GluehweinShiftSettingsModal from './GluehweinShiftSettingsModal';
 import GluehweinShiftCalendar from './GluehweinShiftCalendar';

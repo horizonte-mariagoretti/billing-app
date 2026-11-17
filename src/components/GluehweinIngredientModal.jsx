@@ -8,6 +8,7 @@ import ConfirmDialog from './ConfirmDialog';
 import './ClientModal.css'; // shared .modal-overlay / .modal-content / .modal-actions styles
 import './SettingsFieldsModal.css'; // shared field grid (.settings-fields-modal-*)
 import './GluehweinIngredientModal.css';
+import Modal from './Modal';
 
 const INGREDIENT_PACK_TYPES = [
   { value: 'none', label: '–' },
@@ -120,7 +121,7 @@ const GluehweinIngredientModal = ({
   const unitLabel = form.unit.trim() || 'Stk';
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gw-ing-modal-title">
+    <Modal className="modal-overlay" aria-labelledby="gw-ing-modal-title">
       <div className="modal-content settings-fields-modal" ref={modalRef}>
         <h2 id="gw-ing-modal-title">
           {ingredient ? t('gw_ing_edit', 'Zutat bearbeiten') : t('gw_ing_add', 'Zutat hinzufügen')}
@@ -276,7 +277,7 @@ const GluehweinIngredientModal = ({
           onCancel={() => setConfirming(false)}
         />
       )}
-    </div>
+    </Modal>
   );
 };
 

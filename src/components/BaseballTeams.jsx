@@ -5,9 +5,10 @@ import useSettings from '../hooks/useSettings';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsFieldsModal from './SettingsFieldsModal';
 import BaseballTeamModal from './BaseballTeamModal';
-import BaseballFieldSelect, { countTeamsPerField } from './BaseballFieldSelect';
+import BaseballFieldSelect from './BaseballFieldSelect';
+import { countTeamsPerField, money } from '../utils/baseballFormat';
 import { editableRowProps } from './editableRow';
-import { CheckCell, DeleteButton, EditButton, money } from './BaseballCells';
+import { CheckCell, DeleteButton, EditButton } from './BaseballCells';
 import './DataTable.css';
 import './BaseballPlanning.css';
 
@@ -69,7 +70,7 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
   };
 
   const handleAddKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault();
       saveDraft({ refocus: true });
     }
@@ -143,6 +144,7 @@ const BaseballTeams = ({ year, yearLocked, onError }) => {
             </tr>
           </thead>
           <tbody>
+            {/* eslint-disable-next-line react-hooks/refs -- handlers only write the ref when clicked */}
             {teams.rows.map((t) => (
               <tr
                 key={t.id}

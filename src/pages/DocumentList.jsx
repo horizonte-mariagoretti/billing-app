@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import useDocuments from '../hooks/useDocuments';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
@@ -7,6 +7,7 @@ import { effectiveStatus } from '../utils/documentLifecycle';
 import { useT } from '../hooks/useUiTranslations';
 import { Plus, Search, Edit2, Trash2, FileCheck, AlertCircle } from 'lucide-react';
 import './DocumentList.css';
+import { clickableRow } from '../utils/clickableRow';
 
 const DocumentList = ({ type = 'invoice', onEdit, onNew }) => {
   const { fetchDocuments, deleteDocument } = useDocuments();
@@ -17,6 +18,7 @@ const DocumentList = ({ type = 'invoice', onEdit, onNew }) => {
   const [error, setError] = useState(null);
   const [confirm, setConfirm] = useState(null); // { id, number }
 
+  // eslint-disable-next-line react-hooks/immutability, react-hooks/exhaustive-deps -- effect runs after render, the function is declared below
   useEffect(() => { loadDocs(); }, [type]);
 
   const loadDocs = async () => {
@@ -97,7 +99,7 @@ const DocumentList = ({ type = 'invoice', onEdit, onNew }) => {
             </thead>
             <tbody>
               {filteredDocs.map(doc => (
-                <tr key={doc.id} className="doc-row-clickable" onClick={() => onEdit(doc)}>
+                <tr key={doc.id} className="doc-row-clickable" {...clickableRow(() => onEdit(doc))}>
                   <td className="doc-num">{doc.number}</td>
                   <td className="client-name">{doc.client_name || t('doc_no_client', 'No Client')}</td>
                   <td className="doc-title-cell">{doc.title || '—'}</td>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { useT } from '../hooks/useUiTranslations';
 import './CategoryEditor.css';
@@ -19,7 +19,9 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true, compact =
   const [data, setData] = useState(() => ({ ...EMPTY, ...(initial || {}) }));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- local draft follows its prop
     setData({ ...EMPTY, ...(initial || {}) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- trigger list is intentional
   }, [initial?.id]);
 
   const canSave = data.name_de.trim().length > 0;
@@ -31,7 +33,7 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true, compact =
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSave();
     } else if (e.key === 'Escape') {
@@ -73,10 +75,10 @@ const CategoryEditor = ({ initial, onSave, onCancel, autoFocus = true, compact =
           ))}
         </div>
         <div className="cat-editor-actions">
-          <button type="button" className="cat-btn-cancel" onClick={onCancel} title={t('btn_cancel', 'Cancel')}>
+          <button type="button" className="cat-btn-cancel" onClick={onCancel} title={t('btn_cancel', 'Cancel')} aria-label={t('btn_cancel', 'Cancel')}>
             <X size={14} />
           </button>
-          <button type="button" className="cat-btn-save" disabled={!canSave} onClick={handleSave} title={t('btn_save', 'Save')}>
+          <button type="button" className="cat-btn-save" disabled={!canSave} onClick={handleSave} title={t('btn_save', 'Save')} aria-label={t('btn_save', 'Save')}>
             <Check size={14} />
           </button>
         </div>
