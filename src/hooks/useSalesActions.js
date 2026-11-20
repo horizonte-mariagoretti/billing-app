@@ -5,10 +5,12 @@ import useSettings from './useSettings';
 import { SALES_ACTIONS, lasagnaSummary, salesActionMonthKey } from '../utils/lasagnaFinance';
 import { saldo as entriesSaldo, saldoMonthKey } from '../utils/gluehweinFinance';
 import { loadKasse } from './useSalesKasse';
+import { useGluehweinPurchases } from './useGluehweinPurchases';
 
 // Where the money of a Verkaufsaktion comes from. Actions missing here (Baseball) track no money yet.
 //   lasagna: Übersicht orders + lasagna_expenses (lasagnaSummary)
-//   entries: sales_entries income − expense + the Kasse live (Bargeld + Kartenzahlung, kasseIncome)
+//   entries: sales_entries income − expense + the Kasse live (Bargeld + Kartenzahlung, kasseIncome); Glühwein also
+//   the Einkaufsliste live as Ausgaben (useGluehweinPurchases)
 const SALDO_SOURCE = { lasagnen: 'lasagna', gluehwein: 'entries' };
 
 export const hasSaldoSource = (action) => Boolean(SALDO_SOURCE[action?.key]);
@@ -18,6 +20,7 @@ const useSalesActions = () => {
   const { query } = useDatabase();
   const { fetchOrders } = useLasagnen();
   const { loadYearSettings } = useSettings();
+  const { fetchShoppingExpenses } = useGluehweinPurchases();
 
   // Money of one action in one scout year: { saldo, monthKey, summary } or null (no saldo source).
   // settings = year settings of that year (for the action date and the Lasagnen prices).
@@ -33,12 +36,13 @@ const useSalesActions = () => {
       return { saldo: summary.saldo, monthKey: salesActionMonthKey(action, year, settings[action.dateKey]), summary };
     }
     if (source === 'entries') {
-      const [entries, days, kasse] = await Promise.all([
+      const [entries, days, kasse, shopping] = await Promise.all([
         query('SELECT kind, amount FROM sales_entries WHERE action = ? AND year = ?', [action.key, year]),
         query('SELECT date FROM sales_days WHERE action = ? AND year = ? ORDER BY date ASC', [action.key, year]),
         loadKasse(query, action.key, year),
+        action.key === 'gluehwein' ? fetchShoppingExpenses(year) : [],
       ]);
-      const s = entriesSaldo(entries, kasse);
+      const s = entriesSaldo([...entries, ...shopping], kasse);
       // Month of the first sales day; without days the action date set next to the year switcher, else the default month.
       const dateKey = settings?.[action.dateKey];
       const monthDays = days.length ? days : (dateKey ? [{ date: dateKey }] : []);
@@ -49,7 +53,7 @@ const useSalesActions = () => {
       };
     }
     return null;
-  }, [query, fetchOrders]);
+  }, [query, fetchOrders, fetchShoppingExpenses]);
 
   // Returns [{ action, year, monthKey, saldo }] (zero saldos left out).
   const fetchSalesActionSaldi = useCallback(async () => {

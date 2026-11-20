@@ -1,4 +1,5 @@
 import './DocumentPreview.css';
+import { invoiceQr, paymentReference } from '../utils/epcQr';
 import {
   getDocLabels, getVisibleColumns, isPricingHidden, fmtCurrency, fmtNum, fmtDocDate,
   calcDocTotals, getDocTypeLabel, getClientAddressLines, splitItemNameDesc, getItemLineTotal,
@@ -20,7 +21,8 @@ const DocumentPreview = ({ doc, sender, client }) => {
 
   const { subtotal, discountAmt, tax, total } = calcDocTotals(doc);
 
-  const senderAddress = sender?.company_address || '';
+  const qr = invoiceQr(doc, sender, total);
+  const senderAddress =sender?.company_address || '';
   const clientAddress = getClientAddressLines(client).join('\n');
 
   const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
@@ -172,11 +174,28 @@ const DocumentPreview = ({ doc, sender, client }) => {
         {/* ── Payment footer ── */}
         <footer className="pdf-footer">
           <div className="pdf-rule pdf-rule--footer" />
-          <p className="pdf-payment-label">{labels.paymentNote}</p>
-          <div className="pdf-bank">
-            {sender?.company_name && <span className="pdf-bank-name">{sender.company_name}</span>}
-            {sender?.company_iban && <span>IBAN: {sender.company_iban}</span>}
-            {sender?.company_bic  && <span>BIC: {sender.company_bic}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div>
+              <p className="pdf-payment-label">{labels.paymentNote}</p>
+              {sender?.company_name && (
+                <div className="pdf-bank"><span className="pdf-bank-name">{sender.company_name}</span></div>
+              )}
+              {(sender?.company_iban || sender?.company_bic) && (
+                <div className="pdf-bank">
+                  {sender.company_iban && <span>IBAN: {sender.company_iban}</span>}
+                  {sender.company_bic && <span>BIC: {sender.company_bic}</span>}
+                </div>
+              )}
+              {doc.type === 'invoice' && paymentReference(doc) && (
+                <div className="pdf-bank"><span>{labels.paymentRef}: {paymentReference(doc)}</span></div>
+              )}
+            </div>
+            {qr && (
+              <svg viewBox={qr.viewBox} width="84" height="84" role="img" aria-label="EPC QR" shapeRendering="crispEdges">
+                <rect x="-2" y="-2" width="100%" height="100%" fill="#fff" />
+                <path d={qr.d} fill="#000" />
+              </svg>
+            )}
           </div>
           {(sender?.company_vat || sender?.company_email) && (
             <div className="pdf-footer-legal">

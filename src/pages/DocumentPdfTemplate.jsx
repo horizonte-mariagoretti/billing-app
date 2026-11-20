@@ -1,7 +1,10 @@
-import { Document, Page, View, Text, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Font, Svg, Path } from '@react-pdf/renderer';
+import { invoiceQr, paymentReference } from '../utils/epcQr';
 import InterRegular from '@fontsource/inter/files/inter-latin-400-normal.woff';
 import InterSemiBold from '@fontsource/inter/files/inter-latin-600-normal.woff';
 import InterBold from '@fontsource/inter/files/inter-latin-700-normal.woff';
+import MonoRegular from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff';
+import MonoSemiBold from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-600-normal.woff';
 import OutfitBold from '@fontsource/outfit/files/outfit-latin-700-normal.woff';
 import {
   getDocLabels, getVisibleColumns, fmtCurrency as fmt, fmtNum, fmtDocDate as fmtDate,
@@ -14,6 +17,14 @@ Font.register({
     { src: InterRegular, fontWeight: 400 },
     { src: InterSemiBold, fontWeight: 600 },
     { src: InterBold, fontWeight: 700 },
+  ],
+});
+
+Font.register({
+  family: 'JetBrains Mono',
+  fonts: [
+    { src: MonoRegular, fontWeight: 400 },
+    { src: MonoSemiBold, fontWeight: 600 },
   ],
 });
 
@@ -82,6 +93,7 @@ const s = StyleSheet.create({
     lineHeight: 1.1,
   },
   docNumber: {
+    fontFamily: 'JetBrains Mono',
     fontWeight: 600,
     fontSize: 9.5,
     color: C.textDark,
@@ -92,7 +104,7 @@ const s = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     marginBottom: 2,
   },
   metaLabel: {
@@ -103,8 +115,9 @@ const s = StyleSheet.create({
     marginRight: 8,
   },
   metaValue: {
+    fontFamily: 'JetBrains Mono',
     fontWeight: 600,
-    fontSize: 9,
+    fontSize: 9.5,
   },
 
   // Divider
@@ -178,10 +191,11 @@ const s = StyleSheet.create({
   colQty:   { width: '8%',  textAlign: 'right' },
   colRate:  { width: '17%', textAlign: 'right' },
   colTotal: { width: '17%', textAlign: 'right' },
-  numText:   { fontSize: 8.5, color: '#999999' },
+  mono: { fontFamily: 'JetBrains Mono' },
+  numText:   { fontFamily: 'JetBrains Mono', fontSize: 8.5, color: '#999999' },
   itemName:  { fontWeight: 600, fontSize: 9.5, color: C.textMain },
   itemDesc:  { fontSize: 8.5, color: C.textDim, lineHeight: 1.6, marginTop: 2 },
-  totalText: { fontWeight: 600 },
+  totalText: { fontFamily: 'JetBrains Mono', fontWeight: 600 },
 
   // Totals
   totalsWrap: {
@@ -204,7 +218,7 @@ const s = StyleSheet.create({
     fontSize: 9.5,
     color: C.textDark,
   },
-  discountAmt: { color: C.success },
+  discountAmt: { fontFamily: 'JetBrains Mono', color: C.success },
 
   // Grand total bar
   totalBar: {
@@ -251,20 +265,15 @@ const s = StyleSheet.create({
     marginBottom: '5mm',
   },
   paymentLabel: { fontSize: 9, color: C.textDim, marginBottom: 4 },
-  bankRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    fontSize: 9.5,
-    gap: 12,
-  },
-  bankName: {
-    fontWeight: 700,
-    color: C.textMain,
-  },
+  bankRow: { flexDirection: 'row', fontSize: 9.5, gap: 12 },
+  bankName: { fontSize: 9.5, fontWeight: 700, color: C.textMain },
   bankItem: {
     fontWeight: 600,
     color: C.textMain,
   },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  paymentInfo: { flex: 1 },
+  qrBox: { width: 84, height: 84, marginLeft: 16 },
   footerLegal: {
     marginTop: 8,
     fontSize: 8,
@@ -303,6 +312,8 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
   const dueDateLabel = doc.type === 'quote' ? labels.validUntil : labels.dueDate;
 
   const { subtotal, discountAmt, tax, total } = calcDocTotals(doc);
+
+  const qr = invoiceQr(doc, sender, total);
 
   // Address lines
   const senderAddressLines = (sender?.company_address || '').split('\n').filter(Boolean);
@@ -398,17 +409,17 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
               </View>
               {vc.qty !== false && (
               <View style={colQtyStyle}>
-                <Text>{fmtNum(item.qty)}</Text>
+                <Text style={s.mono}>{fmtNum(item.qty)}</Text>
               </View>
               )}
               {vc.duration !== false && (
               <View style={colDurStyle}>
-                <Text>{fmtNum(item.duration ?? 1)}</Text>
+                <Text style={s.mono}>{fmtNum(item.duration ?? 1)}</Text>
               </View>
               )}
               {vc.rate !== false && (
               <View style={colRateStyle}>
-                <Text>{fmt(item.rate, currency)}</Text>
+                <Text style={s.mono}>{fmt(item.rate, currency)}</Text>
               </View>
               )}
               <View style={colTotalStyle}>
@@ -423,7 +434,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
           <View style={s.totalsBox}>
             <View style={s.totalsRow}>
               <Text>{labels.subtotal}</Text>
-              <Text>{fmt(subtotal, currency)}</Text>
+              <Text style={s.mono}>{fmt(subtotal, currency)}</Text>
             </View>
             {(doc.discount_value || 0) > 0 && (
               <View style={s.totalsRow}>
@@ -436,7 +447,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
             {!isCash && (
               <View style={s.totalsRow}>
                 <Text>{labels.tax}{doc.tax_rate ? ` (${doc.tax_rate}%)` : ''}</Text>
-                <Text>{fmt(tax, currency)}</Text>
+                <Text style={s.mono}>{fmt(tax, currency)}</Text>
               </View>
             )}
           </View>
@@ -445,7 +456,7 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
         {/* ── Grand total bar ── */}
         <View style={s.totalBar}>
           <Text style={s.totalBarText}>{totalLabel.toUpperCase()}</Text>
-          <Text style={s.totalBarText}>{fmt(total, currency)}</Text>
+          <Text style={[s.totalBarText, s.mono]}>{fmt(total, currency)}</Text>
         </View>
 
         {/* ── Notes ── */}
@@ -461,16 +472,26 @@ const DocumentPdfTemplate = ({ doc, sender, client }) => {
         {/* ── Payment footer ── */}
         <View>
           <View style={s.footerRule} />
-          <Text style={s.paymentLabel}>{labels.paymentNote}</Text>
-          <View style={s.bankRow}>
-            {sender?.company_name && (
-              <Text style={s.bankName}>{sender.company_name}</Text>
-            )}
-            {sender?.company_iban && (
-              <Text style={s.bankItem}>IBAN: {sender.company_iban}</Text>
-            )}
-            {sender?.company_bic && (
-              <Text style={s.bankItem}>BIC: {sender.company_bic}</Text>
+          <View style={s.paymentRow}>
+            <View style={s.paymentInfo}>
+              <Text style={s.paymentLabel}>{labels.paymentNote}</Text>
+              {sender?.company_name && (
+                <Text style={s.bankName}>{sender.company_name}</Text>
+              )}
+              {(sender?.company_iban || sender?.company_bic) && (
+                <View style={s.bankRow}>
+                  {sender.company_iban && <Text style={s.bankItem}>IBAN: {sender.company_iban}</Text>}
+                  {sender.company_bic && <Text style={s.bankItem}>BIC: {sender.company_bic}</Text>}
+                </View>
+              )}
+              {doc.type === 'invoice' && paymentReference(doc) && (
+                <Text style={s.bankItem}>{labels.paymentRef}: {paymentReference(doc)}</Text>
+              )}
+            </View>
+            {qr && (
+              <Svg style={s.qrBox} viewBox={qr.viewBox}>
+                <Path d={qr.d} fill="#000000" />
+              </Svg>
             )}
           </View>
           {(sender?.company_name || sender?.company_email) && (

@@ -694,6 +694,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
   const sorted = useMemo(() => sortRows(visible, {
     name: (i) => String(i.name).toLowerCase(),
     sell_price: (i) => i.sell_price ?? null,
+    buy_pack_price: (i) => i.buy_pack_price ?? null,
     planned_qty: (i) => Number(i.planned_qty) || 0,
     difference: (i) => differenceOf(i),
   }, { tieBreak: (i) => i.name, locale: LOCALE }), [visible, sortRows]);
@@ -863,6 +864,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
               <col />
               <col className="gw-col-sell" />
               <col className="gw-col-buy" />
+              <col className="gw-col-buyprice" />
               <col className="gw-col-planned" />
               <col className="gw-col-diff" />
               <col className="gw-col-actions" />
@@ -872,6 +874,7 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                 {sortTh('name', t('gw_col_name', 'Name'))}
                 {sortTh('sell_price', t('gw_col_sell', 'Verkaufspreis'))}
                 <th>{t('gw_col_bought_form', 'Einkauf')}</th>
+                {sortTh('buy_pack_price', t('gw_col_buy_price', 'Einkaufspreis'))}
                 {sortTh('planned_qty', t('gw_col_left', 'Übrig'))}
                 {sortTh('difference', t('gw_col_difference', 'Differenz'))}
                 <th aria-label={t('actions', 'Aktionen')} />
@@ -910,6 +913,24 @@ const GluehweinCatalog = ({ action, year, yearLocked, search = '', onError, addR
                           onCommit={(text) => commitPurchase(i, text)}
                         />
                         <span className="gw-unit-label">{i.buy_unit ? pluralUnit(i.buy_unit, i.purchase_qty) : "–"}</span>
+                      </div>
+                    </td>
+                    <td className="dt-mono gw-price-cell">
+                      <div className="gw-cell">
+                        {i.use_recipe ? (
+                          <span className="dt-muted">{t('gw_via_recipe', 'über Rezept')}</span>
+                        ) : (
+                          <>
+                            <InlineField
+                              label={`${t('gw_col_buy_price', 'Einkaufspreis')}: ${i.name}`}
+                              value={i.buy_pack_price}
+                              decimals={2}
+                              disabled={yearLocked}
+                              onCommit={(text) => commitField(i, 'buy_pack_price', text)}
+                            />
+                            <span className="dt-muted gw-unit-suffix"> €</span>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="dt-mono gw-sold-cell">

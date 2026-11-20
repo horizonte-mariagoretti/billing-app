@@ -2,7 +2,7 @@
   "name": "hori-admin",
   "private": true,
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,11 +12,13 @@
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/outfit": "^5.2.8",
     "@react-pdf/renderer": "^4.5.1",
     "libphonenumber-js": "^1.12.42",
     "lucide-react": "^1.11.0",
     "pako": "^2.1.0",
+    "qrcode": "^1.5.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "sql.js": "^1.10.3"
