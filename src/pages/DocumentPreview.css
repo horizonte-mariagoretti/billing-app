@@ -88,6 +88,7 @@
 }
 
 .pdf-meta-table td {
+  vertical-align: baseline;
   padding: 1px 0;
   font-size: 9pt;
   color: #444;
@@ -102,8 +103,10 @@
   white-space: nowrap;
 }
 
-.pdf-meta-value {
+.pdf-meta-table .pdf-meta-value {
   font-weight: 600;
+  font-size: 9.5pt;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -418,4 +421,17 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+}
+
+/* Numbers in monospace, like the exported PDF */
+.pdf-doc-number,
+.pdf-meta-value,
+.pdf-table td.col-num,
+.pdf-table td.col-qty,
+.pdf-table td.col-duration,
+.pdf-table td.col-rate,
+.pdf-table td.col-total,
+.pdf-totals-row span:last-child,
+.pdf-total-bar span:last-child {
+  font-family: var(--font-mono);
 }

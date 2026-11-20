@@ -17,16 +17,21 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
-.doc-table th:nth-child(1), .doc-table td:nth-child(1) { min-width: 130px; }
-.doc-table th:nth-child(2), .doc-table td:nth-child(2) { min-width: 150px; }
-.doc-table th:nth-child(3), .doc-table td:nth-child(3) { min-width: 160px; }
-.doc-table th:nth-child(4), .doc-table td:nth-child(4) { min-width: 100px; white-space: nowrap; }
-.doc-table th:nth-child(5), .doc-table td:nth-child(5) { width: 100px; }
-.doc-table th:nth-child(6), .doc-table td:nth-child(6) { width: 120px; text-align: right; }
-.doc-table th:nth-child(7), .doc-table td:nth-child(7) { width: 100px; text-align: right; }
+/* Fixed layout: invoices and offers get identical columns, independent of content.
+   Client and name share the remaining width. */
+.doc-table th:nth-child(1), .doc-table td:nth-child(1) { width: 210px; }
+.doc-table th:nth-child(4), .doc-table td:nth-child(4) { width: 110px; white-space: nowrap; }
+.doc-table th:nth-child(5), .doc-table td:nth-child(5) { width: 120px; }
+.doc-table th:nth-child(6), .doc-table td:nth-child(6) { width: 130px; text-align: right; }
+.doc-table th:nth-child(7), .doc-table td:nth-child(7) { width: 110px; text-align: right; }
+.doc-table td:nth-child(1), .doc-table td:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .doc-title-cell {
   color: var(--color-text-dark-secondary);

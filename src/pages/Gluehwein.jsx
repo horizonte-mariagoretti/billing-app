@@ -2,16 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import useActionDate from '../hooks/useActionDate';
 import DateRangeField from '../components/DateRangeField';
 import {
-  Search, AlertCircle, LayoutList, Coffee, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, Copy, Plus, Settings2,
+  Search, AlertCircle, LayoutList, Wallet, CalendarDays, ShoppingCart, Scale, Banknote, TrendingUp, ReceiptEuro, Copy, Plus, Settings2,
 } from 'lucide-react';
 import useSettings from '../hooks/useSettings';
 import useYear from '../hooks/useYear';
 import useCurrency from '../hooks/useCurrency';
-import { useSalesDays } from '../hooks/useSalesDays';
 import { useSalesKasse } from '../hooks/useSalesKasse';
 import { useSalesEntries } from '../hooks/useSalesEntries';
+import { useGluehweinPurchases } from '../hooks/useGluehweinPurchases';
 import { SALES_ACTIONS } from '../utils/lasagnaFinance';
-import { saldo as computeSaldo, kasseIncome } from '../utils/gluehweinFinance';
+import { saldo as computeSaldo } from '../utils/gluehweinFinance';
 import YearSwitcher from '../components/YearSwitcher';
 import Button from '../components/Button';
 import SegmentedToggle from '../components/SegmentedToggle';
@@ -31,7 +31,6 @@ const END_DATE_KEY = 'gluehwein_end_action_date';
 
 const TABS = [
   { value: 'overview', label: 'Übersicht', icon: <LayoutList size={15} /> },
-  { value: 'catalog', label: 'Sortiment', icon: <Coffee size={15} /> },
   { value: 'kasse', label: 'Kasse', icon: <Banknote size={15} /> },
   { value: 'shifts', label: 'Schichten', icon: <CalendarDays size={15} /> },
   { value: 'shopping', label: 'Einkaufsliste', icon: <ShoppingCart size={15} /> },
@@ -39,13 +38,13 @@ const TABS = [
 ];
 
 // Tabs whose content filters by the search bar.
-const SEARCH_TABS = new Set(['catalog', 'finance']);
+const SEARCH_TABS = new Set(['overview', 'finance']);
 
 // Add buttons a tab shows in the page header, left of the year switcher (like Lasagnen / Horis). Per tab an array,
 // so a tab can supply several (key tells the tab which one was clicked). A click bumps addRequest = { tab, key, n,
 // triggerRef }; the tab opens its popup when n changes (the value present on mount is ignored).
 const HEADER_ACTIONS = {
-  catalog: [
+  overview: [
     { key: 'copy', label: 'Aus Jahr kopieren', icon: Copy, variant: 'secondary' },
     { key: 'add', label: 'Artikel hinzufügen', icon: Plus, variant: 'primary' },
   ],
@@ -54,52 +53,50 @@ const HEADER_ACTIONS = {
   ],
 };
 
-/** Read-only summary: event days, Kasse (Bargeld + Karte), Saldo. Reloads on mount (i.e. each time the tab is opened). */
+/** Read-only summary: Einnahmen (incl. Kasse), Ausgaben (incl. Einkaufsliste), Saldo. Reloads on mount (i.e. each time the tab is opened). */
 const GluehweinOverview = ({ year, onError }) => {
-  const { fetchDays } = useSalesDays(ACTION.key);
   const { readKasse } = useSalesKasse(ACTION.key);
   const { fetchEntries } = useSalesEntries(ACTION.key);
+  const { fetchShoppingExpenses } = useGluehweinPurchases();
   const formatCurrency = useCurrency();
-  const [data, setData] = useState(null); // { year, days, kasseTotal, totals }
+  const [data, setData] = useState(null); // { year, totals }
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [days, kasse, entries] = await Promise.all([fetchDays(year), readKasse(year), fetchEntries(year)]);
-        const kasseTotal = Math.round(kasseIncome(kasse).reduce((s, x) => s + x.amount, 0) * 100) / 100;
-        if (!cancelled) setData({ year, days, kasseTotal, totals: computeSaldo(entries, kasse) });
+        const [kasse, entries, shopping] = await Promise.all([readKasse(year), fetchEntries(year), fetchShoppingExpenses(year)]);
+        if (!cancelled) setData({ year, totals: computeSaldo([...entries, ...shopping], kasse) });
       } catch (err) {
         console.error('Glühwein-Übersicht laden fehlgeschlagen', err);
         if (!cancelled) onError?.('Übersicht konnte nicht geladen werden.');
       }
     })();
     return () => { cancelled = true; };
-  }, [year, fetchDays, readKasse, fetchEntries, onError]);
+  }, [year, readKasse, fetchEntries, fetchShoppingExpenses, onError]);
 
   const ready = data && data.year === year;
-  const days = ready ? data.days : [];
   const totals = ready ? data.totals : { income: 0, expense: 0, saldo: 0 };
 
   return (
     <div className="gw-overview">
       <div className="gw-summary">
         <div className="gw-summary-card">
-          <div className="gw-summary-icon indigo"><CalendarDays size={20} /></div>
+          <div className="gw-summary-icon green"><TrendingUp size={20} /></div>
           <div className="gw-summary-body">
-            <div className="gw-summary-label">Verkaufstage</div>
-            <div className="gw-summary-value">{ready ? days.length : '–'}</div>
+            <div className="gw-summary-label">Einnahmen</div>
+            <div className="gw-summary-value">{ready ? formatCurrency(totals.income) : '–'}</div>
           </div>
         </div>
         <div className="gw-summary-card">
-          <div className="gw-summary-icon amber"><Banknote size={20} /></div>
+          <div className="gw-summary-icon pink"><ReceiptEuro size={20} /></div>
           <div className="gw-summary-body">
-            <div className="gw-summary-label">Kasse</div>
-            <div className="gw-summary-value">{ready ? formatCurrency(data.kasseTotal) : '–'}</div>
+            <div className="gw-summary-label">Ausgaben</div>
+            <div className="gw-summary-value">{ready ? formatCurrency(totals.expense) : '–'}</div>
           </div>
         </div>
         <div className="gw-summary-card">
-          <div className="gw-summary-icon green"><Scale size={20} /></div>
+          <div className="gw-summary-icon indigo"><Scale size={20} /></div>
           <div className="gw-summary-body">
             <div className="gw-summary-label">Saldo</div>
             <div className={`gw-summary-value${totals.saldo < 0 ? ' negative' : ''}`}>{formatCurrency(totals.saldo)}</div>
@@ -112,7 +109,7 @@ const GluehweinOverview = ({ year, onError }) => {
 
 /**
  * Glühweinbude: multi-day Verkaufsaktion. No action date here — the Saldo month is the first sales day
- * (set in Schichten). Tabs: Übersicht, Katalog, Kasse, Schichten, Einkaufsliste, Finanzen.
+ * (set in Schichten). Tabs: Übersicht (incl. Sortiment), Kasse, Schichten, Einkaufsliste, Finanzen.
  */
 const Gluehwein = () => {
   const { loadYearSettings } = useSettings();
@@ -150,7 +147,7 @@ const Gluehwein = () => {
   };
 
   const searchEnabled = SEARCH_TABS.has(view);
-  const placeholder = view === 'catalog' ? 'Artikel suchen…' : view === 'finance' ? 'Einträge suchen…' : 'Suchen…';
+  const placeholder = view === 'overview' ? 'Artikel suchen…' : view === 'finance' ? 'Einträge suchen…' : 'Suchen…';
   const common = { action: ACTION, year: selectedYear, yearLocked };
 
   return (
@@ -218,14 +215,16 @@ const Gluehwein = () => {
         )}
       </div>
 
-      {view === 'overview' && <GluehweinOverview key={selectedYear} year={selectedYear} onError={setError} />}
-      {view === 'catalog' && (
-        <GluehweinCatalog
-          {...common}
-          search={search}
-          onError={setError}
-          addRequest={addRequest?.tab === 'catalog' ? addRequest : null}
-        />
+      {view === 'overview' && (
+        <>
+          <GluehweinOverview key={selectedYear} year={selectedYear} onError={setError} />
+          <GluehweinCatalog
+            {...common}
+            search={search}
+            onError={setError}
+            addRequest={addRequest?.tab === 'overview' ? addRequest : null}
+          />
+        </>
       )}
       {view === 'kasse' && <GluehweinKasse key={selectedYear} {...common} onError={setError} />}
       {view === 'shifts' && (

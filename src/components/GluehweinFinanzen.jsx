@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TrendingUp, ReceiptEuro, Scale, Plus, Edit2, Trash2, Receipt, LayoutList, Lock } from 'lucide-react';
 import { useSalesEntries } from '../hooks/useSalesEntries';
 import { useSalesKasse } from '../hooks/useSalesKasse';
+import { useGluehweinPurchases } from '../hooks/useGluehweinPurchases';
 import useCurrency from '../hooks/useCurrency';
 import useTableSort from '../hooks/useTableSort';
 import { saldo as computeSaldo, kasseIncome } from '../utils/gluehweinFinance';
@@ -34,7 +35,7 @@ const SALES_ENTRY_CATEGORIES = {
 };
 
 // Categories of the virtual Kasse income lines (kasseIncome) and of old booked Kasse entries.
-const KASSE_LABELS = { kasse: 'Kasse', kasse_cash: 'Kasse Bargeld', kasse_card: 'Kartenzahlung' };
+const KASSE_LABELS = { kasse: 'Kasse', kasse_cash: 'Kasse Bargeld', kasse_card: 'Kartenzahlung', shopping: 'Einkaufsliste' };
 
 const categoryLabel = (kind, value) => {
   if (KASSE_LABELS[value]) return KASSE_LABELS[value];
@@ -61,11 +62,13 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
   const actionKey = action?.key;
   const { fetchEntries, saveEntry, deleteEntry } = useSalesEntries(actionKey);
   const { readKasse } = useSalesKasse(actionKey);
+  const { fetchShoppingExpenses } = useGluehweinPurchases();
   const formatCurrency = useCurrency();
   const locale = 'de-DE';
 
   const [records, setRecords] = useState([]);
   const [kasse, setKasse] = useState(null);
+  const [shopping, setShopping] = useState([]); // Einkaufsliste as live Ausgaben (Glühweinbude only)
   const [loadedKey, setLoadedKey] = useState(null);
   const loadKey = `${actionKey}:${year}`;
   const loading = loadedKey !== loadKey;
@@ -77,14 +80,20 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
   // Unsorted = hook order (newest first).
   const { sort, toggleSort, sortRows } = useTableSort({ key: null, dir: null });
 
+  const loadShopping = useCallback(
+    () => (actionKey === 'gluehwein' ? fetchShoppingExpenses(year) : Promise.resolve([])),
+    [actionKey, fetchShoppingExpenses, year],
+  );
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [list, k] = await Promise.all([fetchEntries(year), readKasse(year)]);
+        const [list, k, shop] = await Promise.all([fetchEntries(year), readKasse(year), loadShopping()]);
         if (!cancelled) {
           setRecords(list || []);
           setKasse(k || null);
+          setShopping(shop);
         }
       } catch {
         if (!cancelled) onError?.('Einträge konnten nicht geladen werden.');
@@ -97,13 +106,14 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
   }, [loadKey]);
 
   const reload = useCallback(async () => {
-    const [list, k] = await Promise.all([fetchEntries(year), readKasse(year)]);
+    const [list, k, shop] = await Promise.all([fetchEntries(year), readKasse(year), loadShopping()]);
     setRecords(list || []);
     setKasse(k || null);
-  }, [fetchEntries, readKasse, year]);
+    setShopping(shop);
+  }, [fetchEntries, readKasse, loadShopping, year]);
 
   // The Kasse counts live (Bargeld + Kartenzahlung), never as a stored entry.
-  const totals = useMemo(() => computeSaldo(records, kasse), [records, kasse]);
+  const totals = useMemo(() => computeSaldo([...records, ...shopping], kasse), [records, shopping, kasse]);
 
   const entries = useMemo(() => [
     ...kasseIncome(kasse).map((x) => ({
@@ -112,7 +122,16 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
       description: x.category === 'kasse_card' ? 'Kartenzahlung (Kasse)' : 'Bargeld (Kasse)',
       category: categoryLabel('income', x.category),
       amount: x.amount,
-      isKasse: true,
+      readOnlyHint: 'Aus der Kasse: im Tab Kasse ändern',
+      raw: null,
+    })),
+    ...shopping.map((x) => ({
+      key: x.key,
+      kind: 'expense',
+      description: x.description,
+      category: categoryLabel('expense', x.category),
+      amount: -x.amount,
+      readOnlyHint: 'Aus der Einkaufsliste: dort ändern (Tab Einkaufsliste)',
       raw: null,
     })),
     ...records.map((x) => {
@@ -124,11 +143,11 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
         description: x.description || '',
         category: categoryLabel(isIncome ? 'income' : 'expense', x.category),
         amount: isIncome ? amount : -amount,
-        isKasse: x.source_kasse_id != null,
+        readOnlyHint: x.source_kasse_id != null ? 'Aus der Kasse: im Tab Kasse ändern' : null,
         raw: x,
       };
     }),
-  ], [records, kasse]);
+  ], [records, shopping, kasse]);
 
   const incomeCount = entries.filter((x) => x.kind === 'income').length;
   const expenseCount = entries.length - incomeCount;
@@ -284,7 +303,7 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
               {sorted.map((x) => (
                 <tr
                   key={x.key}
-                  {...(yearLocked || x.isKasse ? {} : editableRowProps(
+                  {...(yearLocked || x.readOnlyHint ? {} : editableRowProps(
                     () => setModal({ kind: x.kind, entry: x.raw, triggerRef: null }),
                     `Bearbeiten: ${x.description}`,
                   ))}
@@ -294,8 +313,8 @@ const GluehweinFinanzen = ({ action, year, yearLocked, search = '', onError }) =
                   <td className={`num dt-mono ${x.kind === 'income' ? 'gw-fin-amount-in' : 'gw-fin-amount-out'}`}>{formatCurrency(x.amount)}</td>
                   {!yearLocked && (
                     <td className="gw-fin-row-actions">
-                      {x.isKasse ? (
-                        <span className="gw-fin-readonly" title="Aus der Kasse: im Tab Kasse ändern">
+                      {x.readOnlyHint ? (
+                        <span className="gw-fin-readonly" title={x.readOnlyHint}>
                           <Lock size={14} />
                         </span>
                       ) : (

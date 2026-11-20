@@ -1,4 +1,19 @@
 # Changelog
+## [2.1.0] - 2026-11-17
+
+### Changed
+- Glühweinbude: the Sortiment now sits in the Übersicht tab, below the summary cards (the separate Sortiment tab is gone).
+- Glühweinbude Sortiment: new editable "Einkaufspreis" column (price per buying unit) between Einkauf and Übrig; recipe products show "über Rezept".
+- Glühweinbude: everything on the Einkaufsliste now counts as Ausgaben, live (one read-only line per drink/Zutat in Finanzen, included in Ausgaben/Saldo on Übersicht and in the Dashboard Umsatz). Nothing is stored, so changes to the Einkaufsliste show up at once.
+- Glühweinbude Übersicht: the summary boxes are now Einnahmen, Ausgaben and Saldo (were Verkaufstage, Kasse, Saldo), with the same icons and colours as the Finanzen tab.
+
+### Fixed
+- Invoice and offer lists use the same fixed column widths (the columns used to resize with the content).
+
+### Added
+- Numbers (document number, dates, quantities, amounts) are set in JetBrains Mono on the PDF and the preview.
+- **Payment QR code on invoice PDFs** (EPC / SEPA, scannable in Belgian banking apps): fills IBAN, amount and the Betreff (title) as payment reference, falling back to the invoice number. Only on EUR invoices with an IBAN set that are not paid or cancelled. The reference is also printed as text (Verwendungszweck / Communication).
+
 
 ## [2.0.0] - 2026-11-17
 

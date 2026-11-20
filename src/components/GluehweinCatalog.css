@@ -373,9 +373,10 @@
 /* ── Sortiment table ──
    One row height (60 px, from .data-table). Every cell holds its content in .gw-cell: a 28 px flex row, centred.
    Columns have fixed widths, so editing or resizing a field cannot shift the row lines. */
-.gw-catalog-table { table-layout: fixed; width: 100%; min-width: 980px; }
+.gw-catalog-table { table-layout: fixed; width: 100%; min-width: 1240px; }
 .gw-col-sell    { width: 190px; }
 .gw-col-buy     { width: 230px; }
+.gw-col-buyprice { width: 190px; }
 .gw-col-planned { width: 260px; }
 .gw-col-diff    { width: 130px; }
 .gw-col-actions { width: 96px; }

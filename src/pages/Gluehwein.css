@@ -44,7 +44,7 @@
   border-radius: var(--radius-md);
 }
 .gw-summary-icon.indigo { background: var(--stat-indigo-bg); color: var(--stat-indigo-icon); }
-.gw-summary-icon.amber  { background: var(--stat-amber-bg);  color: var(--stat-amber-icon); }
+.gw-summary-icon.pink   { background: var(--stat-pink-bg);   color: var(--stat-pink-icon); }
 .gw-summary-icon.green  { background: var(--stat-green-bg);  color: var(--stat-green-icon); }
 
 .gw-summary-label {

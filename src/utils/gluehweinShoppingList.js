@@ -158,3 +158,19 @@ export function buildShoppingList({ products, ingredients, productTerms, ingredi
     + drinks.filter((d) => !d.hasRecipe).reduce((s, d) => s + d.cost, 0));
   return { drinks, ingredients: ingRows, total };
 }
+
+/**
+ * The Einkaufsliste as Ausgaben lines for the Finanzen/Saldo: drinks bought as they are plus the Zutaten (recipe
+ * drinks are covered by their ingredients). Rows without a cost are left out.
+ * products: fetchItems rows (with .recipe), ingredients: fetchIngredients rows (both carry this year's terms).
+ * -> [{ key, kind: 'expense', category: 'shopping', description, amount }]
+ */
+export function shoppingExpenseLines(products, ingredients) {
+  const productTerms = new Map(products.map((p) => [p.id, p]));
+  const ingredientTerms = new Map(ingredients.map((g) => [g.id, g]));
+  const recipe = products.flatMap((p) => (p.recipe || []).map((r) => ({ product_id: p.id, ...r })));
+  const list = buildShoppingList({ products, ingredients, productTerms, ingredientTerms, recipe });
+  return [...list.drinks.filter((d) => !d.hasRecipe), ...list.ingredients]
+    .filter((r) => r.cost > 0)
+    .map((r) => ({ key: `shopping:${r.key}`, kind: 'expense', category: 'shopping', description: r.name, amount: r.cost }));
+}
