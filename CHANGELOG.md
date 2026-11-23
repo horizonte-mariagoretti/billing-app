@@ -1,4 +1,9 @@
 # Changelog
+## [2.1.1] - 2026-11-23
+
+### Fixed
+- Horis: the "Auf inaktiv setzen" / "Aktivieren" icon (and the Aktiv checkbox in the Hori popup) now works. It only changed the global flag, while the page reads the per-scout-year status; it now updates the selected year too.
+
 ## [2.1.0] - 2026-11-17
 
 ### Changed

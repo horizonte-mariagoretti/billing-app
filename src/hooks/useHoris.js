@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import useDatabase from './useDatabase';
+import useYear from './useYear';
 import { SCOUT_YEAR_SQL } from '../utils/scoutYear';
 
 const newId = () => crypto.randomUUID();
@@ -7,6 +8,7 @@ const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 const useHoris = () => {
   const { query, run, transaction } = useDatabase();
+  const { selectedYear } = useYear();
 
   const fetchHoris = useCallback(async () => {
     return await query(
@@ -18,10 +20,18 @@ const useHoris = () => {
     const active = hori.active === undefined || hori.active === null ? 1 : (hori.active ? 1 : 0);
     const birth = hori.birth_date || null;
     if (hori.id) {
-      await run(
-        `UPDATE horis SET first_name = ?, last_name = ?, birth_date = ?, active = ? WHERE id = ?`,
-        [hori.first_name, hori.last_name, birth, active, hori.id]
-      );
+      // The Horis page reads active per scout year (hori_years), so update the selected year too.
+      await transaction([
+        {
+          sql: `UPDATE horis SET first_name = ?, last_name = ?, birth_date = ?, active = ? WHERE id = ?`,
+          params: [hori.first_name, hori.last_name, birth, active, hori.id],
+        },
+        {
+          sql: `INSERT INTO hori_years (hori_id, year, active) VALUES (?, ?, ?)
+                ON CONFLICT (hori_id, year) DO UPDATE SET active = excluded.active`,
+          params: [hori.id, selectedYear, active],
+        },
+      ]);
       return hori.id;
     }
     const id = newId();
@@ -37,7 +47,7 @@ const useHoris = () => {
       },
     ]);
     return id;
-  }, [run, transaction]);
+  }, [transaction, selectedYear]);
 
   // Insert many Horis atomically (all or nothing). Returns the number inserted.
   const saveHorisBulk = useCallback(async (list) => {
